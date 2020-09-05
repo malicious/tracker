@@ -1,0 +1,9 @@
+venv/
+.python-version
+
+*.pyc
+__pycache__/
+
+*.swp
+instance/
+
