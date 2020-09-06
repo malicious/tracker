@@ -1,6 +1,7 @@
 import re
 from datetime import date, datetime, timedelta
 from enum import Enum
+from typing import Dict
 
 
 class TimeScope(str):
@@ -45,6 +46,7 @@ class TimeScope(str):
         - weeks as: `2020-ww35`
         - quarters as: `2020—Q3` (note that that is an em dash)
         """
+
         def dt_from_iso(year, week, weekday):
             "This already exists in datetime 3.8+"
             return datetime.strptime(f'{year} {week} {weekday}', '%G %V %u')
@@ -64,3 +66,11 @@ class TimeScope(str):
             return
 
         raise ValueError(f"Couldn't parse TimeScope: {repr(self)}")
+
+    def to_json_dict(self) -> Dict:
+        return {
+            "self": self,
+            "type": str(self.type),
+            "start": str(self.start),
+            "end": str(self.end),
+        }
