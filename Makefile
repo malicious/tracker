@@ -21,4 +21,3 @@ $(venv)/bin/activate:
 	pyenv local 3.7.5 \
 		&& eval "$(pyenv init -)" \
 		&& python3 -m venv $(venv)
-
