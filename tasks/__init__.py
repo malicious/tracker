@@ -7,7 +7,7 @@ from dateutil import parser
 from flask.cli import with_appcontext
 
 from tracker.content import content_db as db
-from tracker.scope import TimeScope
+from tasks.time_scope import TimeScope
 
 
 class Task(db.Model):

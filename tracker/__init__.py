@@ -9,7 +9,7 @@ from sqlalchemy.orm import Query
 
 from tasks import populate_test_data, tasks_from_csv, Task, TaskTimeScope
 from tracker.content import content_db, reset_db, migrate_db
-from tracker.scope import TimeScope
+from tasks.time_scope import TimeScope
 
 
 # ---------
