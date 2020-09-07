@@ -3,6 +3,7 @@ import io
 from typing import Dict
 
 import click
+from dateutil import parser
 from flask.cli import with_appcontext
 
 from tracker.content import content_db
@@ -60,7 +61,9 @@ class Task(content_db.Model):
     @staticmethod
     def from_csv(csv_entry):
         t = Task(desc=csv_entry['desc'])
-        for field in ["category", "created_at", "resolution", "parent_id", "time_estimate", "time_actual"]:
+        if 'created_at' in csv_entry and csv_entry['created_at']:
+            t.created_at = parser.parse(csv_entry['created_at'])
+        for field in ["category", "resolution", "parent_id", "time_estimate", "time_actual"]:
             value = csv_entry.get(field)
             setattr(t, field, value if value else None)
 
