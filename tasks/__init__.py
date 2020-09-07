@@ -48,7 +48,10 @@ class Task(db.Model):
 
         # Skip null fields, per Google JSON style guide:
         # https://google.github.io/styleguide/jsoncstyleguide.xml#Empty/Null_Property_Values
-        for field in ["category", "created_at", "resolution", "parent_id", "time_estimate", "time_actual"]:
+        if self.created_at:
+            response_dict['created_at'] = str(self.created_at)
+
+        for field in ["category", "resolution", "parent_id", "time_estimate", "time_actual"]:
             if getattr(self, field):
                 response_dict[field] = getattr(self, field)
 
@@ -56,6 +59,16 @@ class Task(db.Model):
 
     def short_scope(self, reference_scope) -> str:
         return TimeScope(self.first_scope).shorten(reference_scope)
+
+    def short_time(self) -> str:
+        if self.time_estimate and self.time_actual:
+            return f"`{self.time_estimate}h => {self.time_actual}h`"
+        elif self.time_estimate:
+            return f"`{self.time_estimate}h`"
+        elif self.time_actual:
+            return f"`=> {self.time_actual}`"
+        else:
+            return ""
 
 
 class TaskTimeScope(db.Model):

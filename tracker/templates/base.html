@@ -8,25 +8,33 @@ body {
   font-family: 'Source Code Pro', monospace;
   width: 85%;
 }
-div {
+div, details {
     border: 0px;
     padding: 8px;
-    overflow-wrap: break-word;
 }
 a {
   text-decoration: none;
 }
-.task {
+summary {
+    overflow-wrap: break-word;
+}
+details {
     border: 1px solid rgba(0,0,0,.125);
     color: dimgray;
-    -webkit-user-select: all;
+}
+.task-details {
+    margin: 1.3em 0.7em 0.7em 1.3em;
+    background-color: rgb(246,246,246);
 }
 .category {
     color: black;
-    -webkit-user-select: all;
 }
-.task .time_estimate {
+.task_time {
   color: brown;
+}
+.created_at {
+    color: forestgreen;
+    margin-top: 1em;
 }
     </style>
 </head>
@@ -42,22 +50,37 @@ a {
         ### {{ task.category }}
     </div>
     {% endif %}
-    <div class="task">
-        *
-        {% if task.short_scope(ref_scope) %}
-        <span class="scope">
-            {{ task.short_scope(ref_scope) }}:
-        </span>
+
+<details>
+<summary class="task">*
+    {% if task.short_scope(ref_scope) %}
+    <span class="scope">{{ task.short_scope(ref_scope) }}:</span>
+    {% endif %}
+
+    <span class="task_desc">{{ link_replacer(task['desc'])|safe }}</span>
+
+    {% if task.short_time() %}
+    <span class="task_time">{{ task.short_time() }}</span>
+    {% endif %}
+</summary>
+
+<div class="task-details">
+    <a href="task/{{ task.task_id }}">
+        {% if task.created_at %}
+        <span class="created_at">&lt;!-- {{ task.created_at }} --&gt;</span>
+        <br />
         {% endif %}
-        <span class="task_desc">
-            {{ link_replacer(task['desc'])|safe }}
-        </span>
-        {% if task.time_estimate %}
-        <span class="time_estimate">
-            `{{ task.time_estimate }}h`
-        </span>
-        {% endif %}
-    </div>
+
+        * {{ task.first_scope }}:
+    </a>
+        {{ link_replacer(task['desc'])|safe }}
+
+    {% if task.short_time() %}
+    <span class="task_time">{{ task.short_time() }}</span>
+    {% endif %}
+</div>
+</details>
+
     {% set ns.prev = task %}
 {% endfor %}
 
