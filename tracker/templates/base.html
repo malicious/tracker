@@ -1,0 +1,40 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <title>Title</title>
+    <style type="text/css">
+body {
+  font-family: 'Source Code Pro', monospace;
+  width: 85%;
+}
+div.task {
+  border: 1px solid rgba(0,0,0,.125);
+  padding: 8px;
+  color: dimgray;
+}
+.task a {
+  text-decoration: none;
+}
+.task .time_estimate {
+  color: brown;
+}
+    </style>
+</head>
+<body>
+{% set prev_task = None %}
+{% for task in tasks %}
+    <div class="task">
+        <span class="task_desc">
+            *&nbsp;{{ link_replacer(task['desc'])|safe }}
+        </span>
+        {% if task['time_estimate'] %}
+        <span class="time_estimate">
+            `{{ task['time_estimate'] }}h`
+        </span>
+        {% endif %}
+    </div>
+    {% set prev_task = task %}
+{% endfor %}
+</body>
+</html>

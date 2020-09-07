@@ -1,7 +1,8 @@
 import os
+import re
 from typing import Dict
 
-from flask import Flask
+from flask import Flask, render_template
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Query
 
@@ -33,7 +34,7 @@ def create_app(app_config_dict: Dict = None):
         pass
 
     @app.route("/time_scope/<scope_str>")
-    def print_time_scope(scope_str: str):
+    def get_time_scope(scope_str: str):
         return TimeScope(scope_str).to_json_dict()
 
     @app.route("/task/<task_id>")
@@ -47,6 +48,20 @@ def create_app(app_config_dict: Dict = None):
             pass
 
         return {"error": f"Couldn't find task: {task_id}"}
+
+    @app.route("/report-open-tasks")
+    def report_open_tasks():
+        query: Query = Task.query \
+            .filter(Task.resolution == None) \
+            .order_by(Task.category, Task.created_at)
+
+        def link_replacer(mdown: str):
+            return re.sub(r'\[(.+?)\]\((.+?)\)',
+                          r"""[\1](<a href="\2">\2</a>)""",
+                          mdown)
+
+        return render_template('base.html',
+                               tasks=query.all(), link_replacer=link_replacer)
 
     @app.route("/open-tasks/<scope_str>")
     def get_open_tasks(scope_str: str):
