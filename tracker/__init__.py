@@ -48,6 +48,16 @@ def create_app(app_config_dict: Dict = None):
 
         return {"error": f"Couldn't find task: {task_id}"}
 
+    @app.route("/open-tasks/<scope_str>")
+    def get_open_tasks(scope_str: str):
+        end_time = TimeScope(scope_str).end
+        query: Query = Task.query \
+            .filter(Task.resolution == None) \
+            .filter(Task.created_at <= end_time) \
+            .order_by(Task.category, Task.created_at)
+
+        return {"tasks": [task.to_json() for task in query.all()]}
+
     content_db.init_app(app)
     app.cli.add_command(reset_db)
     app.cli.add_command(populate_test_data)
