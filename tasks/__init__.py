@@ -11,7 +11,10 @@ from tracker.content import content_db
 
 def _import_from_csv(csv_file, session):
     for csv_entry in csv.DictReader(csv_file):
-        session.add(Task.from_csv(csv_entry))
+        new_task = Task.from_csv(csv_entry)
+        existing_task = session.query(Task).filter_by(desc=new_task.desc, created_at=new_task.created_at)
+        if not existing_task.first():
+            session.add(new_task)
 
     session.commit()
 
@@ -39,6 +42,7 @@ def populate_test_data():
     test_csv_data = """desc,category,time_estimate,
 task 5,,0.8,
 task 6,"cat with space",,
+task 7,,,
 task 7,,,
 """
     _import_from_csv(io.StringIO(test_csv_data), s)

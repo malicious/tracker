@@ -47,6 +47,7 @@ def test_json_export():
 def test_csv_import(session):
     csv_test_file = """desc,
 "csv test file desc",
+"another one",
 "another one","""
 
     test_csv = io.StringIO(csv_test_file)
@@ -64,19 +65,3 @@ def test_create_and_read_python(session):
     query = Task.query.filter_by(task_id=task.task_id)
     task_out = query.first()
     assert task_out.task_id == task.task_id
-
-
-def test_create_app(test_app):
-    pass
-
-
-def test_create_and_read_app(test_app):
-    pass
-
-
-def test_create_rest(test_app):
-    pass
-
-
-def test_create_and_read_rest(test_app):
-    pass
