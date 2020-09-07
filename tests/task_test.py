@@ -1,6 +1,6 @@
 import io
 
-from tasks import _import_from_csv
+from tasks.models import _import_from_csv
 from tracker import Task
 
 

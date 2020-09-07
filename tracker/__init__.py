@@ -7,7 +7,7 @@ from flask import Flask, render_template
 from markupsafe import escape
 from sqlalchemy.orm import Query
 
-from tasks import populate_test_data, tasks_from_csv, Task, TaskTimeScope
+from tasks.models import TaskTimeScope, Task, tasks_from_csv, populate_test_data
 from tracker.content import content_db, reset_db, migrate_db
 from tasks.time_scope import TimeScope
 
