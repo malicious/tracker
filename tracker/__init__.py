@@ -7,7 +7,7 @@ from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Query
 
 from tasks import populate_test_data, tasks_from_csv, Task
-from tracker.content import content_db, reset_db
+from tracker.content import content_db, reset_db, migrate_db
 from tracker.scope import TimeScope
 
 
@@ -75,6 +75,7 @@ def create_app(app_config_dict: Dict = None):
 
     content_db.init_app(app)
     app.cli.add_command(reset_db)
+    app.cli.add_command(migrate_db)
     app.cli.add_command(populate_test_data)
     app.cli.add_command(tasks_from_csv)
     return app

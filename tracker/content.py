@@ -10,3 +10,10 @@ content_db = SQLAlchemy()
 def reset_db():
     content_db.drop_all()
     content_db.create_all()
+
+
+
+@click.command('migrate-db')
+@with_appcontext
+def migrate_db():
+    content_db.create_all()
