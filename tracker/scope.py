@@ -47,7 +47,7 @@ class TimeScope(str):
         - quarters as: `2020—Q3` (note that that is an em dash)
         """
 
-        def dt_from_iso(year, week, weekday):
+        def dt_from_iso(year, week, weekday) -> datetime:
             "This already exists in datetime 3.8+"
             return datetime.strptime(f'{year} {week} {weekday}', '%G %V %u')
 
@@ -74,3 +74,11 @@ class TimeScope(str):
             "start": str(self.start),
             "end": str(self.end),
         }
+
+    def shorten(self, reference_scope) -> str:
+        if reference_scope[0:4] != self[0:4]:
+            return self
+        elif reference_scope != self:
+            return self[5:]
+        else:
+            return ""
