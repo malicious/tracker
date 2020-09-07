@@ -1,6 +1,6 @@
 import io
 
-from tasks.models import _import_from_csv
+from tasks.models import import_from_csv
 from tracker import Task
 
 
@@ -56,7 +56,7 @@ def test_csv_import(session):
 "another one",2020-ww52.4"""
 
     test_csv = io.StringIO(csv_test_file)
-    _import_from_csv(test_csv, session)
+    import_from_csv(test_csv, session)
 
     query = Task.query
     assert query.first()
@@ -66,7 +66,7 @@ def test_csv_ordering(session):
     csv_test_file = """desc,scopes
 "csv test file desc",2020-ww12.1 2019-ww14.5"""
 
-    _import_from_csv(io.StringIO(csv_test_file), session)
+    import_from_csv(io.StringIO(csv_test_file), session)
 
     t: Task = Task.query.first()
     assert t.first_scope == "2019-ww14.5"
