@@ -9,45 +9,6 @@ from flask.cli import with_appcontext
 from tracker.content import content_db
 
 
-def _import_from_csv(csv_file, session):
-    for csv_entry in csv.DictReader(csv_file):
-        new_task = Task.from_csv(csv_entry)
-        existing_task = session.query(Task).filter_by(desc=new_task.desc, created_at=new_task.created_at)
-        if not existing_task.first():
-            session.add(new_task)
-
-    session.commit()
-
-
-@click.command('import-tasks')
-@click.argument('csv_file', type=click.File('r'))
-@with_appcontext
-def tasks_from_csv(csv_file):
-    _import_from_csv(csv_file, content_db.session)
-
-
-@click.command('test-db')
-@with_appcontext
-def populate_test_data():
-    s = content_db.session
-
-    # manual task insertion
-    s.add(Task(desc="test task row 1"))
-    s.add(Task(desc="test task row 2"))
-    s.add(Task(desc="test task row 3"))
-    s.add(Task(desc="test task row 4", category="row 4 category"))
-    s.commit()
-
-    # faux-CSV insertion
-    test_csv_data = """desc,category,time_estimate,
-task 5,,0.8,
-task 6,"cat with space",,
-task 7,,,
-task 7,,,
-"""
-    _import_from_csv(io.StringIO(test_csv_data), s)
-
-
 class Task(content_db.Model):
     __tablename__ = 'Tasks'
     task_id = content_db.Column(content_db.Integer, primary_key=True, nullable=False, unique=True)
@@ -89,3 +50,46 @@ class Task(content_db.Model):
                 response_dict[field] = getattr(self, field)
 
         return response_dict
+
+
+# ------------------
+# Task import/export
+# ------------------
+
+def _import_from_csv(csv_file, session):
+    for csv_entry in csv.DictReader(csv_file):
+        new_task = Task.from_csv(csv_entry)
+        existing_task = session.query(Task).filter_by(desc=new_task.desc, created_at=new_task.created_at)
+        if not existing_task.first():
+            session.add(new_task)
+
+    session.commit()
+
+
+@click.command('import-tasks')
+@click.argument('csv_file', type=click.File('r'))
+@with_appcontext
+def tasks_from_csv(csv_file):
+    _import_from_csv(csv_file, content_db.session)
+
+
+@click.command('test-db')
+@with_appcontext
+def populate_test_data():
+    s = content_db.session
+
+    # manual task insertion
+    s.add(Task(desc="test task row 1"))
+    s.add(Task(desc="test task row 2"))
+    s.add(Task(desc="test task row 3"))
+    s.add(Task(desc="test task row 4", category="row 4 category"))
+    s.commit()
+
+    # faux-CSV insertion
+    test_csv_data = """desc,category,time_estimate,
+task 5,,0.8,
+task 6,"cat with space",,
+task 7,,,
+task 7,,,
+"""
+    _import_from_csv(io.StringIO(test_csv_data), s)
