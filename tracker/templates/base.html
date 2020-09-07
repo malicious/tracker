@@ -8,15 +8,22 @@ body {
   font-family: 'Source Code Pro', monospace;
   width: 85%;
 }
-.task {
-  border: 1px solid rgba(0,0,0,.125);
-  padding: 8px;
-  color: dimgray;
-  overflow-wrap: break-word;
-  -webkit-user-select: all;
+div {
+    border: 0px;
+    padding: 8px;
+    overflow-wrap: break-word;
 }
-.task a {
+a {
   text-decoration: none;
+}
+.task {
+    border: 1px solid rgba(0,0,0,.125);
+    color: dimgray;
+    -webkit-user-select: all;
+}
+.category {
+    color: black;
+    -webkit-user-select: all;
 }
 .task .time_estimate {
   color: brown;
@@ -25,9 +32,16 @@ body {
 </head>
 <body>
 {% set ns = namespace() %}
-{% set ns.prev_task = None %}
+{% set ns.prev = None %}
 
 {% for task in tasks %}
+    {% if task.category
+       and not (ns.prev.category and task.category == ns.prev.category) %}
+    <div><br /></div>
+    <div class="category">
+        ### {{ task.category }}
+    </div>
+    {% endif %}
     <div class="task">
         *
         {% if task.short_scope(ref_scope) %}
@@ -44,7 +58,7 @@ body {
         </span>
         {% endif %}
     </div>
-    {% set ns.prev_task = task %}
+    {% set ns.prev = task %}
 {% endfor %}
 
 </body>
