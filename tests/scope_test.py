@@ -1,5 +1,7 @@
 from datetime import date, datetime
 
+import pytest
+
 from tracker.scope import TimeScope
 
 
@@ -11,6 +13,12 @@ def test_create():
 def test_create_short():
     s = TimeScope("ww35")
     assert s
+
+
+def test_invalid():
+    with pytest.raises(ValueError):
+        s = TimeScope("invalid scope string")
+        s.type
 
 
 def _construct_dt(year, month, day):
