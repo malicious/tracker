@@ -7,6 +7,7 @@ from dateutil import parser
 from flask.cli import with_appcontext
 
 from tracker.content import content_db as db
+from tracker.scope import TimeScope
 
 
 class Task(db.Model):
@@ -29,7 +30,7 @@ class Task(db.Model):
         t = Task(desc=csv_entry['desc'])
         if 'created_at' in csv_entry and csv_entry['created_at']:
             t.created_at = parser.parse(csv_entry['created_at'])
-        for field in ["category", "resolution", "parent_id", "time_estimate", "time_actual"]:
+        for field in ["first_scope", "category", "resolution", "parent_id", "time_estimate", "time_actual"]:
             value = csv_entry.get(field)
             setattr(t, field, value if value else None)
 
@@ -42,6 +43,7 @@ class Task(db.Model):
         response_dict = {
             'task_id': self.task_id,
             'desc': self.desc,
+            'first_scope': self.first_scope,
         }
 
         # Skip null fields, per Google JSON style guide:
@@ -52,6 +54,18 @@ class Task(db.Model):
 
         return response_dict
 
+    def short_scope(self, reference_scope) -> str:
+        return TimeScope(self.first_scope).shorten(reference_scope)
+
+
+class TaskTimeScope(db.Model):
+    __tablename__ = 'TaskTimeScopes'
+    task_id = db.Column(db.Integer, db.ForeignKey("Tasks.task_id"), primary_key=True, nullable=False)
+    time_scope_id = db.Column(db.String, primary_key=True, nullable=False)
+    __table_args__ = (
+        db.UniqueConstraint('task_id', 'time_scope_id'),
+    )
+
 
 # ------------------
 # Task import/export
@@ -59,10 +73,31 @@ class Task(db.Model):
 
 def _import_from_csv(csv_file, session):
     for csv_entry in csv.DictReader(csv_file):
+        # Sort out TimeScopes first
+        sorted_scopes = sorted([TimeScope(scope_str) for scope_str in csv_entry['scopes'].split() if not None])
+        if not sorted_scopes:
+            raise ValueError(f"No scopes provided for given Task")
+        csv_entry['first_scope'] = sorted_scopes[0]
+
+        # Check for a pre-existing Task before creating one
         new_task = Task.from_csv(csv_entry)
-        existing_task = session.query(Task).filter_by(desc=new_task.desc, created_at=new_task.created_at)
-        if not existing_task.first():
+        task = session.query(Task) \
+            .filter_by(desc=new_task.desc, created_at=new_task.created_at) \
+            .first()
+        if not task:
             session.add(new_task)
+            task = new_task
+            session.commit()
+
+        # Then create the linkages
+        for scope in sorted_scopes:
+            new_tts = TaskTimeScope(task_id=task.task_id, time_scope_id=scope)
+            tts = session.query(TaskTimeScope) \
+                .filter_by(task_id=task.task_id, time_scope_id=scope) \
+                .first()
+            if not tts:
+                session.add(new_tts)
+                tts = new_tts
 
     session.commit()
 

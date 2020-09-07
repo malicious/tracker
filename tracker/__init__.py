@@ -1,5 +1,6 @@
 import os
 import re
+from datetime import datetime
 from typing import Dict
 
 from flask import Flask, render_template
@@ -17,7 +18,7 @@ from tracker.scope import TimeScope
 
 def create_app(app_config_dict: Dict = None):
     app = Flask(__name__, instance_relative_config=True)
-    app.config['SQLALCHEMY_ECHO'] = True
+    # app.config['SQLALCHEMY_ECHO'] = True
     app.config['SQLALCHEMY_DATABASE_URI'] = \
         "sqlite:///" + \
         os.path.abspath(os.path.join(app.instance_path, 'content.db'))
@@ -60,8 +61,9 @@ def create_app(app_config_dict: Dict = None):
                           r"""[\1](<a href="\2">\2</a>)""",
                           mdown)
 
+        ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
         return render_template('base.html',
-                               tasks=query.all(), link_replacer=link_replacer)
+                               tasks=query.all(), link_replacer=link_replacer, ref_scope=ref_scope)
 
     @app.route("/open-tasks/<scope_str>")
     def get_open_tasks(scope_str: str):
