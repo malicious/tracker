@@ -5,7 +5,6 @@ from typing import Dict
 
 from flask import Flask, render_template
 from markupsafe import escape
-from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Query
 
 from tasks import populate_test_data, tasks_from_csv, Task, TaskTimeScope
@@ -77,7 +76,35 @@ def create_app(app_config_dict: Dict = None):
 
         ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
         return render_template('base.html',
-                               tasks=query.all(), link_replacer=link_replacer, ref_scope=ref_scope)
+                               tasks_by_scope={ref_scope: query.all()},
+                               link_replacer=link_replacer)
+
+    @app.route("/report-tasks/<scope_str>")
+    def report_tasks(scope_str):
+        tasks_by_scope = {}
+
+        subscopes = TaskTimeScope.query \
+            .filter(TaskTimeScope.time_scope_id.like(escape(scope_str) + "%")) \
+            .order_by(TaskTimeScope.time_scope_id) \
+            .all()
+
+        for scope in subscopes:
+            tasks = Task.query \
+                .join(TaskTimeScope, Task.task_id == TaskTimeScope.task_id) \
+                .filter(TaskTimeScope.time_scope_id == scope.time_scope_id) \
+                .order_by(TaskTimeScope.time_scope_id, Task.category) \
+                .all()
+            tasks_by_scope[TimeScope(scope.time_scope_id)] = tasks
+
+        def mdown_desc_cleaner(desc: str):
+            desc = re.sub(r'\[(.+?)]\((.+?)\)',
+                          r"""[\1](<a href="\2">\2</a>)""",
+                          desc)
+            return desc
+
+        return render_template('base.html',
+                               tasks_by_scope=tasks_by_scope,
+                               link_replacer=mdown_desc_cleaner)
 
     content_db.init_app(app)
     app.cli.add_command(reset_db)
