@@ -4,10 +4,11 @@ from datetime import datetime
 from typing import Dict
 
 from flask import Flask, render_template
+from markupsafe import escape
 from sqlalchemy.exc import OperationalError
 from sqlalchemy.orm import Query
 
-from tasks import populate_test_data, tasks_from_csv, Task
+from tasks import populate_test_data, tasks_from_csv, Task, TaskTimeScope
 from tracker.content import content_db, reset_db, migrate_db
 from tracker.scope import TimeScope
 
@@ -36,19 +37,32 @@ def create_app(app_config_dict: Dict = None):
 
     @app.route("/time_scope/<scope_str>")
     def get_time_scope(scope_str: str):
-        return TimeScope(scope_str).to_json_dict()
+        return TimeScope(escape(scope_str)).to_json_dict()
 
     @app.route("/task/<task_id>")
     def get_task(task_id):
-        q: Query = Task.query.filter_by(task_id=task_id)
-        try:
-            t = q.first()
-            if t:
-                return t.to_json()
-        except OperationalError:
-            pass
+        task = Task.query \
+            .filter(Task.task_id == escape(task_id)) \
+            .first()
 
-        return {"error": f"Couldn't find task: {task_id}"}
+        time_scopes = TaskTimeScope.query \
+            .filter(TaskTimeScope.task_id == escape(task_id)) \
+            .all()
+
+        return {
+            "task": task.to_json(),
+            "time_scopes": [s.time_scope_id for s in time_scopes],
+        }
+
+    @app.route("/open-tasks/<scope_str>")
+    def get_open_tasks(scope_str: str):
+        end_time = TimeScope(escape(scope_str)).end
+        query: Query = Task.query \
+            .filter(Task.resolution == None) \
+            .filter(Task.created_at <= end_time) \
+            .order_by(Task.category, Task.created_at)
+
+        return {"tasks": [task.to_json() for task in query.all()]}
 
     @app.route("/report-open-tasks")
     def report_open_tasks():
@@ -64,16 +78,6 @@ def create_app(app_config_dict: Dict = None):
         ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
         return render_template('base.html',
                                tasks=query.all(), link_replacer=link_replacer, ref_scope=ref_scope)
-
-    @app.route("/open-tasks/<scope_str>")
-    def get_open_tasks(scope_str: str):
-        end_time = TimeScope(scope_str).end
-        query: Query = Task.query \
-            .filter(Task.resolution == None) \
-            .filter(Task.created_at <= end_time) \
-            .order_by(Task.category, Task.created_at)
-
-        return {"tasks": [task.to_json() for task in query.all()]}
 
     content_db.init_app(app)
     app.cli.add_command(reset_db)
