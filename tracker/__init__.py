@@ -46,7 +46,7 @@ def create_app(app_config_dict: Dict = None):
             .all()
 
         return {
-            "task": task.to_json(),
+            "task": Task.tree_to_json(task),
             "time_scopes": [s.time_scope_id for s in time_scopes],
         }
 

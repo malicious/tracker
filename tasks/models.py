@@ -32,7 +32,7 @@ class Task(db.Model):
 
         return t
 
-    def to_json(self) -> Dict:
+    def _to_json(self) -> Dict:
         """
         Build a dict for JSON response
         """
@@ -52,6 +52,32 @@ class Task(db.Model):
                 response_dict[field] = getattr(self, field)
 
         return response_dict
+
+    def to_json(self, recurse: bool = False) -> Dict:
+        response_dict = self._to_json()
+
+        if recurse:
+            child_json = []
+            child_tasks = Task.query \
+                .filter(Task.parent_id == self.task_id) \
+                .all()
+            for c in child_tasks:
+                child_json.append(c.to_json(recurse))
+
+            if child_json:
+                response_dict['child_tasks'] = child_json
+
+        return response_dict
+
+    @staticmethod
+    def tree_to_json(task) -> Dict:
+        # Look for the highest-level parent
+        while task.parent_id:
+            task = Task.query \
+                .filter(Task.task_id == task.parent_id) \
+                .first()
+
+        return task.to_json(True)
 
     def short_scope(self, reference_scope) -> str:
         return TimeScope(self.first_scope).shorten(reference_scope)
