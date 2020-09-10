@@ -74,3 +74,4 @@ class TaskTimeScope(db.Model):
     __table_args__ = (
         db.UniqueConstraint('task_id', 'time_scope_id'),
     )
+

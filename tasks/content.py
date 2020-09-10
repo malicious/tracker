@@ -1,5 +1,8 @@
 import csv
 import io
+import json
+
+from sqlalchemy.exc import StatementError
 
 from tasks.models import Task, TaskTimeScope
 from tasks.time_scope import TimeScope
@@ -21,7 +24,13 @@ def import_from_csv(csv_file, session):
         if not task:
             session.add(new_task)
             task = new_task
-            session.commit()
+            try:
+                session.commit()
+            except StatementError as e:
+                print("Hit exception when parsing:")
+                print(json.dumps(csv_entry, indent=4))
+                session.rollback()
+                continue
 
         # Then create the linkages
         for scope in sorted_scopes:
@@ -33,7 +42,7 @@ def import_from_csv(csv_file, session):
                 session.add(new_tts)
                 tts = new_tts
 
-    session.commit()
+        session.commit()
 
 
 def populate_test_data(s):
