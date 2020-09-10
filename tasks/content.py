@@ -11,9 +11,13 @@ from tasks.time_scope import TimeScope
 def import_from_csv(csv_file, session):
     for csv_entry in csv.DictReader(csv_file):
         # Sort out TimeScopes first
+        if not csv_entry['scopes']:
+            raise ValueError(f"No scopes specified for Task: \n{json.dumps(csv_entry, indent=4)}")
+
         sorted_scopes = sorted([TimeScope(scope_str) for scope_str in csv_entry['scopes'].split() if not None])
         if not sorted_scopes:
-            raise ValueError(f"No scopes provided for given Task")
+            print(json.dumps(csv_entry, indent=4))
+            raise ValueError(f"No valid scopes for Task: \n{json.dumps(csv_entry, indent=4)}")
         csv_entry['first_scope'] = sorted_scopes[0]
 
         # Check for a pre-existing Task before creating one
