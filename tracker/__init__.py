@@ -7,15 +7,11 @@ from flask import Flask, render_template
 from markupsafe import escape
 from sqlalchemy.orm import Query
 
-from tasks.content import tasks_from_csv, populate_test_data
 from tasks.models import TaskTimeScope, Task
 from tasks.time_scope import TimeScope, enclosing_scopes
-from tracker.content import content_db, reset_db, migrate_db
+from tracker.cli import reset_db, migrate_db, tasks_from_csv, populate_test_db
+from tracker.content import content_db
 
-
-# ---------
-# flask app
-# ---------
 
 def create_app(app_config_dict: Dict = None):
     app = Flask(__name__, instance_relative_config=True)
@@ -112,6 +108,6 @@ def create_app(app_config_dict: Dict = None):
     content_db.init_app(app)
     app.cli.add_command(reset_db)
     app.cli.add_command(migrate_db)
-    app.cli.add_command(populate_test_data)
+    app.cli.add_command(populate_test_db)
     app.cli.add_command(tasks_from_csv)
     return app

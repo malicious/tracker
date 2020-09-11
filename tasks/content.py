@@ -1,12 +1,8 @@
 import csv
 import io
 
-import click
-from flask.cli import with_appcontext
-
 from tasks.models import Task, TaskTimeScope
 from tasks.time_scope import TimeScope
-from tracker.content import content_db as db
 
 
 def import_from_csv(csv_file, session):
@@ -40,18 +36,7 @@ def import_from_csv(csv_file, session):
     session.commit()
 
 
-@click.command('import-tasks')
-@click.argument('csv_file', type=click.File('r'))
-@with_appcontext
-def tasks_from_csv(csv_file):
-    import_from_csv(csv_file, db.session)
-
-
-@click.command('test-db')
-@with_appcontext
-def populate_test_data():
-    s = db.session
-
+def populate_test_data(s):
     # manual task insertion
     s.add(Task(desc="test task row 1", first_scope="2042-ww06.9"))
     s.add(Task(desc="test task row 2", first_scope="2042-ww06.9"))
