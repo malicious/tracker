@@ -1,11 +1,13 @@
 import csv
 import io
 import json
+import re
 
+from flask import render_template
 from sqlalchemy.exc import StatementError
 
 from tasks.models import Task, TaskTimeScope
-from tasks.time_scope import TimeScope
+from tasks.time_scope import TimeScope, TimeScopeUtils
 
 
 def import_from_csv(csv_file, session):
@@ -65,3 +67,39 @@ task 7,,,2042-ww06.9 2002-ww02.2 2002-ww02.2
 task 7,,,2042-ww06.9 2002-ww02.2
 """
     import_from_csv(io.StringIO(test_csv_data), s)
+
+
+def report_tasks(scope):
+    tasks_by_scope = {}
+
+    superscopes = TimeScopeUtils.enclosing_scopes(scope)
+    subscopes = TaskTimeScope.query \
+        .filter(TaskTimeScope.time_scope_id.like(scope + "%")) \
+        .order_by(TaskTimeScope.time_scope_id) \
+        .all()
+
+    sorted_scopes = [s for s in superscopes] + [scope] + [s.time_scope_id for s in subscopes]
+    for s in sorted_scopes:
+        tasks = Task.query \
+            .join(TaskTimeScope, Task.task_id == TaskTimeScope.task_id) \
+            .filter(TaskTimeScope.time_scope_id == s) \
+            .order_by(TaskTimeScope.time_scope_id, Task.category) \
+            .all()
+        tasks_by_scope[TimeScope(s)] = tasks
+
+    prev_scope = TimeScopeUtils.prev_scope(scope)
+    prev_scope_html = f'<a href="/report-tasks/{prev_scope}">{prev_scope}</a>'
+    next_scope = TimeScopeUtils.next_scope(scope)
+    next_scope_html = f'<a href="/report-tasks/{next_scope}">{next_scope}</a>'
+
+    def mdown_desc_cleaner(desc: str):
+        desc = re.sub(r'\[(.+?)]\((.+?)\)',
+                      r"""[\1](<a href="\2">\2</a>)""",
+                      desc)
+        return desc
+
+    return render_template('base.html',
+                           prev_scope=prev_scope_html,
+                           next_scope=next_scope_html,
+                           tasks_by_scope=tasks_by_scope,
+                           link_replacer=mdown_desc_cleaner)

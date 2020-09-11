@@ -7,9 +7,9 @@ from flask import Flask, render_template
 from markupsafe import escape
 from sqlalchemy.orm import Query
 
+import tasks
 from tasks.models import TaskTimeScope, Task
 from tasks.time_scope import TimeScope
-from tasks.time_scope import TimeScopeUtils
 from tracker.cli import reset_db, migrate_db, tasks_from_csv, populate_test_db
 from tracker.content import content_db
 
@@ -80,39 +80,7 @@ def create_app(app_config_dict: Dict = None):
     @app.route("/report-tasks/<scope_str>")
     def report_tasks(scope_str):
         scope = TimeScope(escape(scope_str))
-        tasks_by_scope = {}
-
-        superscopes = TimeScopeUtils.enclosing_scopes(TimeScope(escape(scope_str)))
-        subscopes = TaskTimeScope.query \
-            .filter(TaskTimeScope.time_scope_id.like(escape(scope_str) + "%")) \
-            .order_by(TaskTimeScope.time_scope_id) \
-            .all()
-
-        sorted_scopes = [s for s in superscopes] + [scope] + [s.time_scope_id for s in subscopes]
-        for s in sorted_scopes:
-            tasks = Task.query \
-                .join(TaskTimeScope, Task.task_id == TaskTimeScope.task_id) \
-                .filter(TaskTimeScope.time_scope_id == s) \
-                .order_by(TaskTimeScope.time_scope_id, Task.category) \
-                .all()
-            tasks_by_scope[TimeScope(s)] = tasks
-
-        prev_scope = TimeScopeUtils.prev_scope(scope)
-        prev_scope_html = f'<a href="/report-tasks/{prev_scope}">{prev_scope}</a>'
-        next_scope = TimeScopeUtils.next_scope(scope)
-        next_scope_html = f'<a href="/report-tasks/{next_scope}">{next_scope}</a>'
-
-        def mdown_desc_cleaner(desc: str):
-            desc = re.sub(r'\[(.+?)]\((.+?)\)',
-                          r"""[\1](<a href="\2">\2</a>)""",
-                          desc)
-            return desc
-
-        return render_template('base.html',
-                               prev_scope=prev_scope_html,
-                               next_scope=next_scope_html,
-                               tasks_by_scope=tasks_by_scope,
-                               link_replacer=mdown_desc_cleaner)
+        return tasks.content.report_tasks(scope)
 
     content_db.init_app(app)
     app.cli.add_command(reset_db)
