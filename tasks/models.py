@@ -44,7 +44,7 @@ class Task(db.Model):
 
         # Skip null fields, per Google JSON style guide:
         # https://google.github.io/styleguide/jsoncstyleguide.xml#Empty/Null_Property_Values
-        if self.created_at:
+        if self.created_at is not None:
             response_dict['created_at'] = str(self.created_at)
 
         for field in ["category", "resolution", "parent_id", "time_estimate", "time_actual"]:
