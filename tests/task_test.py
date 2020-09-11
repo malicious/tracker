@@ -1,6 +1,6 @@
 import io
 
-from tasks.models import import_from_csv
+from tasks.content import import_from_csv
 from tasks.time_scope import TimeScope
 from tracker import Task
 
