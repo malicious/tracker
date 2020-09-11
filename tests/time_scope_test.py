@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 import pytest
 
-from tasks.time_scope import TimeScope, enclosing_scopes
+from tasks.time_scope import TimeScope, TimeScopeUtils
 
 
 def test_create():
@@ -18,6 +18,10 @@ def test_create_short():
 def test_invalid():
     with pytest.raises(ValueError):
         s = TimeScope("invalid scope string")
+        s.type
+
+    with pytest.raises(ValueError):
+        s = TimeScope("2020-w35")
         s.type
 
 
@@ -78,7 +82,22 @@ def test_shorten_years_close():
 
 def test_enclosing_scopes():
     ref = TimeScope("2023-ww04.3")
-    enclosing = list(enclosing_scopes(ref))
+    enclosing = list(TimeScopeUtils.enclosing_scopes(ref))
 
     assert TimeScope("2023—Q1") in enclosing
     assert TimeScope("2023-ww04") in enclosing
+
+def test_prev_next_day():
+    dref = TimeScope("2002-ww04.4")
+    assert TimeScopeUtils.next_scope(dref) == "2002-ww04.5"
+
+def test_prev_next_week():
+    wref = TimeScope("2020-ww01")
+    assert TimeScopeUtils.prev_scope(wref) == "2019-ww52"
+    assert TimeScopeUtils.next_scope(wref) == "2020-ww02"
+
+def test_prev_next_quarter():
+    ref = TimeScope("2020—Q4")
+    assert TimeScopeUtils.prev_scope(ref) == "2020—Q3"
+    assert TimeScopeUtils.next_scope(ref) == "2021—Q1"
+

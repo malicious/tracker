@@ -102,22 +102,60 @@ class TimeScope(str):
             return ""
 
 
-def enclosing_scopes(scope: TimeScope) -> Iterator[TimeScope]:
-    if scope.type == TimeScope.Type.quarter:
-        return scope
+class TimeScopeUtils:
+    @staticmethod
+    def enclosing_scopes(scope: TimeScope) -> Iterator[TimeScope]:
+        def compute_scopes(dt: datetime) -> List[TimeScope]:
+            return [
+                TimeScope(dt.strftime("%G-ww%V.%u")),
+                TimeScope(dt.strftime("%G-ww%V")),
+                TimeScope(f"{dt.year}—Q{(dt.month - 1) // 3 + 1}"),
+            ]
 
-    elif scope.type == TimeScope.Type.week:
-        return filter(lambda s: s.type == TimeScope.Type.quarter,
-                      compute_scopes(scope.start) + compute_scopes(scope.end))
+        if scope.type == TimeScope.Type.quarter:
+            return scope
 
-    elif scope.type == TimeScope.Type.day:
-        return filter(lambda s: s.type == TimeScope.Type.quarter or s.type == TimeScope.Type.week,
-                      compute_scopes(scope.start) + compute_scopes(scope.end))
+        elif scope.type == TimeScope.Type.week:
+            return filter(lambda s: s.type == TimeScope.Type.quarter,
+                          compute_scopes(scope.start) + compute_scopes(scope.end))
 
+        elif scope.type == TimeScope.Type.day:
+            return filter(lambda s: s.type == TimeScope.Type.quarter or s.type == TimeScope.Type.week,
+                          compute_scopes(scope.start) + compute_scopes(scope.end))
 
-def compute_scopes(dt: datetime) -> List[TimeScope]:
-    return [
-        TimeScope(dt.strftime("%G-ww%V.%u")),
-        TimeScope(dt.strftime("%G-ww%V")),
-        TimeScope(f"{dt.year}—Q{(dt.month - 1) // 3 + 1}"),
-    ]
+    @staticmethod
+    def next_scope(scope: TimeScope) -> TimeScope:
+        if scope.type == TimeScope.Type.week:
+            return TimeScope(scope.end.strftime(f"%G-ww%V"))
+
+        elif scope.type == TimeScope.Type.day:
+            return TimeScope(scope.end.strftime(f"%G-ww%V.%u"))
+
+        elif scope.type == TimeScope.Type.quarter:
+            m = re.fullmatch(r"(\d\d\d\d)—Q([1-4])", scope)
+            if m and m[2] == '4':
+                return TimeScope(f"{int(m[1]) + 1}—Q1")
+            elif m:
+                return TimeScope(f"{m[1]}—Q{int(m[2]) + 1}")
+
+        raise ValueError(f"Couldn't calculate next_scope for: {repr(scope)}")
+
+    @staticmethod
+    def prev_scope(scope: TimeScope) -> TimeScope:
+        if scope.type == TimeScope.Type.week:
+            dt = scope.start + timedelta(days=-7)
+            return TimeScope(dt.strftime(f"%G-ww%V"))
+
+        elif scope.type == TimeScope.Type.day:
+            dt = scope.start + timedleta(days=-1)
+            return TimeScope(dt.strftime(f"%G-ww%V.%u"))
+
+        elif scope.type == TimeScope.Type.quarter:
+            m = re.fullmatch(r"(\d\d\d\d)—Q([1-4])", scope)
+            if m and m[2] == '1':
+                return TimeScope(f"{int(m[1]) - 1}—Q4")
+            elif m:
+                return TimeScope(f"{m[1]}—Q{int(m[2]) - 1}")
+
+        raise ValueError(f"Couldn't calculate prev_scope for: {repr(scope)}")
+

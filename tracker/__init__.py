@@ -8,7 +8,8 @@ from markupsafe import escape
 from sqlalchemy.orm import Query
 
 from tasks.models import TaskTimeScope, Task
-from tasks.time_scope import TimeScope, enclosing_scopes
+from tasks.time_scope import TimeScope
+from tasks.time_scope import TimeScopeUtils
 from tracker.cli import reset_db, migrate_db, tasks_from_csv, populate_test_db
 from tracker.content import content_db
 
@@ -78,15 +79,16 @@ def create_app(app_config_dict: Dict = None):
 
     @app.route("/report-tasks/<scope_str>")
     def report_tasks(scope_str):
+        scope = TimeScope(escape(scope_str))
         tasks_by_scope = {}
 
-        superscopes = enclosing_scopes(TimeScope(escape(scope_str)))
+        superscopes = TimeScopeUtils.enclosing_scopes(TimeScope(escape(scope_str)))
         subscopes = TaskTimeScope.query \
             .filter(TaskTimeScope.time_scope_id.like(escape(scope_str) + "%")) \
             .order_by(TaskTimeScope.time_scope_id) \
             .all()
 
-        sorted_scopes = [s for s in superscopes] + [escape(scope_str)] + [s.time_scope_id for s in subscopes]
+        sorted_scopes = [s for s in superscopes] + [scope] + [s.time_scope_id for s in subscopes]
         for s in sorted_scopes:
             tasks = Task.query \
                 .join(TaskTimeScope, Task.task_id == TaskTimeScope.task_id) \
