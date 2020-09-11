@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 import pytest
 
-from tasks.time_scope import TimeScope
+from tasks.time_scope import TimeScope, enclosing_scopes
 
 
 def test_create():
@@ -74,3 +74,11 @@ def test_shorten_years_close():
     ref = "2020-ww52.4"
     s = TimeScope("2021-ww02.1").shorten(ref)
     assert s == "2021-ww02.1"
+
+
+def test_enclosing_scopes():
+    ref = TimeScope("2023-ww04.3")
+    enclosing = list(enclosing_scopes(ref))
+
+    assert TimeScope("2023—Q1") in enclosing
+    assert TimeScope("2023-ww04") in enclosing

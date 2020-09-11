@@ -9,7 +9,7 @@ from sqlalchemy.orm import Query
 
 from tasks.models import TaskTimeScope, Task, tasks_from_csv, populate_test_data
 from tracker.content import content_db, reset_db, migrate_db
-from tasks.time_scope import TimeScope
+from tasks.time_scope import TimeScope, enclosing_scopes
 
 
 # ---------
@@ -83,18 +83,20 @@ def create_app(app_config_dict: Dict = None):
     def report_tasks(scope_str):
         tasks_by_scope = {}
 
+        superscopes = enclosing_scopes(TimeScope(escape(scope_str)))
         subscopes = TaskTimeScope.query \
             .filter(TaskTimeScope.time_scope_id.like(escape(scope_str) + "%")) \
             .order_by(TaskTimeScope.time_scope_id) \
             .all()
 
-        for scope in subscopes:
+        sorted_scopes = [s for s in superscopes] + [escape(scope_str)] + [s.time_scope_id for s in subscopes]
+        for s in sorted_scopes:
             tasks = Task.query \
                 .join(TaskTimeScope, Task.task_id == TaskTimeScope.task_id) \
-                .filter(TaskTimeScope.time_scope_id == scope.time_scope_id) \
+                .filter(TaskTimeScope.time_scope_id == s) \
                 .order_by(TaskTimeScope.time_scope_id, Task.category) \
                 .all()
-            tasks_by_scope[TimeScope(scope.time_scope_id)] = tasks
+            tasks_by_scope[TimeScope(s)] = tasks
 
         def mdown_desc_cleaner(desc: str):
             desc = re.sub(r'\[(.+?)]\((.+?)\)',

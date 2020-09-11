@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime, timedelta
 from enum import Enum
-from typing import Dict
+from typing import Dict, List, Iterator
 
 
 class TimeScope(str):
@@ -100,3 +100,24 @@ class TimeScope(str):
             return self[5:]
         else:
             return ""
+
+
+def enclosing_scopes(scope: TimeScope) -> Iterator[TimeScope]:
+    if scope.type == TimeScope.Type.quarter:
+        return scope
+
+    elif scope.type == TimeScope.Type.week:
+        return filter(lambda s: s.type == TimeScope.Type.quarter,
+                      compute_scopes(scope.start) + compute_scopes(scope.end))
+
+    elif scope.type == TimeScope.Type.day:
+        return filter(lambda s: s.type == TimeScope.Type.quarter or s.type == TimeScope.Type.week,
+                      compute_scopes(scope.start) + compute_scopes(scope.end))
+
+
+def compute_scopes(dt: datetime) -> List[TimeScope]:
+    return [
+        TimeScope(dt.strftime("%G-ww%V.%u")),
+        TimeScope(dt.strftime("%G-ww%V")),
+        TimeScope(f"{dt.year}—Q{(dt.month - 1) // 3 + 1}"),
+    ]
