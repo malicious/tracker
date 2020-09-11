@@ -42,13 +42,13 @@ def create_app(app_config_dict: Dict = None):
             .filter(Task.task_id == escape(task_id)) \
             .first()
 
-        time_scopes = TaskTimeScope.query \
+        task_time_scopes = TaskTimeScope.query \
             .filter(TaskTimeScope.task_id == escape(task_id)) \
             .all()
 
         return {
             "task": Task.tree_to_json(task),
-            "time_scopes": [s.time_scope_id for s in time_scopes],
+            "time_scopes": [tts.time_scope_id for tts in task_time_scopes],
         }
 
     @app.route("/open-tasks/<scope_str>")
