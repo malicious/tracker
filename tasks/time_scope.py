@@ -65,6 +65,24 @@ class TimeScope(str):
             self._end = self._start + timedelta(days=1)
             return
 
+        m = re.fullmatch(r"(\d\d\d\d)—Q([1-4])", self)
+        if m:
+            self._type = TimeScope.Type.quarter
+            year = int(m[1])
+            if m[2] == '1':
+                self._start = datetime(year, 1, 1)
+                self._end = datetime(year, 4, 1)
+            elif m[2] == '2':
+                self._start = datetime(year, 4, 1)
+                self._end = datetime(year, 7, 1)
+            elif m[2] == '3':
+                self._start = datetime(year, 7, 1)
+                self._end = datetime(year, 10, 1)
+            elif m[2] == '4':
+                self._start = datetime(year, 10, 1)
+                self._end = datetime(year + 1, 1, 1)
+            return
+
         raise ValueError(f"Couldn't parse TimeScope: {repr(self)}")
 
     def to_json_dict(self) -> Dict:

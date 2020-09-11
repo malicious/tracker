@@ -1,6 +1,7 @@
 import io
 
 from tasks.models import import_from_csv
+from tasks.time_scope import TimeScope
 from tracker import Task
 
 
@@ -16,6 +17,12 @@ def test_create_python(session):
     session.add(task)
     session.commit()
     assert task.task_id is not None
+
+
+def test_create_quarterly(session):
+    task = Task(desc="아니아", first_scope="2020—Q4")
+    time = TimeScope(task.first_scope)
+    assert time.type == TimeScope.Type.quarter
 
 
 def test_dict_import():

@@ -39,6 +39,13 @@ def test_day_type():
     assert s.end == _construct_dt(2020, 8, 29)
 
 
+def test_quarter_type():
+    s = TimeScope("2018—Q3")
+    assert s.type == TimeScope.Type.quarter
+    assert s.start == _construct_dt(2018, 7, 1)
+    assert s.end == _construct_dt(2018, 10, 1)
+
+
 def test_print_time_scope(test_client):
     r = test_client.get('/time_scope/2020-ww35')
     j = r.get_json()
