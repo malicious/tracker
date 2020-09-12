@@ -147,7 +147,7 @@ class TimeScopeUtils:
             return TimeScope(dt.strftime(f"%G-ww%V"))
 
         elif scope.type == TimeScope.Type.day:
-            dt = scope.start + timedleta(days=-1)
+            dt = scope.start + timedelta(days=-1)
             return TimeScope(dt.strftime(f"%G-ww%V.%u"))
 
         elif scope.type == TimeScope.Type.quarter:
@@ -158,4 +158,3 @@ class TimeScopeUtils:
                 return TimeScope(f"{m[1]}—Q{int(m[2]) - 1}")
 
         raise ValueError(f"Couldn't calculate prev_scope for: {repr(scope)}")
-
