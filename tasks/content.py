@@ -30,9 +30,9 @@ def import_from_csv(csv_file, session):
 
         # Check for a pre-existing Task before creating one
         new_task = Task.from_csv(csv_entry)
-        task = session.query(Task) \
+        task = Task.query \
             .filter_by(desc=new_task.desc, created_at=new_task.created_at) \
-            .first()
+            .one_or_none()
         if not task:
             session.add(new_task)
             task = new_task
@@ -53,7 +53,7 @@ def import_from_csv(csv_file, session):
             new_tts = TaskTimeScope(task_id=task.task_id, time_scope_id=scope)
             tts = session.query(TaskTimeScope) \
                 .filter_by(task_id=task.task_id, time_scope_id=scope) \
-                .first()
+                .one_or_none()
             if not tts:
                 session.add(new_tts)
                 tts = new_tts

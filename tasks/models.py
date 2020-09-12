@@ -75,7 +75,7 @@ class Task(db.Model):
         while task.parent_id:
             task = Task.query \
                 .filter(Task.task_id == task.parent_id) \
-                .first()
+                .one()
 
         return task.to_json(True)
 

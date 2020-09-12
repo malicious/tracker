@@ -75,7 +75,7 @@ def test_csv_ordering(session):
 
     import_from_csv(io.StringIO(csv_test_file), session)
 
-    t: Task = Task.query.first()
+    t: Task = Task.query.one()
     assert t.first_scope == "2019-ww14.5"
 
 
@@ -85,5 +85,5 @@ def test_create_and_read_python(session):
     session.commit()
 
     query = Task.query.filter_by(task_id=task.task_id)
-    task_out = query.first()
+    task_out = query.one()
     assert task_out.task_id == task.task_id

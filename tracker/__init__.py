@@ -40,7 +40,7 @@ def create_app(app_config_dict: Dict = None):
     def get_task(task_id):
         task = Task.query \
             .filter(Task.task_id == escape(task_id)) \
-            .first()
+            .one()
 
         task_time_scopes = TaskTimeScope.query \
             .filter(TaskTimeScope.task_id == escape(task_id)) \
