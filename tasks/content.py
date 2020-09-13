@@ -71,6 +71,11 @@ def add_from_cli(session):
         requested_scopes = today_scope
 
     requested_scopes = sorted([TimeScope(s) for s in requested_scopes.split()])
+    try:
+        [s.get_type() for s in requested_scopes]
+    except ValueError as e:
+        print(e)
+        return
     print(f"parsed as {requested_scopes}")
     print("")
 
@@ -96,6 +101,52 @@ def add_from_cli(session):
 
     # Done, print output
     print(f"Created task {t.task_id}")
+
+
+def update_from_cli(session, task_id):
+    # Open relevant task
+    t = Task.query \
+        .filter(Task.task_id == task_id) \
+        .one()
+
+    # Print matching scopes
+    scopes = [tts.time_scope_id for tts in \
+              TaskTimeScope.query \
+                  .filter(TaskTimeScope.task_id == task_id) \
+                  .all()]
+    print(f"Existing scopes: {scopes}")
+
+    # Decide what we're adding
+    today_scope = TimeScope(datetime.now().strftime("%G-ww%V.%u"))
+    requested_scope = input(f"Enter scope to add [{today_scope}]: ")
+    if requested_scope:
+        try:
+            TimeScope(requested_scope).get_type()
+        except ValueError as e:
+            print(e)
+            return
+    else:
+        requested_scope = today_scope
+
+    # Decide whether we're resolving it
+    if t.resolution:
+        print(f"Task already has a resolution: {t.resolution}")
+        requested_resolution = input(f"Enter resolution to set [{t.resolution}]: ")
+        if requested_resolution:
+            t.resolution = requested_resolution
+            session.add(t)
+    else:
+        requested_resolution = input(f"Enter resolution to set: ")
+        t.resolution = requested_resolution
+        session.add(t)
+
+    # And update the scopes, maybe
+    if TimeScope(requested_scope) not in scopes:
+        session.add(TaskTimeScope(task_id=t.task_id, time_scope_id=requested_scope))
+
+    session.commit()
+    print(f"Updated task {t.task_id}")
+    print(json.dumps(t.to_json(), indent=4))
 
 
 def populate_test_data(s):

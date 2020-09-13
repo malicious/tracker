@@ -37,9 +37,17 @@ def add_task():
     tasks.content.add_from_cli(content_db.session)
 
 
+@click.command('update-task')
+@click.argument('task_id', type=click.INT)
+@with_appcontext
+def update_task(task_id: int):
+    tasks.content.update_from_cli(content_db.session, task_id)
+
+
 def init_app(app):
     app.cli.add_command(reset_db)
     app.cli.add_command(migrate_db)
     app.cli.add_command(populate_test_db)
     app.cli.add_command(tasks_from_csv)
     app.cli.add_command(add_task)
+    app.cli.add_command(update_task)
