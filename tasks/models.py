@@ -69,9 +69,6 @@ class Task(db.Model):
 
         return response_dict
 
-    def short_scope(self, reference_scope) -> str:
-        return TimeScope(self.first_scope).shorten(reference_scope)
-
     def short_time(self) -> str:
         if self.time_estimate and self.time_actual:
             return f"`{self.time_estimate}h => {self.time_actual}h`"

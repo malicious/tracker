@@ -221,8 +221,11 @@ def report_tasks(scope):
                       desc)
         return desc
 
+    time_scope_shortener = lambda task, ref: TimeScope(task.first_scope).shorten(ref)
+
     return render_template('task.html',
                            prev_scope=prev_scope_html,
                            next_scope=next_scope_html,
                            tasks_by_scope=tasks_by_scope,
-                           link_replacer=mdown_desc_cleaner)
+                           link_replacer=mdown_desc_cleaner,
+                           time_scope_shortener=time_scope_shortener)
