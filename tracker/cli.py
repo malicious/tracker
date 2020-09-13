@@ -1,6 +1,7 @@
 import click
 from flask.cli import with_appcontext
 
+import notes
 import tasks
 from tracker.content import content_db
 
@@ -44,6 +45,13 @@ def update_task(task_id: int):
     tasks.content.update_from_cli(content_db.session, task_id)
 
 
+@click.command('import-notes')
+@click.argument('csv_file', type=click.File('r'))
+@with_appcontext
+def notes_from_csv(csv_file):
+    notes.content.import_from_csv(csv_file, content_db.session)
+
+
 def init_app(app):
     app.cli.add_command(reset_db)
     app.cli.add_command(migrate_db)
@@ -51,3 +59,4 @@ def init_app(app):
     app.cli.add_command(tasks_from_csv)
     app.cli.add_command(add_task)
     app.cli.add_command(update_task)
+    app.cli.add_command(notes_from_csv)

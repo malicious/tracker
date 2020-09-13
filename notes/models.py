@@ -1,5 +1,8 @@
 from typing import Dict
 
+from dateutil import parser
+
+from tasks.time_scope import TimeScope
 from tracker.content import content_db as db
 
 
@@ -16,6 +19,28 @@ class Note(db.Model):
         db.UniqueConstraint('time_scope_id', 'desc', 'title'),
         db.CheckConstraint('NOT(desc IS NULL AND title IS NULL)'),
     )
+
+    @staticmethod
+    def from_csv(csv_entry):
+        n = Note(
+            time_scope_id=TimeScope(csv_entry['scope']),
+            desc=csv_entry['desc'],
+            title=csv_entry['title']
+        )
+
+        if 'created_at' in csv_entry and csv_entry['created_at']:
+            n.created_at = parser.parse(csv_entry['created_at'])
+
+        n.is_summary = False
+        if 'is_summary' in csv_entry and csv_entry['is_summary']:
+            if csv_entry['is_summary'] in ["TRUE", "True", "true"]:
+                n.is_summary = True
+
+        for field in ['source']:
+            value = csv_entry.get(field)
+            setattr(n, field, value if value else None)
+
+        return n
 
     def to_json(self) -> Dict:
         response_dict = {
