@@ -11,6 +11,8 @@ from tasks.time_scope import TimeScope, TimeScopeUtils
 
 
 def import_from_csv(csv_file, session):
+    id_remapper = {}
+
     for csv_entry in csv.DictReader(csv_file):
         # Sort out TimeScopes first
         if not csv_entry['scopes']:
@@ -21,6 +23,10 @@ def import_from_csv(csv_file, session):
             print(json.dumps(csv_entry, indent=4))
             raise ValueError(f"No valid scopes for Task: \n{json.dumps(csv_entry, indent=4)}")
         csv_entry['first_scope'] = sorted_scopes[0]
+
+        # If there's a parent_id, run it through the remapper first
+        if 'parent_id' in csv_entry and csv_entry['parent_id']:
+            csv_entry['parent_id'] = id_remapper[csv_entry['parent_id']]
 
         # Check for a pre-existing Task before creating one
         new_task = Task.from_csv(csv_entry)
@@ -37,6 +43,10 @@ def import_from_csv(csv_file, session):
                 print(json.dumps(csv_entry, indent=4))
                 session.rollback()
                 continue
+
+        # Add the task_id to the remapper
+        if 'id' in csv_entry and csv_entry['id']:
+            id_remapper[csv_entry['id']] = task.task_id
 
         # Then create the linkages
         for scope in sorted_scopes:
