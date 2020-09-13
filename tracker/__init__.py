@@ -63,7 +63,7 @@ def create_app(app_config_dict: Dict = None):
                           mdown)
 
         ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
-        return render_template('base.html',
+        return render_template('task.html',
                                tasks_by_scope={ref_scope: query.all()},
                                link_replacer=link_replacer)
 

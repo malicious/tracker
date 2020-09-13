@@ -221,7 +221,7 @@ def report_tasks(scope):
                       desc)
         return desc
 
-    return render_template('base.html',
+    return render_template('task.html',
                            prev_scope=prev_scope_html,
                            next_scope=next_scope_html,
                            tasks_by_scope=tasks_by_scope,
