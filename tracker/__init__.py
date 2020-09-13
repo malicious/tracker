@@ -8,6 +8,7 @@ from markupsafe import escape
 from sqlalchemy.orm import Query
 
 import tasks
+from notes.content import note_to_json
 from tasks.content import task_and_scopes_to_json
 from tasks.models import Task
 from tasks.time_scope import TimeScope
@@ -71,6 +72,10 @@ def create_app(app_config_dict: Dict = None):
     def report_tasks(scope_str):
         scope = TimeScope(escape(scope_str))
         return tasks.content.report_tasks(scope)
+
+    @app.route("/note/<note_id>")
+    def get_note(note_id):
+        return note_to_json(escape(note_id))
 
     content_db.init_app(app)
     cli.init_app(app)
