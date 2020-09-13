@@ -158,6 +158,9 @@ def report_notes_by_domain(domain, session):
         if not domains:
             return ""
 
+        # Replace spaces in domain names, so they don't break
+        domains = [d.replace(' ', '&nbsp;') for d in domains]
+
         return ", ".join(domains)
 
     def time_scope_lengthener(note) -> str:

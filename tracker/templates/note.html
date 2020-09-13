@@ -130,7 +130,7 @@
                         <div class="title-and-domain">
                             <div class="title">{{ note.title }}</div>
                             <div class="domain">
-                                <div>{{ match_domains(note) }}</div>
+                                <div>{{ match_domains(note)|safe }}</div>
                             </div>
                         </div>
                     </div>
@@ -144,7 +144,7 @@
                     </div>
                     {% if match_domains(note) %}
                     <div class="domain">
-                        <div>{{ match_domains(note) }}</div>
+                        <div>{{ match_domains(note)|safe }}</div>
                     </div>
                     {% endif %}
                 {% endif %}
