@@ -24,4 +24,5 @@ def test_client(test_app):
 def session(test_app):
     tracker.content_db.create_all()
     yield tracker.content_db.session
+    tracker.content_db.session.rollback()
     tracker.content_db.drop_all()
