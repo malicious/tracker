@@ -103,6 +103,7 @@ def report_notes_by_domain(domain, session):
             .filter(NoteDomain.domain_id == domain) \
             .filter(Note.time_scope_id.like(week + ".%")) \
             .filter(Note.is_summary.is_(True)) \
+            .order_by(Note.time_scope_id) \
             .all()
 
         day_week_long_notes = Note.query \
