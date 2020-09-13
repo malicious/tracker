@@ -35,3 +35,11 @@ def tasks_from_csv(csv_file):
 @with_appcontext
 def add_task():
     tasks.content.add_from_cli(content_db.session)
+
+
+def init_app(app):
+    app.cli.add_command(reset_db)
+    app.cli.add_command(migrate_db)
+    app.cli.add_command(populate_test_db)
+    app.cli.add_command(tasks_from_csv)
+    app.cli.add_command(add_task)

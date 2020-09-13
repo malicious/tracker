@@ -10,7 +10,7 @@ from sqlalchemy.orm import Query
 import tasks
 from tasks.models import TaskTimeScope, Task
 from tasks.time_scope import TimeScope
-from tracker.cli import reset_db, migrate_db, tasks_from_csv, populate_test_db, add_task
+from tracker import cli
 from tracker.content import content_db
 
 
@@ -83,9 +83,5 @@ def create_app(app_config_dict: Dict = None):
         return tasks.content.report_tasks(scope)
 
     content_db.init_app(app)
-    app.cli.add_command(reset_db)
-    app.cli.add_command(migrate_db)
-    app.cli.add_command(populate_test_db)
-    app.cli.add_command(tasks_from_csv)
-    app.cli.add_command(add_task)
+    cli.init_app(app)
     return app
