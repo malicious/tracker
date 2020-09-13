@@ -101,6 +101,9 @@ class TimeScope(str):
         else:
             return ""
 
+    def lengthen(self) -> str:
+        return self + self.start.strftime("-%b-%d")
+
 
 class TimeScopeUtils:
     @staticmethod
