@@ -69,16 +69,6 @@ class Task(db.Model):
 
         return response_dict
 
-    @staticmethod
-    def tree_to_json(task) -> Dict:
-        # Look for the highest-level parent
-        while task.parent_id:
-            task = Task.query \
-                .filter(Task.task_id == task.parent_id) \
-                .one()
-
-        return task.to_json(True)
-
     def short_scope(self, reference_scope) -> str:
         return TimeScope(self.first_scope).shorten(reference_scope)
 
@@ -100,4 +90,3 @@ class TaskTimeScope(db.Model):
     __table_args__ = (
         db.UniqueConstraint('task_id', 'time_scope_id'),
     )
-

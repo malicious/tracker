@@ -8,7 +8,8 @@ from markupsafe import escape
 from sqlalchemy.orm import Query
 
 import tasks
-from tasks.models import TaskTimeScope, Task
+from tasks.content import task_and_scopes_to_json
+from tasks.models import Task
 from tasks.time_scope import TimeScope
 from tracker import cli
 from tracker.content import content_db
@@ -38,18 +39,7 @@ def create_app(app_config_dict: Dict = None):
 
     @app.route("/task/<task_id>")
     def get_task(task_id):
-        task = Task.query \
-            .filter(Task.task_id == escape(task_id)) \
-            .one()
-
-        task_time_scopes = TaskTimeScope.query \
-            .filter(TaskTimeScope.task_id == escape(task_id)) \
-            .all()
-
-        return {
-            "task": Task.tree_to_json(task),
-            "time_scopes": [tts.time_scope_id for tts in task_time_scopes],
-        }
+        return task_and_scopes_to_json(escape(task_id))
 
     @app.route("/open-tasks/<scope_str>")
     def get_open_tasks(scope_str: str):
