@@ -8,11 +8,21 @@
             margin-left:  80pt;
             margin-right: 80pt;
             max-width: 36em;
+            margin-bottom: 20em;
         }
         .date-quarter {
             font-size: 150%;
             margin-bottom: 0.8em;
             border-bottom: 1pt solid dimgrey;
+            position: sticky;
+            top: 0px;
+            height: 1.6em;
+            background-color: #eee;
+        }
+        .date-week {
+            position: sticky;
+            top: 2.5em;
+            background-color: #eee;
         }
 
         /* title and domain formatting */
@@ -90,7 +100,7 @@
     <div class="date-quarter"># {{ quarter }}</div>
 
 {% set ns.prev_week = None %}
-{% for week, week_notes in quarter_dict.items() if not not week_notes %}
+{% for week, week_notes in quarter_dict.items() if week_notes %}
     {% if week != "quarter-notes" %}
     <div class="date-week">## {{ week }}</div>
     {% endif %}

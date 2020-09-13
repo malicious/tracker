@@ -6,38 +6,46 @@
         body {
             margin-left: 7.5%;
             margin-right: 7.5%;
-        }
-        div {
-            border: 0px;
-            padding: 0.5em;
+            margin-bottom: 50em;
         }
 
-        .date {
+        .date-scope {
+            font-size: 200%;
+            margin-bottom: 0.8em;
+            border-bottom: 1pt solid dimgrey;
+            position: sticky;
+            top: 0px;
+            height: 1.6em;
             color: black;
-            font-size: 150%;
+            background-color: #eee;
         }
         .category {
-            font-size: 125%;
+            font-size: 150%;
+            margin-top: 0.8em;
+            margin-bottom: 0.8em;
+            position: sticky;
+            top: 2.5em;
+            background-color: #eee;
         }
 
+        /* task formatting */
         details {
-            border: thin solid #f4f4f4;
             padding: 0.5em;
+        }
+        .time-scope {
+            color: #bbb;
+        }
+        .task-time {
+          color: brown;
+        }
+        .task-resolved, .task-resolved .task-time, .task-resolved .time-scope {
+            color: rgb(220, 220, 220);
         }
         .task-details {
             margin: 1.3em 0.7em 0.7em 1.3em;
             background-color: rgb(246,246,246);
         }
-        .task-time {
-          color: brown;
-        }
-        .scope {
-            color: #bbb;
-        }
-        .task-resolved, .task-resolved .task-time, .task-resolved .scope {
-            color: rgb(220, 220, 220);
-        }
-        .created_at {
+        .task-details .created_at {
             color: forestgreen;
             margin-top: 1em;
         }
@@ -49,81 +57,76 @@
 {% block content %}
 
 {% set ns = namespace() %}
-{% set ns.prev = None %}
+{% set ns.prev_scope = None %}
+{% for scope, scope_tasks in tasks_by_scope.items() if scope_tasks %}
+<div class="scope-container">
+    <div class="date-scope">## {{ scope }}</div>
 
-{% for ref_scope, tasks in tasks_by_scope.items() %}
-    {% if ref_scope %}
-        {% if ns.prev %}
-        <div><br /></div>
-        <div><br /></div>
-        <div><br /></div>
+    {% set ns.prev_task = None %}
+    {% for task in scope_tasks %}
+        {# if this is the start of a new category, print heading #}
+        {% if task.category
+           and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
+        <div class="category">### {{ task.category }}</div>
         {% endif %}
-    <div class="date">
-        ## {{ ref_scope }}
-    </div>
-    {% endif %}
 
-{% for task in tasks %}
-    {% if task.category
-       and not (ns.prev.category and task.category == ns.prev.category) %}
-    <div><br /></div>
-    <div class="category">
-        ### {{ task.category }}
-    </div>
-    {% endif %}
+        <details>
+            {% if task.resolution == "info" %}
+            <summary class="task-resolved">
+                <span class="desc">{{ link_replacer(task['desc'])|safe }}</span>
+            </summary>
+            {% elif task.resolution %}
+            <summary class="task-resolved">
+                <span class="resolution">({{ task.resolution }}) </span>
 
-<details>
-    {% if task.resolution == "info" %}
-        <summary class="task-resolved">-
-            <span class="task_desc">{{ link_replacer(task['desc'])|safe }}</span>
-        </summary>
-    {% elif task.resolution %}
-        <summary class="task task-resolved">*
-            <span class="resolution">({{ task.resolution }}) </span>
+                {% if time_scope_shortener(task, scope) %}
+                <span class="time-scope">{{ time_scope_shortener(task, scope) }}</span>
+                {% endif %}
 
-            {% if time_scope_shortener(task, ref_scope) %}
-            <span class="scope">{{ time_scope_shortener(task, ref_scope) }}</span>
+                <span class="desc">{{ link_replacer(task['desc'])|safe }}</span>
+
+                {% if task.short_time() %}
+                <span class="task-time">{{ task.short_time() }}</span>
+                {% endif %}
+            </summary>
+            {% else %}
+            <summary class="task">
+                {% if time_scope_shortener(task, scope) %}
+                <span class="time-scope">{{ time_scope_shortener(task, scope) }}</span>
+                {% endif %}
+
+                <span class="desc">{{ link_replacer(task['desc'])|safe }}</span>
+
+                {% if task.short_time() %}
+                <span class="task-time">{{ task.short_time() }}</span>
+                {% endif %}
+            </summary>
             {% endif %}
 
-            <span class="task_desc">{{ link_replacer(task['desc'])|safe }}</span>
+            <div class="task-details">
+                <a href="/task/{{ task.task_id }}">
+                    {% if task.created_at %}
+                    <span class="created_at">&lt;!-- {{ task.created_at }} --&gt;</span>
+                    <br />
+                    {% endif %}
 
-            {% if task.short_time() %}
-            <span class="task-time">{{ task.short_time() }}</span>
-            {% endif %}
-        </summary>
-    {% else %}
-        <summary class="task">*
-            {% if time_scope_shortener(task, ref_scope) %}
-            <span class="scope">{{ time_scope_shortener(task, ref_scope) }}</span>
-            {% endif %}
+                    * {{ task.first_scope }}:
+                </a>
+                <span class="desc">{{ link_replacer(task['desc'])|safe }}</span>
 
-            <span class="task_desc">{{ link_replacer(task['desc'])|safe }}</span>
+                {% if task.short_time() %}
+                <span class="task-time">{{ task.short_time() }}</span>
+                {% endif %}
+            </div>
+        </details>
 
-            {% if task.short_time() %}
-            <span class="task-time">{{ task.short_time() }}</span>
-            {% endif %}
-        </summary>
-    {% endif %}
+        {% set ns.prev_task = task %}
+    {% endfor %}
+    {# trailing whitespace for end of scope block #}
+    <br /><br /><br />
+    {% set ns.prev_scope = scope %}
 
-    <div class="task-details">
-        <a href="/task/{{ task.task_id }}">
-            {% if task.created_at %}
-            <span class="created_at">&lt;!-- {{ task.created_at }} --&gt;</span>
-            <br />
-            {% endif %}
-
-            * {{ task.first_scope }}:
-        </a>
-            {{ link_replacer(task['desc'])|safe }}
-
-        {% if task.short_time() %}
-        <span class="task-time">{{ task.short_time() }}</span>
-        {% endif %}
-    </div>
-</details>
-
-    {% set ns.prev = task %}
-{% endfor %}
+</div> {# scope-container #}
 {% endfor %}
 
 {% endblock %}
