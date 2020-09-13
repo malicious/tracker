@@ -195,13 +195,17 @@ def task_and_scopes_to_json(task_id) -> Dict:
 def report_tasks(scope):
     tasks_by_scope = {}
 
-    superscopes = TimeScopeUtils.enclosing_scopes(scope)
     subscopes = TaskTimeScope.query \
         .filter(TaskTimeScope.time_scope_id.like(scope + "%")) \
         .order_by(TaskTimeScope.time_scope_id) \
         .all()
 
-    sorted_scopes = [s for s in superscopes] + [scope] + [s.time_scope_id for s in subscopes]
+    sorted_scopes = [] \
+                    + TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.quarter) \
+                    + TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.week) \
+                    + [scope] \
+                    + [s.time_scope_id for s in subscopes]
+
     for s in sorted_scopes:
         tasks = Task.query \
             .join(TaskTimeScope, Task.task_id == TaskTimeScope.task_id) \

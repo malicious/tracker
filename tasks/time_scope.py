@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Iterator
+from typing import Dict, List
 
 
 class TimeScope(str):
@@ -104,24 +104,39 @@ class TimeScope(str):
 
 class TimeScopeUtils:
     @staticmethod
-    def enclosing_scopes(scope: TimeScope) -> Iterator[TimeScope]:
-        def compute_scopes(dt: datetime) -> List[TimeScope]:
-            return [
-                TimeScope(dt.strftime("%G-ww%V.%u")),
-                TimeScope(dt.strftime("%G-ww%V")),
-                TimeScope(f"{dt.year}—Q{(dt.month - 1) // 3 + 1}"),
-            ]
+    def _compute_scopes(dt: datetime) -> List[TimeScope]:
+        return [
+            TimeScope(dt.strftime("%G-ww%V.%u")),
+            TimeScope(dt.strftime("%G-ww%V")),
+            TimeScope(f"{dt.year}—Q{(dt.month - 1) // 3 + 1}"),
+        ]
 
-        if scope.type == TimeScope.Type.quarter:
-            return scope
+    @staticmethod
+    def enclosing_scope(scope: TimeScope, enclosing_type: TimeScope.type) -> List[TimeScope]:
+        """
+        Computes the scope that contains this scope.
+
+        - Hard-coded to known TimeScope.Types, week/day/quarter
+        - Can return multiple/redundant TimeScopes, because weeks can span quarters
+        """
+        if scope.type == enclosing_type:
+            return [scope]
+
+        if scope.type == TimeScope.Type.day:
+            if enclosing_type == TimeScope.Type.week:
+                return [TimeScope(scope[0:9])]
+            elif enclosing_type == TimeScope.Type.quarter:
+                quarter = (scope.start.month - 1) // 3 + 1
+                return [TimeScope(f"{scope.start.year}—Q{quarter}")]
 
         elif scope.type == TimeScope.Type.week:
-            return filter(lambda s: s.type == TimeScope.Type.quarter,
-                          compute_scopes(scope.start) + compute_scopes(scope.end))
+            if enclosing_type == TimeScope.Type.quarter:
+                start_quarter = (scope.start.month - 1) // 3 + 1
+                end_quarter = (scope.end.month - 1) // 3 + 1
+                return [TimeScope(f"{scope.start.year}—Q{start_quarter}"),
+                        TimeScope(f"{scope.end.year}—Q{end_quarter}")]
 
-        elif scope.type == TimeScope.Type.day:
-            return filter(lambda s: s.type == TimeScope.Type.quarter or s.type == TimeScope.Type.week,
-                          compute_scopes(scope.start) + compute_scopes(scope.end))
+        return []
 
     @staticmethod
     def next_scope(scope: TimeScope) -> TimeScope:

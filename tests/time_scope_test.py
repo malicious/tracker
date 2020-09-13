@@ -82,10 +82,8 @@ def test_shorten_years_close():
 
 def test_enclosing_scopes():
     ref = TimeScope("2023-ww04.3")
-    enclosing = list(TimeScopeUtils.enclosing_scopes(ref))
-
-    assert TimeScope("2023—Q1") in enclosing
-    assert TimeScope("2023-ww04") in enclosing
+    assert TimeScopeUtils.enclosing_scope(ref, TimeScope.Type.quarter) == [TimeScope("2023—Q1")]
+    assert TimeScopeUtils.enclosing_scope(ref, TimeScope.Type.week) == [TimeScope("2023-ww04")]
 
 def test_prev_next_day():
     dref = TimeScope("2002-ww04.4")
