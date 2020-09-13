@@ -3,13 +3,40 @@ import io
 import json
 import re
 from datetime import datetime
-from typing import Dict
+from typing import Dict, Iterator
 
 from flask import render_template
 from sqlalchemy.exc import StatementError
 
 from tasks.models import Task, TaskTimeScope
 from tasks.time_scope import TimeScope, TimeScopeUtils
+
+
+def list_scopes(task_id) -> Iterator:
+    task_time_scopes = TaskTimeScope.query \
+        .filter(TaskTimeScope.task_id == task_id) \
+        .all()
+    return [tts.time_scope_id for tts in task_time_scopes]
+
+
+def task_and_scopes_to_json(task_id) -> Dict:
+    def get_parentiest_task(task: Task) -> Dict:
+        # Look for the highest-level parent
+        while task.parent_id:
+            task = Task.query \
+                .filter(Task.task_id == task.parent_id) \
+                .one()
+
+        return task.to_json(True)
+
+    task = Task.query \
+        .filter(Task.task_id == task_id) \
+        .one()
+
+    return {
+        "task": get_parentiest_task(task),
+        "time_scopes": list_scopes(task_id),
+    }
 
 
 def import_from_csv(csv_file, session):
@@ -165,31 +192,6 @@ task 7,,,2042-ww06.9 2002-ww02.2 2002-ww02.2
 task 7,,,2042-ww06.9 2002-ww02.2
 """
     import_from_csv(io.StringIO(test_csv_data), s)
-
-
-def task_tree_to_json(task: Task) -> Dict:
-    # Look for the highest-level parent
-    while task.parent_id:
-        task = Task.query \
-            .filter(Task.task_id == task.parent_id) \
-            .one()
-
-    return task.to_json(True)
-
-
-def task_and_scopes_to_json(task_id) -> Dict:
-    task = Task.query \
-        .filter(Task.task_id == task_id) \
-        .one()
-
-    task_time_scopes = TaskTimeScope.query \
-        .filter(TaskTimeScope.task_id == task_id) \
-        .all()
-
-    return {
-        "task": task_tree_to_json(task),
-        "time_scopes": [tts.time_scope_id for tts in task_time_scopes],
-    }
 
 
 def report_tasks(scope):
