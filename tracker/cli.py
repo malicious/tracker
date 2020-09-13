@@ -2,7 +2,6 @@ import click
 from flask.cli import with_appcontext
 
 import tasks
-from tasks.content import import_from_csv
 from tracker.content import content_db
 
 
@@ -29,4 +28,10 @@ def populate_test_db():
 @click.argument('csv_file', type=click.File('r'))
 @with_appcontext
 def tasks_from_csv(csv_file):
-    import_from_csv(csv_file, content_db.session)
+    tasks.content.import_from_csv(csv_file, content_db.session)
+
+
+@click.command('add-task')
+@with_appcontext
+def add_task():
+    tasks.content.add_from_cli(content_db.session)

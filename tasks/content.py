@@ -2,6 +2,7 @@ import csv
 import io
 import json
 import re
+from datetime import datetime
 
 from flask import render_template
 from sqlalchemy.exc import StatementError
@@ -59,6 +60,41 @@ def import_from_csv(csv_file, session):
                 tts = new_tts
 
         session.commit()
+
+
+def add_from_cli(session):
+    # Read relevant scopes
+    today_scope = TimeScope(datetime.now().strftime("%G-ww%V.%u"))
+    requested_scopes = input(f"Enter scopes [{today_scope}]: ")
+    if not requested_scopes:
+        requested_scopes = today_scope
+
+    requested_scopes = sorted([TimeScope(s) for s in requested_scopes.split()])
+    print(f"parsed as {requested_scopes}")
+    print("")
+
+    # Read description for the task
+    desc = input(f"Enter description: ")
+
+    t = Task(desc=desc, first_scope=requested_scopes[0], created_at=datetime.now())
+    try:
+        session.add(t)
+        session.commit()
+    except StatementError as e:
+        print("")
+        print("Hit exception when parsing:")
+        print(json.dumps(t.to_json(), indent=4))
+        session.rollback()
+        return
+
+    # Add scopes etc
+    for scope in requested_scopes:
+        tts = TaskTimeScope(task_id=t.task_id, time_scope_id=scope)
+        session.add(tts)
+    session.commit()
+
+    # Done, print output
+    print(f"Created task {t.task_id}")
 
 
 def populate_test_data(s):
