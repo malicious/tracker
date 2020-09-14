@@ -52,6 +52,12 @@ def notes_from_csv(csv_file):
     notes.content.import_from_csv(csv_file, content_db.session)
 
 
+@click.command('add-summary')
+@with_appcontext
+def add_summary():
+    notes.content.add_from_cli(content_db.session)
+
+
 def init_app(app):
     app.cli.add_command(reset_db)
     app.cli.add_command(migrate_db)
@@ -60,3 +66,4 @@ def init_app(app):
     app.cli.add_command(add_task)
     app.cli.add_command(update_task)
     app.cli.add_command(notes_from_csv)
+    app.cli.add_command(add_summary)

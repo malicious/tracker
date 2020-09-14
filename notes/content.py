@@ -2,6 +2,7 @@ import csv
 import itertools
 import json
 import re
+from datetime import datetime
 from typing import Dict, Iterator
 
 from flask import render_template
@@ -33,12 +34,43 @@ def note_to_json(note_id) -> Dict:
     }
 
 
+def _add_domains_for(note_id, domain_str: str, session, do_commit: bool = True):
+    """
+    Pass `session` if you want this function to do the commit.
+    """
+    sorted_domains = sorted([d.strip() for d in domain_str.split('&') if not None])
+    if not sorted_domains:
+        raise ValueError(f"No valid domains provided for Note")
+
+    for domain_id in sorted_domains:
+        new_domain = Domain(domain_id=domain_id)
+        domain = Domain.query \
+            .filter_by(domain_id=new_domain.domain_id) \
+            .one_or_none()
+        if not domain:
+            session.add(new_domain)
+            domain = new_domain
+
+        new_link = NoteDomain(note_id=note_id, domain_id=domain.domain_id)
+        link = NoteDomain.query \
+            .filter_by(note_id=note_id, domain_id=domain.domain_id) \
+            .one_or_none()
+        if not link:
+            session.add(new_link)
+            link = new_link
+
+    if do_commit:
+        session.commit()
+
+
 def import_from_csv(csv_file, session):
     for csv_entry in csv.DictReader(csv_file):
         # Check for a pre-existing Note before adding one
         new_note = Note.from_csv(csv_entry)
         note = Note.query \
-            .filter_by(time_scope_id=new_note.time_scope_id, desc=new_note.desc, title=new_note.title) \
+            .filter_by(time_scope_id=new_note.time_scope_id,
+                       desc=new_note.desc,
+                       title=new_note.title) \
             .one_or_none()
         if not note:
             session.add(new_note)
@@ -52,33 +84,85 @@ def import_from_csv(csv_file, session):
                 continue
 
         # Then create the linked Domains
-        if not csv_entry['domains']:
+        if 'domains' not in csv_entry or not csv_entry['domains']:
             raise ValueError(f"No domains specified for Note: \n{json.dumps(csv_entry, indent=4)}")
 
-        sorted_domains = sorted([domain_str.strip() for domain_str in csv_entry['domains'].split('&') if not None])
-        if not sorted_domains:
+        try:
+            _add_domains_for(note.note_id, csv_entry['domains'], session)
+        except (ValueError, StatementError):
             print(json.dumps(csv_entry, indent=4))
             raise ValueError(f"No valid domains for Note: \n{json.dumps(csv_entry, indent=4)}")
 
-        for domain_id in sorted_domains:
-            new_domain = Domain(domain_id=domain_id)
-            domain = Domain.query \
-                .filter_by(domain_id=new_domain.domain_id) \
-                .one_or_none()
-            if not domain:
-                session.add(new_domain)
-                domain = new_domain
 
-            new_link = NoteDomain(note_id=note.note_id, domain_id=domain.domain_id)
-            link = NoteDomain.query \
-                .filter_by(note_id=note.note_id, domain_id=domain.domain_id) \
-                .one_or_none()
-            if not link:
-                session.add(new_link)
-                link = new_link
+def add_note_from_cli(session):
+    desc = input(f'{"Enter description (blank to quit)": <40}: ')
+    if not desc:
+        return None
 
-        # Commit per Note, since Domains are likely to overlap
+    # Read other attributes
+    created_at = datetime.now()
+    today_scope = TimeScope(created_at.strftime("%G-ww%V.%u"))
+    requested_scope = input(f'{f"Enter scope [{today_scope}]": <40}: ')
+    if not requested_scope:
+        requested_scope = today_scope
+    try:
+        requested_scope = TimeScope(requested_scope)
+        requested_scope.get_type()
+    except ValueError as e:
+        print(e)
+        return None
+    print(f"{'': <2}parsed as {requested_scope}")
+
+    # Read enough things to create a Note
+    requested_domains = input(f'{f"Enter domains, separated by &": <40}: ')
+    source = input(f'{"Enter title (optional)": <40}: ')
+
+    n = Note(
+        time_scope_id=requested_scope,
+        desc=desc,
+        created_at=created_at,
+        is_summary=True,
+        source=source,
+    )
+
+    try:
+        session.add(n)
         session.commit()
+    except StatementError as e:
+        print("")
+        print("Hit exception when parsing:")
+        print(json.dumps(n.to_json(), indent=4))
+        session.rollback()
+        return None
+
+    # Add domains, note to database
+    try:
+        _add_domains_for(n.note_id, requested_domains, session)
+    except (ValueError, StatementError):
+        print("")
+        print("Hit exception when parsing:")
+        print(json.dumps(n.to_json(), indent=4))
+        session.rollback()
+        return None
+
+    return n
+
+
+def add_from_cli(session):
+    all_notes = []
+
+    while True:
+        n = add_note_from_cli(session)
+        if not n:
+            break
+
+        all_notes.append(n)
+        print(f"  successfully added Note: {n.note_id}")
+        print("")
+
+    # Done, print output
+    # TODO: print as CSV
+    print(json.dumps([n.to_json() for n in all_notes], indent=4))
 
 
 def report_notes_by_domain(domain, session):
