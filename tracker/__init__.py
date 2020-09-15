@@ -63,10 +63,13 @@ def create_app(app_config_dict: Dict = None):
                           r"""[\1](<a href="\2">\2</a>)""",
                           mdown)
 
+        time_scope_shortener = lambda task, ref: TimeScope(task.first_scope).shorten(ref)
+
         ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
         return render_template('task.html',
                                tasks_by_scope={ref_scope: query.all()},
-                               link_replacer=link_replacer)
+                               link_replacer=link_replacer,
+                               time_scope_shortener=time_scope_shortener)
 
     @app.route("/report-tasks/<scope_str>")
     def report_tasks(scope_str):
