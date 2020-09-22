@@ -170,7 +170,7 @@
                 </div>
                 {% if match_domains(note) %}
                 <div class="domain">
-                    <div>{{ match_domains(note) }}</div>
+                    <div>{{ match_domains(note)|safe }}</div>
                 </div>
                 {% endif %}
             </div>

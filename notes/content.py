@@ -174,7 +174,7 @@ def report_notes_by_domain(domain, session):
     # We need to flatten this list, for some reason
     time_scopes = set(itertools.chain.from_iterable(time_scopes))
     if not time_scopes:
-        return {"error": f"No matching time_scopes for: {repr(domain)}"}
+        return {"error": f"No matching domains for: {repr(domain)}"}
 
     # Find the week-TimeScopes that apply to our notes
     week_scopes = set(itertools.chain.from_iterable(
@@ -243,10 +243,10 @@ def report_notes_by_domain(domain, session):
         if not domains:
             return ""
 
-        # Replace spaces in domain names, so they don't break
-        domains = [d.replace(' ', '&nbsp;') for d in domains]
+        def domain_to_html(d):
+            return f'<a href="/report-notes/{d}">{d.replace(" ", "&nbsp;")}</a>'
 
-        return ", ".join(domains)
+        return ", ".join([domain_to_html(d) for d in domains])
 
     def time_scope_lengthener(note) -> str:
         return TimeScope(note.time_scope_id).lengthen()
@@ -255,6 +255,7 @@ def report_notes_by_domain(domain, session):
         # make HTML comments visible
         desc = re.sub(r'<!', r'&lt;!', desc)
         # make newlines have effect
+        desc = re.sub('\r\n', r'<br />', desc)
         desc = re.sub('\n', r'<br />', desc)
         # make markdown links clickable
         desc = re.sub(r'\[(.+?)]\((.+?)\)',
