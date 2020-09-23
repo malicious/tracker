@@ -35,7 +35,7 @@
         }
         .domain {
             flex: 1 2 auto;
-            padding-left: 1rem;
+            padding-left: 1.3rem;
             font-size: 80%;
             text-align: right;
 
@@ -56,9 +56,8 @@
         }
         .summary-block .row .time-scope {
             flex: none;
-            min-width: 9em;
             padding-left: 0.4rem;
-            padding-right: 0.8rem;
+            padding-right: 1.2rem;
         }
         .summary-block .row .time-scope a:link {
             color: #c0c0c0;
@@ -68,6 +67,7 @@
         }
         .summary-block .row .content-vertical {
             flex: 4 2 auto;
+            min-width: 40%;
         }
         .summary-block .row .content-vertical .desc {
             color: black;
@@ -123,31 +123,31 @@
                     <a href="/note/{{ note.note_id }}">{{ time_scope_lengthener(note) }}</a>
                 {% endif %}
                 </div>
-                {# use a two-row flexbox, if that's what we need #}
-                {% if note.title and match_domains(note) %}
-                    <div class="content-vertical">
-                        <div class="desc">{{ desc_to_html(note.desc)|safe }}</div>
-                        <div class="title-and-domain">
-                            <div class="title">{{ note.title }}</div>
-                            <div class="domain">
-                                <div>{{ match_domains(note)|safe }}</div>
-                            </div>
+            {# use a two-row flexbox, if that's what we need #}
+            {% if note.title and match_domains(note) %}
+                <div class="content-vertical">
+                    <div class="desc">{{ desc_to_html(note.desc)|safe }}</div>
+                    <div class="title-and-domain">
+                        <div class="title">{{ note.title }}</div>
+                        <div class="domain">
+                            <div>{{ match_domains(note)|safe }}</div>
                         </div>
                     </div>
-                {# else one row is fine, we don't need both title and domain #}
-                {% else %}
-                    <div class="content-vertical">
-                        <div class="desc">{{ desc_to_html(note.desc)|safe }}</div>
-                        {% if note.title %}
-                        <div class="title-matching-desc">{{ note.title }}</div>
-                        {% endif %}
-                    </div>
-                    {% if match_domains(note) %}
-                    <div class="domain">
-                        <div>{{ match_domains(note)|safe }}</div>
-                    </div>
+                </div>
+            {# else one row is fine, we don't need both title and domain #}
+            {% else %}
+                <div class="content-vertical">
+                    <div class="desc">{{ desc_to_html(note.desc)|safe }}</div>
+                    {% if note.title %}
+                    <div class="title-matching-desc">{{ note.title }}</div>
                     {% endif %}
+                </div>
+                {% if match_domains(note) %}
+                <div class="domain">
+                    <div>{{ match_domains(note)|safe }}</div>
+                </div>
                 {% endif %}
+            {% endif %}
             </div>
         {% endif %}
 
