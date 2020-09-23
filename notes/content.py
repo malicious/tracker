@@ -251,6 +251,9 @@ def report_notes_by_domain(domain, session):
     def time_scope_lengthener(note) -> str:
         return TimeScope(note.time_scope_id).lengthen()
 
+    def time_scope_shortener(note, ref):
+        return TimeScope(note.time_scope_id).shorten(ref)
+
     def desc_to_html(desc: str):
         # make HTML comments visible
         desc = re.sub(r'<!', r'&lt;!', desc)
@@ -267,4 +270,5 @@ def report_notes_by_domain(domain, session):
                            desc_to_html=desc_to_html,
                            match_domains=match_domains,
                            notes_by_quarter=notes_by_quarter,
-                           time_scope_lengthener=time_scope_lengthener)
+                           time_scope_lengthener=time_scope_lengthener,
+                           time_scope_shortener=time_scope_shortener)

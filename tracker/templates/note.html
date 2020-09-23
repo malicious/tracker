@@ -120,9 +120,14 @@
                 {% if week == "quarter-notes" %}
                     <a href="/note/{{ note.note_id }}">{{ note.time_scope_id }}</a>
                 {% else %}
+                    {% if week_notes|length > 5 %}
+                    <a href="/note/{{ note.note_id }}">{{ time_scope_shortener(note, week) }}</a>
+                    {% else %}
                     <a href="/note/{{ note.note_id }}">{{ time_scope_lengthener(note) }}</a>
+                    {% endif %}
                 {% endif %}
                 </div>
+
             {# use a two-row flexbox, if that's what we need #}
             {% if note.title and match_domains(note) %}
                 <div class="content-vertical">
@@ -134,6 +139,7 @@
                         </div>
                     </div>
                 </div>
+
             {# else one row is fine, we don't need both title and domain #}
             {% else %}
                 <div class="content-vertical">
