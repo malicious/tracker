@@ -237,7 +237,7 @@ def report_tasks(scope):
             clickable_scopes.append(f'<a href=/report-tasks/{s}>{s}</a>')
         as_json['time_scopes'] = clickable_scopes
 
-        as_text = json.dumps(as_json, indent=4)
+        as_text = json.dumps(as_json, indent=4, ensure_ascii=False)
         # make task_ids clickable
         as_text = re.sub(r'"task_id": (\d*),',
                          r'<a href="/task/\1">"task_id": \1</a>,',
