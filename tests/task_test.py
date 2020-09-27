@@ -87,3 +87,19 @@ def test_create_and_read_python(session):
     query = Task.query.filter_by(task_id=task.task_id)
     task_out = query.one()
     assert task_out.task_id == task.task_id
+
+
+def test_max_import_depth(session):
+    csv_test_file = """id,parent_id,desc,scopes
+1,,task 1,2020-ww39.1
+2,1,task 2,2020-ww39.1
+3,2,task 3,2020-ww39.1
+4,3,task 4,2020-ww39.1
+5,4,task 5,2020-ww39.1
+6,5,task 6,2020-ww39.1
+"""
+
+    import_from_csv(io.StringIO(csv_test_file), session)
+
+    query = Task.query.all()
+    assert len(query) == 5

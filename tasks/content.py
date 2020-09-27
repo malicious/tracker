@@ -56,6 +56,27 @@ def import_from_csv(csv_file, session):
         # If there's a parent_id, run it through the remapper first
         if 'parent_id' in csv_entry and csv_entry['parent_id']:
             csv_entry['parent_id'] = id_remapper[csv_entry['parent_id']]
+            print(f"DEBUG: Checking for parent_id: {csv_entry['parent_id']}")
+
+            # Next, confirm that our parent depth isn't greater than 5
+            def will_hit_max_depth(task_id, depth):
+                print(f"DEBUG: will_hit_max_depth({task_id}, {depth})")
+                if depth <= 0:
+                    return True
+
+                task = Task.query \
+                    .filter(Task.task_id == task_id) \
+                    .one_or_none()
+                if not task.parent_id:
+                    return False
+
+                return will_hit_max_depth(task.parent_id, depth - 1)
+
+            if will_hit_max_depth(csv_entry['parent_id'], 4):
+                print(f"Will hit maximum Task depth for parent_id: {csv_entry['parent_id']}")
+                print(f"Skipping Task:")
+                print(json.dumps(csv_entry, indent=4))
+                continue
 
         # Check for a pre-existing Task before creating one
         new_task = Task.from_csv(csv_entry)
