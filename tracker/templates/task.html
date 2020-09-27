@@ -117,6 +117,8 @@
                 {% if task.short_time() %}
                 <span class="task-time">{{ task.short_time() }}</span>
                 {% endif %}
+                <hr />
+                <pre>{{ pretty_print_task(task)|safe }}</pre>
             </div>
         </details>
 
