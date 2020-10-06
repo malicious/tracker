@@ -37,6 +37,26 @@ def task_and_scopes_to_json(task_id) -> Dict:
     }
 
 
+def _pretty_print_task(task: Task):
+    as_json = task_and_scopes_to_json(task.task_id)
+    # make linked TimeScopes clickable
+    clickable_scopes = []
+    for s in as_json['time_scopes']:
+        clickable_scopes.append(f'<a href=/report-tasks/{s}>{s}</a>')
+    as_json['time_scopes'] = clickable_scopes
+
+    as_text = json.dumps(as_json, indent=4, ensure_ascii=False)
+    # make task_ids clickable
+    as_text = re.sub(r'"task_id": (\d*),',
+                     r'<a href="/task/\1">"task_id": \1</a>,',
+                     as_text)
+    # make first_scope_id clickable
+    as_text = re.sub(r'"first_scope": "(.*)",',
+                     r'<a href="/report-tasks/\1">"first_scope": "\1"</a>,',
+                     as_text)
+    return as_text
+
+
 def report_open_tasks():
     query: Query = Task.query \
         .filter(Task.resolution == None) \
@@ -53,6 +73,7 @@ def report_open_tasks():
     return render_template('task.html',
                            tasks_by_scope={ref_scope: query.all()},
                            link_replacer=link_replacer,
+                           pretty_print_task=_pretty_print_task,
                            time_scope_shortener=time_scope_shortener)
 
 
@@ -91,29 +112,10 @@ def report_tasks(scope):
 
     time_scope_shortener = lambda task, ref: TimeScope(task.first_scope).shorten(ref)
 
-    def pretty_print_task(task: Task):
-        as_json = task_and_scopes_to_json(task.task_id)
-        # make linked TimeScopes clickable
-        clickable_scopes = []
-        for s in as_json['time_scopes']:
-            clickable_scopes.append(f'<a href=/report-tasks/{s}>{s}</a>')
-        as_json['time_scopes'] = clickable_scopes
-
-        as_text = json.dumps(as_json, indent=4, ensure_ascii=False)
-        # make task_ids clickable
-        as_text = re.sub(r'"task_id": (\d*),',
-                         r'<a href="/task/\1">"task_id": \1</a>,',
-                         as_text)
-        # make first_scope_id clickable
-        as_text = re.sub(r'"first_scope": "(.*)",',
-                         r'<a href="/report-tasks/\1">"first_scope": "\1"</a>,',
-                         as_text)
-        return as_text
-
     return render_template('task.html',
                            prev_scope=prev_scope_html,
                            next_scope=next_scope_html,
                            tasks_by_scope=tasks_by_scope,
                            link_replacer=mdown_desc_cleaner,
-                           pretty_print_task=pretty_print_task,
+                           pretty_print_task=_pretty_print_task,
                            time_scope_shortener=time_scope_shortener)
