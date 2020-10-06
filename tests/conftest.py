@@ -8,8 +8,12 @@ from tracker.db import content_db
 def test_app():
     settings_override = {
         'TESTING': True,
-        'SQLALCHEMY_DATABASE_URI': "sqlite://",
-        'SQLALCHEMY_ECHO': True,
+        'SQLALCHEMY_BINDS': {
+            'notes': 'sqlite://',
+            'tasks': 'sqlite://',
+        },
+        #'SQLALCHEMY_DATABASE_URI': 'sqlite://',
+        #'SQLALCHEMY_ECHO': True,
     }
 
     test_app = create_app(settings_override)

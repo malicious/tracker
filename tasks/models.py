@@ -7,6 +7,7 @@ from tracker.db import content_db as db
 
 class Task(db.Model):
     __tablename__ = 'Tasks'
+    __bind_key__ = 'tasks'
     task_id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
     desc = db.Column(db.String, nullable=False)
     first_scope = db.Column(db.String(20), nullable=False)
@@ -81,6 +82,7 @@ class Task(db.Model):
 
 class TaskTimeScope(db.Model):
     __tablename__ = 'TaskTimeScopes'
+    __bind_key__ = 'tasks'
     task_id = db.Column(db.Integer, db.ForeignKey("Tasks.task_id"), primary_key=True, nullable=False)
     time_scope_id = db.Column(db.String, primary_key=True, nullable=False)
     __table_args__ = (

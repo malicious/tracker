@@ -6,19 +6,6 @@ import tasks
 from tracker.db import content_db
 
 
-@click.command('reset-db')
-@with_appcontext
-def reset_db():
-    content_db.drop_all()
-    content_db.create_all()
-
-
-@click.command('migrate-db')
-@with_appcontext
-def migrate_db():
-    content_db.create_all()
-
-
 @click.command('test-db')
 @with_appcontext
 def populate_test_db():
@@ -59,8 +46,6 @@ def add_summary():
 
 
 def init_app(app):
-    app.cli.add_command(reset_db)
-    app.cli.add_command(migrate_db)
     app.cli.add_command(populate_test_db)
     app.cli.add_command(tasks_from_csv)
     app.cli.add_command(add_task)
