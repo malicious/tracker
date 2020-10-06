@@ -6,12 +6,6 @@ import tasks
 from tracker.db import content_db
 
 
-@click.command('test-db')
-@with_appcontext
-def populate_test_db():
-    tasks.content.populate_test_data(content_db.session)
-
-
 @click.command('import-tasks')
 @click.argument('csv_file', type=click.File('r'))
 @with_appcontext
@@ -46,7 +40,6 @@ def add_summary():
 
 
 def init_app(app):
-    app.cli.add_command(populate_test_db)
     app.cli.add_command(tasks_from_csv)
     app.cli.add_command(add_task)
     app.cli.add_command(update_task)
