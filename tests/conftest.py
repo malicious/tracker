@@ -1,6 +1,7 @@
 import pytest
 
-import tracker
+from tracker.app import create_app
+from tracker.content import content_db
 
 
 @pytest.fixture(scope='session')
@@ -10,7 +11,7 @@ def test_app():
         'SQLALCHEMY_DATABASE_URI': "sqlite://",
     }
 
-    test_app = tracker.create_app(settings_override)
+    test_app = create_app(settings_override)
     with test_app.app_context():
         yield test_app
 
@@ -22,7 +23,7 @@ def test_client(test_app):
 
 @pytest.fixture(scope="function", autouse=True)
 def session(test_app):
-    tracker.content_db.create_all()
-    yield tracker.content_db.session
-    tracker.content_db.session.rollback()
-    tracker.content_db.drop_all()
+    content_db.create_all()
+    yield content_db.session
+    content_db.session.rollback()
+    content_db.drop_all()

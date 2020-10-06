@@ -1,5 +1,5 @@
 venv := venv
-app := tracker
+app := tracker.app
 
 .DEFAULT_GOAL := serve
 

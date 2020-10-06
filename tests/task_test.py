@@ -1,8 +1,8 @@
 import io
 
 from tasks.content import import_from_csv
+from tasks.models import Task
 from tasks.time_scope import TimeScope
-from tracker import Task
 
 
 def test_task_constructor():
