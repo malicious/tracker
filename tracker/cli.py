@@ -10,20 +10,20 @@ from tracker.db import content_db
 @click.argument('csv_file', type=click.File('r'))
 @with_appcontext
 def tasks_from_csv(csv_file):
-    tasks.content.import_from_csv(csv_file, content_db.session)
+    tasks.add.import_from_csv(csv_file, content_db.session)
 
 
 @click.command('add-task')
 @with_appcontext
 def add_task():
-    tasks.content.add_from_cli(content_db.session)
+    tasks.add.add_from_cli(content_db.session)
 
 
 @click.command('update-task')
 @click.argument('task_id', type=click.INT)
 @with_appcontext
 def update_task(task_id: int):
-    tasks.content.update_from_cli(content_db.session, task_id)
+    tasks.add.update_from_cli(content_db.session, task_id)
 
 
 @click.command('import-notes')

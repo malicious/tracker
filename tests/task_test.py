@@ -1,6 +1,7 @@
 import io
 
-from tasks.content import import_from_csv
+import tasks
+from tasks.add import import_from_csv
 from tasks.models import Task
 from tasks.time_scope import TimeScope
 
@@ -30,13 +31,13 @@ def test_dict_import():
     TEST_CAT = "test cat 12453"
     TEST_SCOPE = "2020-ww04.4"
 
-    csv_dict = {
+    csv_entry = {
         "desc": TEST_DESC,
         "category": TEST_CAT,
         "first_scope": TEST_SCOPE,
     }
 
-    t = Task.from_csv(csv_dict)
+    t = tasks.add.from_csv(csv_entry)
     assert t.desc == TEST_DESC
     assert t.category == TEST_CAT
     assert t.first_scope == TEST_SCOPE

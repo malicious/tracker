@@ -21,17 +21,6 @@ class Task(db.Model):
         db.UniqueConstraint('desc', 'created_at'),
     )
 
-    @staticmethod
-    def from_csv(csv_entry):
-        t = Task(desc=csv_entry['desc'])
-        if 'created_at' in csv_entry and csv_entry['created_at']:
-            t.created_at = parser.parse(csv_entry['created_at'])
-        for field in ["first_scope", "category", "resolution", "parent_id", "time_estimate", "time_actual"]:
-            value = csv_entry.get(field)
-            setattr(t, field, value if value else None)
-
-        return t
-
     def _to_json(self) -> Dict:
         """
         Build a dict for JSON response

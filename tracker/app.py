@@ -5,7 +5,7 @@ from markupsafe import escape
 
 import tasks
 from notes.content import note_to_json, report_notes_by_domain
-from tasks.content import task_and_scopes_to_json
+from tasks.report import task_and_scopes_to_json
 from tasks.time_scope import TimeScope
 from . import cli, db
 
@@ -25,12 +25,12 @@ def create_app(settings_overrides: Dict = {}):
 
     @app.route("/report-open-tasks")
     def report_open_tasks():
-        return tasks.content.report_open_tasks()
+        return tasks.report.report_open_tasks()
 
     @app.route("/report-tasks/<scope_str>")
     def report_tasks(scope_str):
         scope = TimeScope(escape(scope_str))
-        return tasks.content.report_tasks(scope)
+        return tasks.report.report_tasks(scope)
 
     @app.route("/note/<note_id>")
     def get_note(note_id):
