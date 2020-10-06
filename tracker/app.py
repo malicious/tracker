@@ -1,4 +1,3 @@
-import os
 import re
 from datetime import datetime
 from typing import Dict
@@ -12,27 +11,13 @@ from notes.content import note_to_json, report_notes_by_domain
 from tasks.content import task_and_scopes_to_json
 from tasks.models import Task
 from tasks.time_scope import TimeScope
-from . import cli
-from .db import content_db
+from . import cli, db
 
 
-def create_app(app_config_dict: Dict = None):
+def create_app(settings_overrides: Dict = {}):
     app = Flask(__name__, instance_relative_config=True)
-    # app.config['SQLALCHEMY_ECHO'] = True
-    app.config['SQLALCHEMY_DATABASE_URI'] = \
-        "sqlite:///" + \
-        os.path.abspath(os.path.join(app.instance_path, 'content.db'))
-    app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
-
-    # Apply debug/testing config changes, as needed
-    if app_config_dict:
-        app.config.update(app_config_dict)
-
-    # Make the parent directory for our SQLite database
-    try:
-        os.makedirs(app.instance_path)
-    except OSError:
-        pass
+    db.init_app(app, settings_overrides)
+    cli.init_app(app)
 
     @app.route("/time_scope/<scope_str>")
     def get_time_scope(scope_str: str):
@@ -88,6 +73,4 @@ def create_app(app_config_dict: Dict = None):
 
         return {"error": f"invalid search: {repr(domain)}"}
 
-    content_db.init_app(app)
-    cli.init_app(app)
     return app

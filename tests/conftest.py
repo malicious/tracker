@@ -9,6 +9,7 @@ def test_app():
     settings_override = {
         'TESTING': True,
         'SQLALCHEMY_DATABASE_URI': "sqlite://",
+        'SQLALCHEMY_ECHO': True,
     }
 
     test_app = create_app(settings_override)
