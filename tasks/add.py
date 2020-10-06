@@ -5,6 +5,7 @@ from datetime import datetime
 from dateutil.parser import parser
 from sqlalchemy.exc import StatementError
 
+import tasks
 from tasks.models import Task, TaskTimeScope
 from tasks.time_scope import TimeScope
 
@@ -97,33 +98,44 @@ def import_from_csv(csv_file, session):
         session.commit()
 
 
+class Color:
+    RED = '\033[1;31;48m'
+    END = '\033[1;37;0m'
+
+
 def add_from_cli(session):
     # Read relevant scopes
     today_scope = TimeScope(datetime.now().strftime("%G-ww%V.%u"))
-    requested_scopes = input(f"Enter scopes [{today_scope}]: ")
-    if not requested_scopes:
-        requested_scopes = today_scope
+    requested_scopes = input(f"Enter input scopes [{today_scope}]: {Color.RED}")
+    print(Color.END, end='', flush=True)
+    if requested_scopes:
+        requested_scopes = sorted([TimeScope(s) for s in requested_scopes.split()])
+        try:
+            [s.get_type() for s in requested_scopes]
+        except ValueError as e:
+            print(e)
+            return
 
-    requested_scopes = sorted([TimeScope(s) for s in requested_scopes.split()])
-    try:
-        [s.get_type() for s in requested_scopes]
-    except ValueError as e:
-        print(e)
-        return
-    print(f"parsed as {requested_scopes}")
-    print("")
+        print(f"- parsed as {requested_scopes}")
+        print("")
+
+    else:
+        requested_scopes = [today_scope]
 
     # Read description for the task
-    desc = input(f"Enter description: ")
+    desc = input(f"Enter description: {Color.RED}")
+    print(Color.END, end='', flush=True)
 
-    t = Task(desc=desc, first_scope=requested_scopes[0], created_at=datetime.now())
+    t = Task(desc=desc,
+             first_scope=requested_scopes[0],
+             created_at=datetime.now())
     try:
         session.add(t)
         session.commit()
     except StatementError as e:
         print("")
         print("Hit exception when parsing:")
-        print(json.dumps(t.to_json(), indent=4))
+        print(json.dumps(t.to_json_dict(), indent=4))
         session.rollback()
         return
 
@@ -133,26 +145,22 @@ def add_from_cli(session):
         session.add(tts)
     session.commit()
 
-    # Done, print output
+    print()
     print(f"Created task {t.task_id}")
+    print(json.dumps(t.to_json_dict(), indent=4))
 
 
 def update_from_cli(session, task_id):
     # Open relevant task
-    t = Task.query \
-        .filter(Task.task_id == task_id) \
-        .one()
+    t = Task.query.filter(Task.task_id == task_id).one()
 
-    # Print matching scopes
-    scopes = [tts.time_scope_id for tts in \
-              TaskTimeScope.query \
-                  .filter(TaskTimeScope.task_id == task_id) \
-                  .all()]
-    print(f"Existing scopes: {scopes}")
+    matching_scopes = tasks.report.matching_scopes(task_id)
+    print(f"Existing scopes => {', '.join(matching_scopes)}")
 
     # Decide what we're adding
     today_scope = TimeScope(datetime.now().strftime("%G-ww%V.%u"))
-    requested_scope = input(f"Enter scope to add [{today_scope}]: ")
+    requested_scope = input(f"Enter scope to add [{today_scope}]: {Color.RED}")
+    print(Color.END, end='', flush=True)
     if requested_scope:
         try:
             TimeScope(requested_scope).get_type()
@@ -164,20 +172,22 @@ def update_from_cli(session, task_id):
 
     # Decide whether we're resolving it
     if t.resolution:
-        print(f"Task already has a resolution: {t.resolution}")
-        requested_resolution = input(f"Enter resolution to set [{t.resolution}]: ")
-        if requested_resolution:
-            t.resolution = requested_resolution
-            session.add(t)
+        print(f"Task already has a resolution => {t.resolution}")
+        requested_resolution = input(f"Enter resolution to set [{t.resolution}]: {Color.RED}")
+        print(Color.END, end='', flush=True)
     else:
-        requested_resolution = input(f"Enter resolution to set: ")
+        requested_resolution = input(f"Enter resolution to set: {Color.RED}")
+        print(Color.END, end='', flush=True)
+
+    if requested_resolution:
         t.resolution = requested_resolution
         session.add(t)
 
     # And update the scopes, maybe
-    if TimeScope(requested_scope) not in scopes:
+    if TimeScope(requested_scope) not in matching_scopes:
         session.add(TaskTimeScope(task_id=t.task_id, time_scope_id=requested_scope))
 
     session.commit()
+    print()
     print(f"Updated task {t.task_id}")
-    print(json.dumps(t.to_json(), indent=4))
+    print(json.dumps(t.to_json_dict(), indent=4))

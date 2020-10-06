@@ -10,7 +10,7 @@ from tasks.models import Task, TaskTimeScope
 from tasks.time_scope import TimeScope, TimeScopeUtils
 
 
-def _matching_scopes(task_id) -> Iterator:
+def matching_scopes(task_id) -> Iterator:
     task_time_scopes = TaskTimeScope.query \
         .filter(TaskTimeScope.task_id == task_id) \
         .all()
@@ -31,7 +31,7 @@ def _to_json(task: Task,
             response_dict['children'] = child_json
 
     if include_scopes:
-        scopes = _matching_scopes(task.task_id)
+        scopes = matching_scopes(task.task_id)
         if scopes:
             response_dict['time_scopes'] = scopes
 
