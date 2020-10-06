@@ -80,7 +80,7 @@ def import_from_csv(csv_file, session):
 
         # Check for a pre-existing Task before creating one
         new_task = Task.from_csv(csv_entry)
-        task = Task.query \
+        task: Task = Task.query \
             .filter_by(desc=new_task.desc, created_at=new_task.created_at) \
             .one_or_none()
         if not task:
@@ -93,6 +93,11 @@ def import_from_csv(csv_file, session):
                 print(json.dumps(csv_entry, indent=4))
                 session.rollback()
                 continue
+        else:
+            # Update existing task
+            task.resolution = new_task.resolution
+            task.category = new_task.category
+            task.parent_id = new_task.parent_id
 
         # Add the task_id to the remapper
         if 'id' in csv_entry and csv_entry['id']:

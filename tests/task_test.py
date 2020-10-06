@@ -103,3 +103,19 @@ def test_max_import_depth(session):
 
     query = Task.query.all()
     assert len(query) == 5
+
+
+def test_update_task(session):
+    csv_orig = """id,parent_id,desc,scopes
+1,,task 1,2020-ww39.1
+"""
+    csv_updated = """id,parent_id,desc,scopes,resolution
+1,,task 1,2020-ww39.1 2020-ww41.1,done
+"""
+
+    import_from_csv(io.StringIO(csv_orig), session)
+    import_from_csv(io.StringIO(csv_updated), session)
+
+    query = Task.query.all()
+    assert len(query) == 1
+    assert query[0].resolution == "done"
