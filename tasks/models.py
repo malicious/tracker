@@ -1,7 +1,5 @@
 from typing import Dict
 
-from dateutil import parser
-
 from tracker.db import content_db as db
 
 
@@ -21,10 +19,17 @@ class Task(db.Model):
         db.UniqueConstraint('desc', 'created_at'),
     )
 
-    def _to_json(self) -> Dict:
-        """
-        Build a dict for JSON response
-        """
+    def get_children(self):
+        return Task.query \
+            .filter(Task.parent_id == self.task_id) \
+            .all()
+
+    def get_parent(self):
+        return Task.query \
+            .filter(Task.task_id == self.parent_id) \
+            .one_or_none()
+
+    def to_json_dict(self) -> Dict:
         response_dict = {
             'task_id': self.task_id,
             'desc': self.desc,
@@ -41,32 +46,6 @@ class Task(db.Model):
                 response_dict[field] = getattr(self, field)
 
         return response_dict
-
-    def to_json(self, recurse: bool = False) -> Dict:
-        response_dict = self._to_json()
-
-        if recurse:
-            child_json = []
-            child_tasks = Task.query \
-                .filter(Task.parent_id == self.task_id) \
-                .all()
-            for c in child_tasks:
-                child_json.append(c.to_json(recurse))
-
-            if child_json:
-                response_dict['child_tasks'] = child_json
-
-        return response_dict
-
-    def short_time(self) -> str:
-        if self.time_estimate and self.time_actual:
-            return f"`{self.time_estimate}h => {self.time_actual}h`"
-        elif self.time_estimate:
-            return f"`{self.time_estimate}h`"
-        elif self.time_actual:
-            return f"`=> {self.time_actual}`"
-        else:
-            return ""
 
 
 class TaskTimeScope(db.Model):

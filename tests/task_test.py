@@ -49,7 +49,9 @@ def test_json_export():
     TEST_CATEGORY = "test cat g'l.',.p"
     TEST_SCOPE = "2011-ww38.3"
 
-    json_dict = Task(desc=TEST_DESC, category=TEST_CATEGORY, first_scope=TEST_SCOPE).to_json()
+    json_dict = Task(desc=TEST_DESC,
+                     category=TEST_CATEGORY,
+                     first_scope=TEST_SCOPE).to_json_dict()
 
     assert json_dict['desc'] == TEST_DESC
     assert json_dict['category'] == TEST_CATEGORY

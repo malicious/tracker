@@ -10,51 +10,108 @@ from tasks.models import Task, TaskTimeScope
 from tasks.time_scope import TimeScope, TimeScopeUtils
 
 
-def list_scopes(task_id) -> Iterator:
+def _matching_scopes(task_id) -> Iterator:
     task_time_scopes = TaskTimeScope.query \
         .filter(TaskTimeScope.task_id == task_id) \
         .all()
     return [tts.time_scope_id for tts in task_time_scopes]
 
 
-def task_and_scopes_to_json(task_id) -> Dict:
+def _to_json(task: Task,
+             include_scopes: bool,
+             include_children: bool) -> Dict:
+    response_dict = task.to_json_dict()
+
+    if include_children:
+        child_json = [
+            _to_json(child, include_scopes, include_children)
+            for child in task.get_children()
+        ]
+        if child_json:
+            response_dict['children'] = child_json
+
+    if include_scopes:
+        scopes = _matching_scopes(task.task_id)
+        if scopes:
+            response_dict['time_scopes'] = scopes
+
+    return response_dict
+
+
+def to_json(task: Task,
+            include_scopes: bool = True,
+            include_parents: bool = True,
+            include_children: bool = False):
     def get_parentiest_task(task: Task) -> Dict:
-        # Look for the highest-level parent
+        "Look for the highest-level parent"
         while task.parent_id:
-            task = Task.query \
-                .filter(Task.task_id == task.parent_id) \
-                .one()
+            task = task.get_parent()
+        return task
 
-        return task.to_json(True)
+    if include_parents:
+        parentiest_task = get_parentiest_task(task)
 
-    task = Task.query \
-        .filter(Task.task_id == task_id) \
-        .one()
+        # Override value of include_children, because we have no way of limiting depth
+        include_children = True
 
-    return {
-        "task": get_parentiest_task(task),
-        "time_scopes": list_scopes(task_id),
-    }
+    else:
+        parentiest_task = Task.query.filter(Task.task_id == task.task_id).one()
+
+    return _to_json(parentiest_task, include_scopes, include_children)
 
 
-def _pretty_print_task(task: Task):
-    as_json = task_and_scopes_to_json(task.task_id)
-    # make linked TimeScopes clickable
-    clickable_scopes = []
-    for s in as_json['time_scopes']:
-        clickable_scopes.append(f'<a href=/report-tasks/{s}>{s}</a>')
-    as_json['time_scopes'] = clickable_scopes
+def to_details_html(task: Task):
+    # keep parameters to a minimum, to avoid hitting slow DB accesses
+    as_json = to_json(task, False, False, False)
+    if 'time_scopes' in as_json:
+        # make linked TimeScopes clickable
+        clickable_scopes = []
+        for s in as_json['time_scopes']:
+            clickable_scopes.append(f'<a href=/report-tasks/{s}>{s}</a>')
+        as_json['time_scopes'] = clickable_scopes
 
     as_text = json.dumps(as_json, indent=4, ensure_ascii=False)
     # make task_ids clickable
     as_text = re.sub(r'"task_id": (\d*),',
                      r'<a href="/task/\1">"task_id": \1</a>,',
                      as_text)
-    # make first_scope_id clickable
+    # make first_scopes clickable
     as_text = re.sub(r'"first_scope": "(.*)",',
                      r'<a href="/report-tasks/\1">"first_scope": "\1"</a>,',
                      as_text)
     return as_text
+
+
+def _to_time_html(t: Task) -> str:
+    if t.time_estimate and t.time_actual:
+        return f"`{t.time_estimate}h => {t.time_actual}h`"
+    elif t.time_estimate:
+        return f"`{t.time_estimate}h`"
+    elif t.time_actual:
+        return f"`=> {t.time_actual}`"
+    else:
+        return ""
+
+
+def to_summary_html(t: Task) -> str:
+    def _link_replacer(mdown: str):
+        return re.sub(r'\[(.+?)\]\((.+?)\)',
+                      r"""[\1](<a href="\2">\2</a>)""",
+                      mdown)
+
+    response_html = f'<span class="desc">{_link_replacer(t.desc)}</span>'
+    if t.time_estimate or t.time_actual:
+        response_html += f'\n<span class="task-time">{_to_time_html(t)}</span>'
+
+    return response_html
+
+
+def report_one_task(s):
+    t = Task.query \
+        .filter(Task.task_id == s) \
+        .one_or_none()
+
+    return to_json(t)
 
 
 def report_open_tasks():
@@ -62,19 +119,14 @@ def report_open_tasks():
         .filter(Task.resolution == None) \
         .order_by(Task.category, Task.created_at)
 
-    def link_replacer(mdown: str):
-        return re.sub(r'\[(.+?)\]\((.+?)\)',
-                      r"""[\1](<a href="\2">\2</a>)""",
-                      mdown)
-
     time_scope_shortener = lambda task, ref: TimeScope(task.first_scope).shorten(ref)
 
     ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
     return render_template('task.html',
                            tasks_by_scope={ref_scope: query.all()},
-                           link_replacer=link_replacer,
-                           pretty_print_task=_pretty_print_task,
-                           time_scope_shortener=time_scope_shortener)
+                           time_scope_shortener=time_scope_shortener,
+                           to_details_html=to_details_html,
+                           to_summary_html=to_summary_html)
 
 
 def report_tasks(scope):
@@ -117,5 +169,6 @@ def report_tasks(scope):
                            next_scope=next_scope_html,
                            tasks_by_scope=tasks_by_scope,
                            link_replacer=mdown_desc_cleaner,
-                           pretty_print_task=_pretty_print_task,
-                           time_scope_shortener=time_scope_shortener)
+                           time_scope_shortener=time_scope_shortener,
+                           to_details_html=to_details_html,
+                           to_summary_html=to_summary_html)

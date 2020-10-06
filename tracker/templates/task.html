@@ -83,11 +83,7 @@
                 <span class="time-scope">{{ time_scope_shortener(task, scope) }}</span>
                 {% endif %}
 
-                <span class="desc">{{ link_replacer(task['desc'])|safe }}</span>
-
-                {% if task.short_time() %}
-                <span class="task-time">{{ task.short_time() }}</span>
-                {% endif %}
+                {{ to_summary_html(task)|safe }}
             </summary>
             {% else %}
             <summary class="task">
@@ -95,11 +91,7 @@
                 <span class="time-scope">{{ time_scope_shortener(task, scope) }}</span>
                 {% endif %}
 
-                <span class="desc">{{ link_replacer(task['desc'])|safe }}</span>
-
-                {% if task.short_time() %}
-                <span class="task-time">{{ task.short_time() }}</span>
-                {% endif %}
+                {{ to_summary_html(task)|safe }}
             </summary>
             {% endif %}
 
@@ -112,13 +104,9 @@
 
                     * {{ task.first_scope }}:
                 </a>
-                <span class="desc">{{ link_replacer(task['desc'])|safe }}</span>
-
-                {% if task.short_time() %}
-                <span class="task-time">{{ task.short_time() }}</span>
-                {% endif %}
+                {{ to_summary_html(task)|safe }}
                 <hr />
-                <pre>{{ pretty_print_task(task)|safe }}</pre>
+                <pre>{{ to_details_html(task)|safe }}</pre>
             </div>
         </details>
 
