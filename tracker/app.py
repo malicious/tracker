@@ -13,7 +13,7 @@ from tasks.content import task_and_scopes_to_json
 from tasks.models import Task
 from tasks.time_scope import TimeScope
 from . import cli
-from .content import content_db
+from .db import content_db
 
 
 def create_app(app_config_dict: Dict = None):

@@ -2,7 +2,7 @@ from typing import Dict
 
 from dateutil import parser
 
-from tracker.content import content_db as db
+from tracker.db import content_db as db
 
 
 class Task(db.Model):

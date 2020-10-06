@@ -1,7 +1,7 @@
 import pytest
 
 from tracker.app import create_app
-from tracker.content import content_db
+from tracker.db import content_db
 
 
 @pytest.fixture(scope='session')

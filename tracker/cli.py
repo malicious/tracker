@@ -3,7 +3,7 @@ from flask.cli import with_appcontext
 
 import notes
 import tasks
-from tracker.content import content_db
+from tracker.db import content_db
 
 
 @click.command('reset-db')
