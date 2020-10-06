@@ -1,7 +1,7 @@
 import json
 import re
 from datetime import datetime
-from typing import Iterator, Dict
+from typing import Iterator, Dict, Optional
 
 from flask import render_template
 from sqlalchemy.orm import Query
@@ -81,29 +81,53 @@ def to_details_html(task: Task):
                      as_text)
     return as_text
 
-
-def _to_time_html(t: Task) -> str:
-    if t.time_estimate and t.time_actual:
-        return f"`{t.time_estimate}h => {t.time_actual}h`"
-    elif t.time_estimate:
-        return f"`{t.time_estimate}h`"
-    elif t.time_actual:
-        return f"`=> {t.time_actual}`"
-    else:
-        return ""
-
-
-def to_summary_html(t: Task) -> str:
+def _to_summary_html(t: Task, ref_scope: Optional[TimeScope]) -> str:
     def _link_replacer(mdown: str):
         return re.sub(r'\[(.+?)\]\((.+?)\)',
                       r"""[\1](<a href="\2">\2</a>)""",
                       mdown)
 
-    response_html = f'<span class="desc">{_link_replacer(t.desc)}</span>'
+    def _to_time_html(t: Task) -> str:
+        if t.time_estimate and t.time_actual:
+            return f"`{t.time_estimate}h => {t.time_actual}h`"
+        elif t.time_estimate:
+            return f"`{t.time_estimate}h`"
+        elif t.time_actual:
+            return f"`=> {t.time_actual}`"
+        else:
+            return ""
+
+    response_html = ""
+
+    if ref_scope:
+        short_scope = TimeScope(t.first_scope).shorten(ref_scope)
+        if short_scope:
+            response_html += f'\n<span class="time-scope">{short_scope}</span>'
+
+    response_html += f'\n<span class="desc">{_link_replacer(t.desc)}</span>'
+
     if t.time_estimate or t.time_actual:
         response_html += f'\n<span class="task-time">{_to_time_html(t)}</span>'
 
     return response_html
+
+
+def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
+    if t.resolution == "info":
+        return '<summary class="task-resolved">\n' + \
+               _to_summary_html(t, ref_scope) + \
+               '</summary>'
+
+    elif t.resolution:
+        return '<summary class="task-resolved">\n' + \
+               f'<span class="resolution">({t.resolution}) </span>' + \
+               _to_summary_html(t, ref_scope) + \
+               '</summary>'
+
+    else:
+        return '<summary class="task">\n' + \
+               _to_summary_html(t, ref_scope) + \
+               '</summary>'
 
 
 def report_one_task(s):

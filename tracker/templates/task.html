@@ -71,41 +71,9 @@
         {% endif %}
 
         <details>
-            {% if task.resolution == "info" %}
-            <summary class="task-resolved">
-                <span class="desc">{{ link_replacer(task['desc'])|safe }}</span>
-            </summary>
-            {% elif task.resolution %}
-            <summary class="task-resolved">
-                <span class="resolution">({{ task.resolution }}) </span>
-
-                {% if time_scope_shortener(task, scope) %}
-                <span class="time-scope">{{ time_scope_shortener(task, scope) }}</span>
-                {% endif %}
-
-                {{ to_summary_html(task)|safe }}
-            </summary>
-            {% else %}
-            <summary class="task">
-                {% if time_scope_shortener(task, scope) %}
-                <span class="time-scope">{{ time_scope_shortener(task, scope) }}</span>
-                {% endif %}
-
-                {{ to_summary_html(task)|safe }}
-            </summary>
-            {% endif %}
+            {{ to_summary_html(task)|safe }}
 
             <div class="task-details">
-                <a href="/task/{{ task.task_id }}">
-                    {% if task.created_at %}
-                    <span class="created_at">&lt;!-- {{ task.created_at }} --&gt;</span>
-                    <br />
-                    {% endif %}
-
-                    * {{ task.first_scope }}:
-                </a>
-                {{ to_summary_html(task)|safe }}
-                <hr />
                 <pre>{{ to_details_html(task)|safe }}</pre>
             </div>
         </details>
