@@ -6,6 +6,7 @@ from typing import Dict, Iterator
 
 from flask import render_template
 from sqlalchemy.exc import StatementError
+from sqlalchemy.orm import Query
 
 from tasks.models import Task, TaskTimeScope
 from tasks.time_scope import TimeScope, TimeScopeUtils
@@ -199,6 +200,25 @@ def update_from_cli(session, task_id):
     session.commit()
     print(f"Updated task {t.task_id}")
     print(json.dumps(t.to_json(), indent=4))
+
+
+def report_open_tasks():
+    query: Query = Task.query \
+        .filter(Task.resolution == None) \
+        .order_by(Task.category, Task.created_at)
+
+    def link_replacer(mdown: str):
+        return re.sub(r'\[(.+?)\]\((.+?)\)',
+                      r"""[\1](<a href="\2">\2</a>)""",
+                      mdown)
+
+    time_scope_shortener = lambda task, ref: TimeScope(task.first_scope).shorten(ref)
+
+    ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
+    return render_template('task.html',
+                           tasks_by_scope={ref_scope: query.all()},
+                           link_replacer=link_replacer,
+                           time_scope_shortener=time_scope_shortener)
 
 
 def report_tasks(scope):

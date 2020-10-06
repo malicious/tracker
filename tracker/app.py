@@ -1,15 +1,11 @@
-import re
-from datetime import datetime
 from typing import Dict
 
-from flask import Flask, render_template
+from flask import Flask
 from markupsafe import escape
-from sqlalchemy.orm import Query
 
 import tasks
 from notes.content import note_to_json, report_notes_by_domain
 from tasks.content import task_and_scopes_to_json
-from tasks.models import Task
 from tasks.time_scope import TimeScope
 from . import cli, db
 
@@ -27,34 +23,9 @@ def create_app(settings_overrides: Dict = {}):
     def get_task(task_id):
         return task_and_scopes_to_json(escape(task_id))
 
-    @app.route("/open-tasks/<scope_str>")
-    def get_open_tasks(scope_str: str):
-        end_time = TimeScope(escape(scope_str)).end
-        query: Query = Task.query \
-            .filter(Task.resolution == None) \
-            .filter(Task.created_at <= end_time) \
-            .order_by(Task.category, Task.created_at)
-
-        return {"tasks": [task.to_json() for task in query.all()]}
-
     @app.route("/report-open-tasks")
     def report_open_tasks():
-        query: Query = Task.query \
-            .filter(Task.resolution == None) \
-            .order_by(Task.category, Task.created_at)
-
-        def link_replacer(mdown: str):
-            return re.sub(r'\[(.+?)\]\((.+?)\)',
-                          r"""[\1](<a href="\2">\2</a>)""",
-                          mdown)
-
-        time_scope_shortener = lambda task, ref: TimeScope(task.first_scope).shorten(ref)
-
-        ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
-        return render_template('task.html',
-                               tasks_by_scope={ref_scope: query.all()},
-                               link_replacer=link_replacer,
-                               time_scope_shortener=time_scope_shortener)
+        return tasks.content.report_open_tasks()
 
     @app.route("/report-tasks/<scope_str>")
     def report_tasks(scope_str):
