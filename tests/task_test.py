@@ -3,6 +3,7 @@ import io
 import tasks
 from tasks.add import import_from_csv
 from tasks.models import Task
+from tasks.report import matching_scopes, latest_scope
 from tasks.time_scope import TimeScope
 
 
@@ -122,3 +123,16 @@ def test_update_task(session):
     query = Task.query.all()
     assert len(query) == 1
     assert query[0].resolution == "done"
+
+
+def test_latest_scope(session):
+    csv_test_file = """desc,scopes
+task 1,2020-ww39.1 2020-ww39.2 2020-ww39.3
+"""
+
+    import_from_csv(io.StringIO(csv_test_file), session)
+    t: Task = Task.query.all()[0]
+
+    assert len(list(matching_scopes(t.task_id))) == 3
+    assert latest_scope(t.task_id, TimeScope("2020-ww39.1")) == "2020-ww39.3"
+    assert not latest_scope(t.task_id, TimeScope("2020-ww39.3"))

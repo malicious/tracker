@@ -13,8 +13,19 @@ from tasks.time_scope import TimeScope, TimeScopeUtils
 def matching_scopes(task_id) -> Iterator:
     task_time_scopes = TaskTimeScope.query \
         .filter(TaskTimeScope.task_id == task_id) \
+        .order_by(TaskTimeScope.time_scope_id) \
         .all()
     return [tts.time_scope_id for tts in task_time_scopes]
+
+
+def latest_scope(task_id, current_scope: TimeScope) -> Optional[TimeScope]:
+    scopes = list(matching_scopes(task_id))
+    if not current_scope in scopes:
+        return None
+    if scopes.index(current_scope) >= len(scopes) - 1:
+        return None
+
+    return scopes[-1]
 
 
 def _to_json(task: Task,
@@ -125,6 +136,15 @@ def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
                '</summary>'
 
     else:
+        # Check if there's a "(roll => ww43.2)"-type message to print
+        if ref_scope:
+            roll_scope = latest_scope(t.task_id, ref_scope)
+            if roll_scope:
+                return '<summary class="task-resolved">\n' + \
+                       f'<span class="resolution">(roll => {roll_scope}) </span>' + \
+                       _to_summary_html(t, ref_scope) + \
+                       '</summary>'
+
         return '<summary class="task">\n' + \
                _to_summary_html(t, ref_scope) + \
                '</summary>'

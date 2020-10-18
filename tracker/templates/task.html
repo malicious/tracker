@@ -71,7 +71,7 @@
         {% endif %}
 
         <details>
-            {{ to_summary_html(task)|safe }}
+            {{ to_summary_html(task, scope)|safe }}
 
             <div class="task-details">
                 <pre>{{ to_details_html(task)|safe }}</pre>
