@@ -38,11 +38,9 @@ def import_from_csv(csv_file, session):
         # If there's a parent_id, run it through the remapper first
         if 'parent_id' in csv_entry and csv_entry['parent_id']:
             csv_entry['parent_id'] = id_remapper[csv_entry['parent_id']]
-            print(f"DEBUG: Checking for parent_id: {csv_entry['parent_id']}")
 
             # Next, confirm that our parent depth isn't greater than 5
             def will_hit_max_depth(task_id, depth):
-                print(f"DEBUG: will_hit_max_depth({task_id}, {depth})")
                 if depth <= 0:
                     return True
 
