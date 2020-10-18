@@ -2,7 +2,7 @@ import csv
 import json
 from datetime import datetime
 
-from dateutil.parser import parser
+from dateutil import parser
 from sqlalchemy.exc import StatementError
 
 import tasks
