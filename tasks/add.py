@@ -104,6 +104,10 @@ class Color:
 
 
 def add_from_cli(session):
+    # Read description for the task
+    desc = input(f"Enter description: {Color.RED}")
+    print(Color.END, end='', flush=True)
+
     # Read relevant scopes
     today_scope = TimeScope(datetime.now().strftime("%G-ww%V.%u"))
     requested_scopes = input(f"Enter input scopes [{today_scope}]: {Color.RED}")
@@ -122,10 +126,7 @@ def add_from_cli(session):
     else:
         requested_scopes = [today_scope]
 
-    # Read description for the task
-    desc = input(f"Enter description: {Color.RED}")
-    print(Color.END, end='', flush=True)
-
+    # Try creating the Task
     t = Task(desc=desc,
              first_scope=requested_scopes[0],
              created_at=datetime.now())
@@ -139,7 +140,7 @@ def add_from_cli(session):
         session.rollback()
         return
 
-    # Add scopes etc
+    # Try creating the TaskTimeScopes
     for scope in requested_scopes:
         tts = TaskTimeScope(task_id=t.task_id, time_scope_id=scope)
         session.add(tts)
