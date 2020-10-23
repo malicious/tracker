@@ -3,7 +3,7 @@ import json
 from datetime import datetime
 
 from dateutil import parser
-from sqlalchemy.exc import StatementError
+from sqlalchemy.exc import OperationalError, StatementError
 
 import tasks
 from tasks.models import Task, TaskTimeScope
@@ -186,7 +186,13 @@ def update_from_cli(session, task_id):
     if TimeScope(requested_scope) not in matching_scopes:
         session.add(TaskTimeScope(task_id=t.task_id, time_scope_id=requested_scope))
 
-    session.commit()
-    print()
-    print(f"Updated task {t.task_id}")
-    print(json.dumps(t.to_json_dict(), indent=4))
+    try:
+        session.commit()
+        print()
+        print(f"Updated task {t.task_id}")
+        print(json.dumps(t.to_json_dict(), indent=4))
+    except OperationalError as e:
+        print()
+        print(e)
+        return
+
