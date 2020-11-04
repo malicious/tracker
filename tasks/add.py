@@ -1,5 +1,6 @@
 import csv
 import json
+import re
 from datetime import datetime
 
 from dateutil import parser
@@ -124,15 +125,28 @@ def add_from_cli(session):
     else:
         requested_scopes = [today_scope]
 
-    # Try creating the Task
+    # Create a Task, now that we have all required fields
     t = Task(desc=desc,
              first_scope=requested_scopes[0],
              created_at=datetime.now())
+
+    # And a time_estimate
+    time_estimate = input(f"Enter time_estimate: {Color.RED}")
+    if time_estimate:
+        if not re.fullmatch(r"\d+\.\d", time_estimate):
+            print(Color.END, end='')
+            print("time_estimate must be in format like `12.0` (\"\d+\.\d\"), exiting")
+            print()
+            return
+        t.time_estimate = time_estimate
+    print(Color.END, end='', flush=True)
+
+    # Try committing the Task
     try:
         session.add(t)
         session.commit()
     except StatementError as e:
-        print("")
+        print()
         print("Hit exception when parsing:")
         print(json.dumps(t.to_json_dict(), indent=4))
         session.rollback()
