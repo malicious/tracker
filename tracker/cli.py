@@ -16,7 +16,13 @@ def tasks_from_csv(csv_file):
 @click.command('add-task')
 @with_appcontext
 def add_task():
-    tasks.add.add_from_cli(content_db.session)
+    try:
+        while True:
+            tasks.add.add_from_cli(content_db.session)
+            print()
+            print("=== starting next task ===")
+    except KeyboardInterrupt:
+        pass
 
 
 @click.command('update-task')
