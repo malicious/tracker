@@ -92,6 +92,7 @@ def to_details_html(task: Task):
                      as_text)
     return as_text
 
+
 def _to_summary_html(t: Task, ref_scope: Optional[TimeScope]) -> str:
     def _link_replacer(mdown: str):
         return re.sub(r'\[(.+?)\]\((.+?)\)',
@@ -124,27 +125,25 @@ def _to_summary_html(t: Task, ref_scope: Optional[TimeScope]) -> str:
 
 
 def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
+    resolution = t.resolution
+    # Check if there's a "(roll => ww43.2)"-type message to print
+    if ref_scope:
+        roll_scope = latest_scope(t.task_id, ref_scope)
+        if roll_scope:
+            resolution = f"roll => {roll_scope}"
+
     if t.resolution == "info":
         return '<summary class="task-resolved">\n' + \
                _to_summary_html(t, ref_scope) + \
                '</summary>'
 
-    elif t.resolution:
+    elif resolution:
         return '<summary class="task-resolved">\n' + \
-               f'<span class="resolution">({t.resolution}) </span>' + \
+               f'<span class="resolution">({resolution}) </span>' + \
                _to_summary_html(t, ref_scope) + \
                '</summary>'
 
     else:
-        # Check if there's a "(roll => ww43.2)"-type message to print
-        if ref_scope:
-            roll_scope = latest_scope(t.task_id, ref_scope)
-            if roll_scope:
-                return '<summary class="task-resolved">\n' + \
-                       f'<span class="resolution">(roll => {roll_scope}) </span>' + \
-                       _to_summary_html(t, ref_scope) + \
-                       '</summary>'
-
         return '<summary class="task">\n' + \
                _to_summary_html(t, ref_scope) + \
                '</summary>'
