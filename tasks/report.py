@@ -100,14 +100,14 @@ def _to_summary_html(t: Task, ref_scope: Optional[TimeScope]) -> str:
                       mdown)
 
     def _to_time_html(t: Task) -> str:
-        if t.time_estimate and t.time_actual:
+        if t.time_estimate is not None and t.time_actual is not None:
             return f"`{t.time_estimate}h => {t.time_actual}h`"
-        elif t.time_estimate:
+        elif t.time_estimate is not None:
             return f"`{t.time_estimate}h`"
-        elif t.time_actual:
+        elif t.time_actual is not None:
             return f"`=> {t.time_actual}`"
         else:
-            return ""
+            return f"{t.time_estimate} => {t.time_actual}"
 
     response_html = ""
 
@@ -118,7 +118,7 @@ def _to_summary_html(t: Task, ref_scope: Optional[TimeScope]) -> str:
 
     response_html += f'\n<span class="desc">{_link_replacer(t.desc)}</span>'
 
-    if t.time_estimate or t.time_actual:
+    if t.time_estimate is not None or t.time_actual is not None:
         response_html += f'\n<span class="task-time">{_to_time_html(t)}</span>'
 
     return response_html

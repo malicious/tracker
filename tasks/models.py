@@ -42,7 +42,7 @@ class Task(db.Model):
             response_dict['created_at'] = str(self.created_at)
 
         for field in ["category", "resolution", "parent_id", "time_estimate", "time_actual"]:
-            if getattr(self, field):
+            if getattr(self, field) is not None:
                 response_dict[field] = getattr(self, field)
 
         return response_dict
