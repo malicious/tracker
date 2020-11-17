@@ -2,6 +2,7 @@ import csv
 import json
 import re
 from datetime import datetime
+from typing import List
 
 from dateutil import parser
 from sqlalchemy.exc import OperationalError, StatementError
@@ -102,28 +103,45 @@ class Color:
     END = '\033[1;37;0m'
 
 
-def add_from_cli(session):
-    # Read description for the task
-    desc = input(f"Enter description: {Color.RED}")
+def _read_validated_scopes() -> List[str]:
+    """
+    Prompts the user to enter a list of space-separated TimeScopes
+
+    - if nothing is entered, fall back to the "current" scope
+    - if whitespace is entered, return an empty list
+    - TimeScopes are checked for validity
+    """
+    today_scope = TimeScope(datetime.now().strftime("%G-ww%V.%u"))
+    entered_scopes = input(f"Enter scopes to add [{today_scope}]: {Color.RED}")
     print(Color.END, end='', flush=True)
 
-    # Read relevant scopes
-    today_scope = TimeScope(datetime.now().strftime("%G-ww%V.%u"))
-    requested_scopes = input(f"Enter input scopes [{today_scope}]: {Color.RED}")
-    print(Color.END, end='', flush=True)
-    if requested_scopes:
-        requested_scopes = sorted([TimeScope(s) for s in requested_scopes.split()])
+    if not entered_scopes:
+        requested_scopes = [today_scope]
+    elif not entered_scopes.strip():
+        requested_scopes = []
+    else:
+        requested_scopes = [TimeScope(s) for s in entered_scopes.split()]
         try:
             [s.get_type() for s in requested_scopes]
         except ValueError as e:
             print(e)
             return
 
-        if len(requested_scopes) > 1:
-            print(f"    => parsed as {requested_scopes}")
+    return requested_scopes
 
-    else:
-        requested_scopes = [today_scope]
+
+def add_from_cli(session):
+    # Read description for the task
+    desc = input(f"Enter description: {Color.RED}")
+    print(Color.END, end='', flush=True)
+
+    # Read relevant scopes
+    requested_scopes = sorted(_read_validated_scopes())
+    if not len(requested_scopes):
+        requested_scopes = [TimeScope(datetime.now().strftime("%G-ww%V.%u"))]
+        print(f"   => defaulting to {requested_scopes}")
+    if len(requested_scopes) > 1:
+        print(f"   => parsed as {requested_scopes}")
 
     # Create a Task, now that we have all required fields
     t = Task(desc=desc,
@@ -153,9 +171,8 @@ def add_from_cli(session):
         return
 
     # Try creating the TaskTimeScopes
-    for scope in requested_scopes:
-        tts = TaskTimeScope(task_id=t.task_id, time_scope_id=scope)
-        session.add(tts)
+    for requested_scope in requested_scopes:
+        session.add(TaskTimeScope(task_id=t.task_id, time_scope_id=requested_scope))
     session.commit()
 
     print()
@@ -170,18 +187,8 @@ def update_from_cli(session, task_id):
     matching_scopes = tasks.report.matching_scopes(task_id)
     print(f"Existing scopes => {', '.join(matching_scopes)}")
 
-    # Decide what we're adding
-    today_scope = TimeScope(datetime.now().strftime("%G-ww%V.%u"))
-    requested_scope = input(f"Enter scope to add [{today_scope}]: {Color.RED}")
-    print(Color.END, end='', flush=True)
-    if requested_scope:
-        try:
-            TimeScope(requested_scope).get_type()
-        except ValueError as e:
-            print(e)
-            return
-    else:
-        requested_scope = today_scope
+    # Read relevant scopes
+    requested_scopes = _read_validated_scopes()
 
     # Decide whether we're resolving it
     if t.resolution:
@@ -197,8 +204,9 @@ def update_from_cli(session, task_id):
         session.add(t)
 
     # And update the scopes, maybe
-    if TimeScope(requested_scope) not in matching_scopes:
-        session.add(TaskTimeScope(task_id=t.task_id, time_scope_id=requested_scope))
+    for requested_scope in requested_scopes:
+        if TimeScope(requested_scope) not in matching_scopes:
+            session.add(TaskTimeScope(task_id=t.task_id, time_scope_id=requested_scope))
 
     try:
         session.commit()
