@@ -119,8 +119,8 @@ def add_from_cli(session):
             print(e)
             return
 
-        print(f"- parsed as {requested_scopes}")
-        print("")
+        if len(requested_scopes) > 1:
+            print(f"    => parsed as {requested_scopes}")
 
     else:
         requested_scopes = [today_scope]
