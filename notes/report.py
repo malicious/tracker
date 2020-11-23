@@ -201,8 +201,11 @@ def _format_as_html(scope, domain, response_by_quarter):
         domains = [domain_to_html(d) for d in domains]
         return ", ".join(domains)
 
-    def time_scope_lengthener(note) -> str:
-        return TimeScope(note.time_scope_id).lengthen()
+    def week_lengthener(scope) -> str:
+        if scope.type == TimeScope.Type.week:
+            return scope.lengthen()
+        else:
+            return scope
 
     def time_scope_shortener(note, ref):
         return TimeScope(note.time_scope_id).shorten(ref)
@@ -253,5 +256,5 @@ def _format_as_html(scope, domain, response_by_quarter):
                            response_by_quarter=response_by_quarter,
                            safen=safen,
                            shorten_sort_time=shorten_sort_time,
-                           time_scope_lengthener=time_scope_lengthener,
-                           time_scope_shortener=time_scope_shortener)
+                           time_scope_shortener=time_scope_shortener,
+                           week_lengthener=week_lengthener)

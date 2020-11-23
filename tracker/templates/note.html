@@ -22,6 +22,7 @@
             top: 0px;
             height: 1.6em;
             background-color: #eee;
+            z-index: 2000;
         }
         body > .scope > .scope-id::before {
             content: "# ";
@@ -31,8 +32,9 @@
         body > .scope > .scope > .scope-id {
             font-size: 150%;
             position: sticky;
-            top: 2.5em;
+            top: 2.2em;
             background-color: #eee;
+            z-index: 1900;
         }
         body > .scope > .scope > .scope-id::before {
             content: "## ";
@@ -40,11 +42,19 @@
 
         /* day scope */
         body > .scope > .scope > .scope {
+            /* draw a nice box around the entire thing */
             padding-top: 0.5em;
             padding-left: 0.8em;
             border: 1px solid #ddd;
             margin-bottom: 0em;
             padding-bottom: 0.5em;
+        }
+        body > .scope > .scope > .scope > .scope-id {
+            /* keep this sticky */
+            position: sticky;
+            top: 5.5em;
+            background-color: #eee;
+            z-index: 1800;
         }
         body > .scope > .scope > .scope > .scope-id::before {
             content: "### ";
@@ -82,7 +92,7 @@
 
 {% macro scope(scope_id, dict) -%}
 <div class="scope">
-    <div class="scope-id">{{ scope_id }}</div>
+    <div class="scope-id">{{ week_lengthener(scope_id) }}</div>
 
     {# print notes #}
     {% if dict['notes'] %}
