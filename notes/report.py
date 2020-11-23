@@ -40,9 +40,11 @@ class NotesFormatter:
 
     {
         "2020—Q3": {
+            "summaries": List[Note],
             "notes": List[Note],
             "child_scopes": {
                 "2020-ww33": {
+                    "summaries": List[Note],
                     "child_scopes": {
                         "2020-ww33.1": {
                             "notes": List[Note],
@@ -58,15 +60,30 @@ class NotesFormatter:
     """
 
     def __init__(self):
+        self.scope_to_summaries_dict = defaultdict(list)
         self.scope_to_notes_dict = defaultdict(list)
         self.scope_to_parent_scopes_dict = {}
 
     def add_note(self, n: Note):
         # Add the note to its dict
         s = TimeScope(n.time_scope_id)
-        self.scope_to_notes_dict[s].append(n)
 
-        self.add_scope(s)
+        # Note that summaries go into their _enclosing_ scope.
+        # Except for quarters, which they don't have such a thing.
+        if n.type == "summary" and s.type == TimeScope.Type.quarter:
+            self.scope_to_summaries_dict[s].append(n)
+            self.add_scope(s)
+        elif n.type == "summary" and s.type == TimeScope.Type.week:
+            enclosing_scope = TimeScopeUtils.enclosing_scope(s, TimeScope.Type.quarter)[0]
+            self.scope_to_summaries_dict[enclosing_scope].append(n)
+            self.add_scope(enclosing_scope)
+        elif n.type == "summary" and s.type == TimeScope.Type.day:
+            enclosing_scope = TimeScopeUtils.enclosing_scope(s, TimeScope.Type.week)[0]
+            self.scope_to_summaries_dict[enclosing_scope].append(n)
+            self.add_scope(enclosing_scope)
+        else:
+            self.scope_to_notes_dict[s].append(n)
+            self.add_scope(s)
 
     def add_scope(self, s: TimeScope):
         """
@@ -102,6 +119,9 @@ class NotesFormatter:
             response_by_quarter[quarter_scope] = {}
             target = response_by_quarter[quarter_scope]
 
+            if quarter_scope in self.scope_to_summaries_dict:
+                self.scope_to_summaries_dict[quarter_scope].sort(key=note_sorter)
+                target["summaries"] = self.scope_to_summaries_dict[quarter_scope]
             if quarter_scope in self.scope_to_notes_dict:
                 self.scope_to_notes_dict[quarter_scope].sort(key=note_sorter)
                 target["notes"] = self.scope_to_notes_dict[quarter_scope]
@@ -115,6 +135,9 @@ class NotesFormatter:
             response_by_quarter[quarter_scope]["child_scopes"][week_scope] = {}
             target = response_by_quarter[quarter_scope]["child_scopes"][week_scope]
 
+            if week_scope in self.scope_to_summaries_dict:
+                self.scope_to_summaries_dict[week_scope].sort(key=note_sorter)
+                target["summaries"] = self.scope_to_summaries_dict[week_scope]
             if week_scope in self.scope_to_notes_dict:
                 self.scope_to_notes_dict[week_scope].sort(key=note_sorter)
                 target["notes"] = self.scope_to_notes_dict[week_scope]
@@ -129,6 +152,9 @@ class NotesFormatter:
             response_by_quarter[quarter_scope]["child_scopes"][week_scope]["child_scopes"][day_scope] = {}
             target = response_by_quarter[quarter_scope]["child_scopes"][week_scope]["child_scopes"][day_scope]
 
+            if day_scope in self.scope_to_summaries_dict:
+                self.scope_to_summaries_dict[day_scope].sort(key=note_sorter)
+                target["summaries"] = self.scope_to_summaries_dict[day_scope]
             if day_scope in self.scope_to_notes_dict:
                 self.scope_to_notes_dict[day_scope].sort(key=note_sorter)
                 target["notes"] = self.scope_to_notes_dict[day_scope]

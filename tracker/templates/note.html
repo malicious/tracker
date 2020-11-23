@@ -79,6 +79,36 @@
             flex-direction: column-reverse;
         }
 
+        /* summary block styling */
+        .summaries {
+            display: flex;
+            flex-direction: column;
+            margin-bottom: 2.0em;
+        }
+        .summaries > .row {
+            display: flex;
+            flow-direction: row;
+        }
+        .summaries > .row > .time-scope {
+            flex: none;
+            padding-left: 0.4rem;
+            padding-right: 1.2rem;
+        }
+        .summaries > .row > .time-scope a:link {
+            color: #c0c0c0;
+        }
+        .summaries > .row > .time-scope a:hover {
+            color: blue;
+        }
+        .summaries > .row > .content-vertical {
+            flex: 4 2 auto;
+            min-width: 40%;
+        }
+        .summaries > .row > .content-vertical > .desc {
+            color: black;
+            white-space: pre-wrap;
+        }
+
         /* individual note styling */
         details > .desc {
             padding: 0.5em;
@@ -94,7 +124,33 @@
 <div class="scope">
     <div class="scope-id">{{ week_lengthener(scope_id) }}</div>
 
-    {# print notes #}
+    {# print summary notes #}
+    {% if dict['summaries'] %}
+    <div class="summaries">
+        {% for note in dict['summaries'] %}
+        <div class="row">
+            <div class="time-scope">
+                <a href="/note/{{ note.note_id }}">{{ note.time_scope_id }}</a>
+            </div>
+
+            <div class="content-vertical">
+                <div class="title-and-domain">
+                    {% if note.short_desc %}
+                    <div class="title">{{ desc_to_html(note.short_desc)|safe }}</div>
+                    {% else %}
+                    <div class="desc">{{ desc_to_html(note.desc)|safe }}</div>
+                    {% endif %}
+                    <div class="domain">
+                        <div>{{ match_domains(note)|safe }}</div>
+                    </div>
+                </div>
+            </div>{# content-vertical #}
+        </div>{# row #}
+        {% endfor %}
+    </div>{# summaries #}
+    {% endif %}
+
+    {# print normal notes #}
     {% if dict['notes'] %}
     <div class="notes">
         {% for note in dict['notes'] %}
