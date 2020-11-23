@@ -1,10 +1,11 @@
 from typing import Dict
 
-from flask import Flask
+from flask import Flask, request
 from markupsafe import escape
 
 import notes
 import tasks
+from notes.report import report_notes
 from tasks.time_scope import TimeScope
 from . import cli, db
 
@@ -34,5 +35,19 @@ def create_app(settings_overrides: Dict = {}):
     @app.route("/note/<note_id>")
     def get_note(note_id):
         return notes.report.report_one_note(escape(note_id))
+
+    @app.route("/report-notes")
+    def report_notes_all():
+        scope = None
+        try:
+            parsed_scope = TimeScope(escape(request.args.get('scope')))
+            parsed_scope.get_type()
+            scope = parsed_scope
+        except ValueError:
+            pass
+
+        domain = request.args.get('domain')
+
+        return report_notes(scope=scope, domain=domain)
 
     return app

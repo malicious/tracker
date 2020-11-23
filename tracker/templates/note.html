@@ -1,0 +1,135 @@
+{% extends "base.html" %}
+
+{% block head %}
+    {{ super() }}
+    <style type="text/css">
+        body {
+            font-size: 200%;
+            margin-left:  80pt;
+            margin-right: 80pt;
+            margin-bottom: 20em;
+        }
+        .scope {
+            margin-bottom: 3.0em;
+        }
+
+        /* quarter scope */
+        body > .scope > .scope-id {
+            font-size: 200%;
+            margin-bottom: 0.8em;
+            border-bottom: 1pt solid dimgrey;
+            position: sticky;
+            top: 0px;
+            height: 1.6em;
+            background-color: #eee;
+        }
+        body > .scope > .scope-id::before {
+            content: "# ";
+        }
+
+        /* week scope */
+        body > .scope > .scope > .scope-id {
+            font-size: 150%;
+            position: sticky;
+            top: 2.5em;
+            background-color: #eee;
+        }
+        body > .scope > .scope > .scope-id::before {
+            content: "## ";
+        }
+
+        /* day scope */
+        body > .scope > .scope > .scope {
+            padding-top: 0.5em;
+            padding-left: 0.8em;
+            border: 1px solid #ddd;
+            margin-bottom: 0em;
+            padding-bottom: 0.5em;
+        }
+        body > .scope > .scope > .scope > .scope-id::before {
+            content: "### ";
+        }
+
+        /* title and domain formatting */
+        .title-and-domain {
+            display: flex;
+            flow-direction: row;
+        }
+        .title-and-domain > .title {
+            flex: 1 4 auto;
+        }
+        .title-and-domain > .domain {
+            flex: 1 2 auto;
+            padding-left: 1.3rem;
+            font-size: 80%;
+            text-align: right;
+
+            /* next two lines position the sub-div that has actual text */
+            display: flex;
+            flex-direction: column-reverse;
+        }
+
+        /* individual note styling */
+        details > .desc {
+            padding: 0.5em;
+            background-color: rgb(246, 246, 246);
+            font-size: 70%;
+        }
+    </style>
+{% endblock %}
+
+
+
+{% macro scope(scope_id, dict) -%}
+<div class="scope">
+    <div class="scope-id">{{ scope_id }}</div>
+
+    {# print notes #}
+    {% if dict['notes'] %}
+    <div class="notes">
+        {% for note in dict['notes'] %}
+        <details id="{{ note.note_id }}" class="{{ safen(note.type) }}">
+            <summary>
+                {% if note.sort_time %}
+                <span class="time">{{ shorten_sort_time(note.sort_time) }}</span>
+                {% endif %}
+
+                {% if note.short_desc %}
+                <span class="title">{{ desc_to_html(note.short_desc)|safe }}</span>
+                {% elif note.source %}
+                <span class="title">{{ note.source }}</span>
+                {% endif %}
+                <span class="domain">{{ match_domains(note)|safe }}</span>
+            </summary>
+            <div class="desc">
+                {% if note.desc %}
+                {{ desc_to_html(note.desc)|safe }}
+                <hr />
+                {% endif %}
+                <pre>{{ pretty_print_note(note)|safe }}</pre>
+            </div>
+        </details>
+        {% endfor %}
+    </div>{# notes #}
+    {% endif %}
+
+    {# print child scopes #}
+    {% if dict['child_scopes'] %}
+    {% for child_scope, child_dict in dict['child_scopes'].items()|sort(reverse=true, attribute="0") %}
+        {{ scope(child_scope, child_dict) }}
+    {% endfor %}
+    {% endif %}
+
+</div>{# note-scope #}
+{%- endmacro %}
+
+
+
+{% block content %}
+
+{% set ns = namespace() %}
+{% for quarter, quarter_dict in response_by_quarter.items()|sort(reverse=true, attribute='0') %}
+{{ scope(quarter, quarter_dict) }}
+
+{% endfor %}
+{% endblock %}
