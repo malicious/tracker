@@ -23,6 +23,7 @@ class Note(db.Model):
     # usually machine-generated
     created_at = db.Column(db.DateTime)
     # usually machine-generated, used for sorting within a TimeScope
+    # NB this should really be within the given TimeScope
     sort_time = db.Column(db.DateTime)
 
     __table_args__ = (
