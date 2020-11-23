@@ -4,7 +4,6 @@ from flask import Flask
 from markupsafe import escape
 
 import tasks
-from notes.content import note_to_json, report_notes_by_domain
 from tasks.time_scope import TimeScope
 from . import cli, db
 from .db import content_db
@@ -31,17 +30,5 @@ def create_app(settings_overrides: Dict = {}):
     def report_tasks(scope_str):
         scope = TimeScope(escape(scope_str))
         return tasks.report.report_tasks(scope)
-
-    @app.route("/note/<note_id>")
-    def get_note(note_id):
-        return note_to_json(escape(note_id))
-
-    @app.route("/report-notes/<domain>")
-    def report_notes(domain):
-        by_domain = report_notes_by_domain(escape(domain), content_db.session)
-        if by_domain:
-            return by_domain
-
-        return {"error": f"invalid search: {repr(domain)}"}
 
     return app
