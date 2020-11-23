@@ -15,6 +15,12 @@ def tasks_from_csv(csv_file):
 @click.command('add-task')
 @with_appcontext
 def add_task():
+    tasks.add.add_from_cli(content_db.session)
+
+
+@click.command('add-tasks')
+@with_appcontext
+def add_tasks():
     try:
         while True:
             tasks.add.add_from_cli(content_db.session)
@@ -34,4 +40,5 @@ def update_task(task_id: int):
 def init_app(app):
     app.cli.add_command(tasks_from_csv)
     app.cli.add_command(add_task)
+    app.cli.add_command(add_tasks)
     app.cli.add_command(update_task)
