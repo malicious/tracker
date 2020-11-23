@@ -5,7 +5,6 @@ from markupsafe import escape
 
 import notes
 import tasks
-from notes.report import report_notes
 from tasks.time_scope import TimeScope
 from . import cli, db
 
@@ -48,6 +47,6 @@ def create_app(settings_overrides: Dict = {}):
 
         domain = request.args.get('domain')
 
-        return report_notes(scope=scope, domain=domain)
+        return notes.report.report_notes(scope=scope, domain=domain)
 
     return app
