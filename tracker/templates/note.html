@@ -154,6 +154,35 @@
     </div>{# summaries #}
     {% endif %}
 
+    {# print event notes #}
+    {% if dict['events'] %}
+    <div class="events">
+        {% for note in dict['events'] %}
+        <details id="{{ note.note_id }}" class="{{ safen(note.type) }}">
+            <summary>
+                {% if note.sort_time %}
+                <span class="time">{{ shorten_sort_time(note.sort_time) }}</span>
+                {% endif %}
+
+                {% if note.short_desc %}
+                <span class="title">{{ desc_to_html(note.short_desc)|safe }}</span>
+                {% elif note.source %}
+                <span class="title">{{ note.source }}</span>
+                {% endif %}
+                <span class="domain">{{ match_domains(note)|safe }}</span>
+            </summary>
+            <div class="desc">
+                {% if note.desc %}
+                {{ desc_to_html(note.desc)|safe }}
+                <hr />
+                {% endif %}
+                <pre>{{ pretty_print_note(note)|safe }}</pre>
+            </div>
+        </details>
+        {% endfor %}
+    </div>{# events #}
+    {% endif %}
+
     {# print normal notes #}
     {% if dict['notes'] %}
     <div class="notes">
