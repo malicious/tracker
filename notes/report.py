@@ -1,7 +1,6 @@
 import json
 import re
 from collections import defaultdict
-from datetime import datetime
 from typing import Dict, Iterator
 
 from flask import render_template
@@ -105,9 +104,9 @@ class NotesFormatter:
             return
 
     def report(self):
-        def note_sorter(n):
+        def note_sorter(n: Note):
             if not n.sort_time:
-                return datetime.min
+                return TimeScope(n.time_scope_id).start
 
             return n.sort_time
 
