@@ -142,6 +142,32 @@ class TimeScopeUtils:
         return []
 
     @staticmethod
+    def child_scopes(scope: TimeScope) -> List[TimeScope]:
+        if scope.type == TimeScope.Type.day:
+            return []
+
+        elif scope.type == TimeScope.Type.week:
+            return [TimeScope(f"{scope}.{day}") for day in range(1, 8)]
+
+        elif scope.type == TimeScope.Type.quarter:
+            result = []
+
+            child_time = scope.start
+            while True:
+                week_scope = TimeScope(child_time.strftime(f"%G-ww%V"))
+                # This includes partial weeks; use week_scope.end for the opposite
+                if week_scope.start > scope.end:
+                    break
+
+                result.append(week_scope)
+                result.extend(TimeScopeUtils.child_scopes(week_scope))
+                child_time = child_time + timedelta(days=7)
+
+            return result
+
+        raise ValueError(f"Unhandled scope type: {repr(scope.type)}")
+
+    @staticmethod
     def next_scope(scope: TimeScope) -> TimeScope:
         if scope.type == TimeScope.Type.week:
             return TimeScope(scope.end.strftime(f"%G-ww%V"))

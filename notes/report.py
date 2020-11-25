@@ -5,7 +5,6 @@ from datetime import datetime
 from typing import Dict, Iterator
 
 from flask import render_template
-from sqlalchemy import or_
 
 from notes.models import Note, NoteDomain
 from tasks.time_scope import TimeScopeUtils, TimeScope
@@ -188,18 +187,30 @@ def _report_notes_for(scope, domain):
         .join(NoteDomain, Note.note_id == NoteDomain.note_id)
 
     if scope:
-        # TODO: Is this even needed?? The TimeScopes logic is probably too freeform atm
-        enclosing_scopes = [] \
-                           + TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.quarter) \
-                           + TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.week) \
-                           + [scope]
+        if scope.type == TimeScope.Type.quarter:
+            scopes = [scope, *TimeScopeUtils.child_scopes(scope)]
+            base_query = base_query \
+                .filter(Note.time_scope_id.in_(scopes))
 
-        # TODO: This wildcard match only applies to week scopes
-        base_query = base_query \
-            .filter(
-            or_(
-                Note.time_scope_id.in_(enclosing_scopes),
-                Note.time_scope_id.like(scope + ".%")))
+        elif scope.type == TimeScope.Type.week:
+            scopes = [
+                *TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.quarter),
+                scope,
+                *TimeScopeUtils.child_scopes(scope)
+            ]
+
+            base_query = base_query \
+                .filter(Note.time_scope_id.in_(scopes))
+
+        elif scope.type == TimeScope.Type.day:
+            enclosing_scopes = [
+                *TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.quarter),
+                *TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.week),
+                scope
+            ]
+
+            base_query = base_query.filter(
+                Note.time_scope_id.in_(enclosing_scopes))
 
     if domain:
         base_query = base_query \
