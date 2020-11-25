@@ -229,11 +229,9 @@ def _format_as_html(scope, domain, response_by_quarter):
 
     def pretty_print_note(note: Note):
         as_json = report_one_note(note.note_id)
-        as_json['note']['desc'] = f'[truncated, try <a href="/note/{note.note_id}">/note/{note.note_id}</a>]'
-        # make linked Domains clickable
-        clickable_domains = []
-        for d in as_json['domains']:
-            clickable_domains.append(f'<a href=/report-notes/{d}>{d}</a>')
+        as_json['note']['desc'] = '[truncated, see note_id link for details]'
+        # tag domain strings so we can turn them into links
+        clickable_domains = [f'domain: {d}' for d in as_json['domains']]
         as_json['domains'] = clickable_domains
 
         as_text = json.dumps(as_json, indent=4, ensure_ascii=False)
@@ -241,6 +239,16 @@ def _format_as_html(scope, domain, response_by_quarter):
         as_text = re.sub(r'"note_id": (\d*),',
                          r'<a href="/note/\1">"note_id": \1</a>,',
                          as_text)
+        # make domains clickable
+        if scope:
+            as_text = re.sub(r'"domain: (.+)"',
+                             f'<a href="/report-notes?scope={scope}&domain=\\1">"\\1"</a>',
+                             as_text)
+        else:
+            as_text = re.sub(r'"domain: (.+)"',
+                             r'<a href="/report-notes?domain=\1">"\1"</a>',
+                             as_text)
+
         return as_text
 
     def shorten_sort_time(dt) -> str:
