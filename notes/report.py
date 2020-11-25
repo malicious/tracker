@@ -192,6 +192,8 @@ def _report_notes_for(scope, domain):
 
 
 def _format_as_html(scope, domain, response_by_quarter):
+    kwargs = {}
+
     def match_domains(n: Note) -> str:
         domains = filter(lambda x: x != domain, _list_domains(n.note_id))
         if not domains:
@@ -206,14 +208,20 @@ def _format_as_html(scope, domain, response_by_quarter):
         domains = [domain_to_html(d) for d in domains]
         return ", ".join(domains)
 
+    kwargs["match_domains"] = match_domains
+
     def week_lengthener(scope) -> str:
         if scope.type == TimeScope.Type.week:
             return scope.lengthen()
         else:
             return scope
 
+    kwargs["week_lengthener"] = week_lengthener
+
     def time_scope_shortener(note, ref):
         return TimeScope(note.time_scope_id).shorten(ref)
+
+    kwargs["time_scope_shortener"] = time_scope_shortener
 
     def desc_to_html(desc: str):
         # make HTML comments visible
@@ -226,6 +234,8 @@ def _format_as_html(scope, domain, response_by_quarter):
                       r"""[\1](<a href="\2">\2</a>)""",
                       desc)
         return desc
+
+    kwargs["desc_to_html"] = desc_to_html
 
     def pretty_print_note(note: Note):
         as_json = report_one_note(note.note_id)
@@ -251,8 +261,12 @@ def _format_as_html(scope, domain, response_by_quarter):
 
         return as_text
 
+    kwargs["pretty_print_note"] = pretty_print_note
+
     def shorten_sort_time(dt) -> str:
         return str(dt)[11:16]
+
+    kwargs["shorten_sort_time"] = shorten_sort_time
 
     def safen(s: str) -> str:
         if not s:
@@ -262,12 +276,21 @@ def _format_as_html(scope, domain, response_by_quarter):
         s = s.replace(" ", "-")
         return s
 
+    kwargs["safen"] = safen
+
+    if scope:
+        prev_scope = TimeScopeUtils.prev_scope(scope)
+        if domain:
+            kwargs["prev_scope"] = f'<a href="/report-notes?scope={prev_scope}&domain={domain}">{prev_scope}</a>'
+        else:
+            kwargs["prev_scope"] = f'<a href="/report-notes?scope={prev_scope}">{prev_scope}</a>'
+
+        next_scope = TimeScopeUtils.next_scope(scope)
+        if domain:
+            kwargs["next_scope"] = f'<a href="/report-notes?scope={next_scope}&domain={domain}">{next_scope}</a>'
+        else:
+            kwargs["next_scope"] = f'<a href="/report-notes?scope={next_scope}">{next_scope}</a>'
+
     return render_template('note.html',
-                           desc_to_html=desc_to_html,
-                           match_domains=match_domains,
-                           pretty_print_note=pretty_print_note,
                            response_by_quarter=response_by_quarter,
-                           safen=safen,
-                           shorten_sort_time=shorten_sort_time,
-                           time_scope_shortener=time_scope_shortener,
-                           week_lengthener=week_lengthener)
+                           **kwargs)
