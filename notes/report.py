@@ -278,6 +278,12 @@ def _format_as_html(scope, domain, response_by_quarter):
 
     kwargs["safen"] = safen
 
+    kwargs["doc_title"] = "[report-notes]"
+    if scope:
+        kwargs["doc_title"] = kwargs["doc_title"] + f" scope={scope}"
+    if domain:
+        kwargs["doc_title"] = kwargs["doc_title"] + f" domain={domain}"
+
     if scope:
         prev_scope = TimeScopeUtils.prev_scope(scope)
         if domain:
