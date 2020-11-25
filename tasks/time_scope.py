@@ -107,14 +107,6 @@ class TimeScope(str):
 
 class TimeScopeUtils:
     @staticmethod
-    def _compute_scopes(dt: datetime) -> List[TimeScope]:
-        return [
-            TimeScope(dt.strftime("%G-ww%V.%u")),
-            TimeScope(dt.strftime("%G-ww%V")),
-            TimeScope(f"{dt.year}—Q{(dt.month - 1) // 3 + 1}"),
-        ]
-
-    @staticmethod
     def enclosing_scope(scope: TimeScope, enclosing_type: TimeScope.type) -> List[TimeScope]:
         """
         Computes the scope that contains this scope.
