@@ -180,11 +180,11 @@ def report_tasks(scope):
         .order_by(TaskTimeScope.time_scope_id) \
         .all()
 
-    sorted_scopes = [] \
-                    + TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.quarter) \
-                    + TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.week) \
-                    + [scope] \
-                    + [s.time_scope_id for s in subscopes]
+    sorted_scopes = [
+        *TimeScopeUtils.enclosing_scope(scope, recurse=True),
+        scope,
+        *[s.time_scope_id for s in subscopes]
+    ]
 
     for s in sorted_scopes:
         tasks = Task.query \

@@ -107,31 +107,31 @@ class TimeScope(str):
 
 class TimeScopeUtils:
     @staticmethod
-    def enclosing_scope(scope: TimeScope, enclosing_type: TimeScope.type) -> List[TimeScope]:
+    def enclosing_scope(scope: TimeScope, recurse: bool = False) -> List[TimeScope]:
         """
-        Computes the scope that contains this scope.
+        Computes the scope(s) that contains this scope.
 
         - Hard-coded to known TimeScope.Types, week/day/quarter
         - Can return multiple/redundant TimeScopes, because weeks can span quarters
         """
-        if scope.type == enclosing_type:
-            return [scope]
-
         if scope.type == TimeScope.Type.day:
-            if enclosing_type == TimeScope.Type.week:
-                return [TimeScope(scope[0:9])]
-            elif enclosing_type == TimeScope.Type.quarter:
-                quarter = (scope.start.month - 1) // 3 + 1
-                return [TimeScope(f"{scope.start.year}—Q{quarter}")]
+            week_scope = TimeScope(scope[0:9])
+            if recurse:
+                return [week_scope, *TimeScopeUtils.enclosing_scope(week_scope)]
+            else:
+                return [week_scope]
 
         elif scope.type == TimeScope.Type.week:
-            if enclosing_type == TimeScope.Type.quarter:
-                start_quarter = (scope.start.month - 1) // 3 + 1
-                end_quarter = (scope.end.month - 1) // 3 + 1
-                return [TimeScope(f"{scope.start.year}—Q{start_quarter}"),
-                        TimeScope(f"{scope.end.year}—Q{end_quarter}")]
+            start_quarter = (scope.start.month - 1) // 3 + 1
+            end_quarter = (scope.end.month - 1) // 3 + 1
+            return [TimeScope(f"{scope.start.year}—Q{start_quarter}"),
+                    TimeScope(f"{scope.end.year}—Q{end_quarter}")]
 
-        return []
+        # Quarters return themselves because that makes client code a lot simpler
+        elif scope.type == TimeScope.Type.quarter:
+            return [scope]
+
+        raise ValueError(f"Unrecognized scope type: {repr(scope.type)}")
 
     @staticmethod
     def child_scopes(scope: TimeScope) -> List[TimeScope]:

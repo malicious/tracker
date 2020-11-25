@@ -82,20 +82,23 @@ def test_shorten_years_close():
 
 def test_enclosing_scopes():
     ref = TimeScope("2023-ww04.3")
-    assert TimeScopeUtils.enclosing_scope(ref, TimeScope.Type.quarter) == [TimeScope("2023—Q1")]
-    assert TimeScopeUtils.enclosing_scope(ref, TimeScope.Type.week) == [TimeScope("2023-ww04")]
+    assert TimeScopeUtils.enclosing_scope(ref, recurse=False) == [TimeScope("2023-ww04")]
+    assert set(TimeScopeUtils.enclosing_scope(ref, recurse=True)) \
+           == {TimeScope("2023-ww04"), TimeScope("2023—Q1")}
+
 
 def test_prev_next_day():
     dref = TimeScope("2002-ww04.4")
     assert TimeScopeUtils.next_scope(dref) == "2002-ww04.5"
+
 
 def test_prev_next_week():
     wref = TimeScope("2020-ww01")
     assert TimeScopeUtils.prev_scope(wref) == "2019-ww52"
     assert TimeScopeUtils.next_scope(wref) == "2020-ww02"
 
+
 def test_prev_next_quarter():
     ref = TimeScope("2020—Q4")
     assert TimeScopeUtils.prev_scope(ref) == "2020—Q3"
     assert TimeScopeUtils.next_scope(ref) == "2021—Q1"
-

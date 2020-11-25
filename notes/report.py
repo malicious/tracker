@@ -68,15 +68,8 @@ class NotesFormatter:
 
         # Note that summaries go into their _enclosing_ scope.
         # Except for quarters, which they don't have such a thing.
-        if n.type == "summary" and s.type == TimeScope.Type.quarter:
-            self.scope_to_summaries_dict[s].append(n)
-            self.add_scope(s)
-        elif n.type == "summary" and s.type == TimeScope.Type.week:
-            enclosing_scope = TimeScopeUtils.enclosing_scope(s, TimeScope.Type.quarter)[0]
-            self.scope_to_summaries_dict[enclosing_scope].append(n)
-            self.add_scope(enclosing_scope)
-        elif n.type == "summary" and s.type == TimeScope.Type.day:
-            enclosing_scope = TimeScopeUtils.enclosing_scope(s, TimeScope.Type.week)[0]
+        if n.type == "summary":
+            enclosing_scope = TimeScopeUtils.enclosing_scope(s)[0]
             self.scope_to_summaries_dict[enclosing_scope].append(n)
             self.add_scope(enclosing_scope)
         else:
@@ -87,21 +80,14 @@ class NotesFormatter:
         """
         Add the scope to its parents
         """
-        if s.type == TimeScope.Type.quarter:
+        enclosing_scope = TimeScopeUtils.enclosing_scope(s)[0]
+        # If our parent is the same as us, ignore and move on
+        if enclosing_scope == s:
             self.scope_to_parent_scopes_dict[s] = None
             return
 
-        if s.type == TimeScope.Type.week:
-            quarter_scope = TimeScopeUtils.enclosing_scope(s, TimeScope.Type.quarter)[0]
-            self.scope_to_parent_scopes_dict[s] = quarter_scope
-            self.add_scope(quarter_scope)
-            return
-
-        elif s.type == TimeScope.Type.day:
-            week_scope = TimeScopeUtils.enclosing_scope(s, TimeScope.Type.week)[0]
-            self.scope_to_parent_scopes_dict[s] = week_scope
-            self.add_scope(week_scope)
-            return
+        self.scope_to_parent_scopes_dict[s] = enclosing_scope
+        self.add_scope(enclosing_scope)
 
     def report(self):
         def note_sorter(n: Note):
@@ -186,30 +172,13 @@ def _report_notes_for(scope, domain):
         .join(NoteDomain, Note.note_id == NoteDomain.note_id)
 
     if scope:
-        if scope.type == TimeScope.Type.quarter:
-            scopes = [scope, *TimeScopeUtils.child_scopes(scope)]
-            base_query = base_query \
-                .filter(Note.time_scope_id.in_(scopes))
-
-        elif scope.type == TimeScope.Type.week:
-            scopes = [
-                *TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.quarter),
-                scope,
-                *TimeScopeUtils.child_scopes(scope)
-            ]
-
-            base_query = base_query \
-                .filter(Note.time_scope_id.in_(scopes))
-
-        elif scope.type == TimeScope.Type.day:
-            enclosing_scopes = [
-                *TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.quarter),
-                *TimeScopeUtils.enclosing_scope(scope, TimeScope.Type.week),
-                scope
-            ]
-
-            base_query = base_query.filter(
-                Note.time_scope_id.in_(enclosing_scopes))
+        scopes = [
+            *TimeScopeUtils.enclosing_scope(scope, recurse=True),
+            scope,
+            *TimeScopeUtils.child_scopes(scope)
+        ]
+        base_query = base_query \
+            .filter(Note.time_scope_id.in_(scopes))
 
     if domain:
         base_query = base_query \
