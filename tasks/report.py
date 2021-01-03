@@ -157,12 +157,17 @@ def report_one_task(s):
     return to_json(t)
 
 
-def report_open_tasks():
+def report_open_tasks(hide_future_tasks: bool):
     query: Query = Task.query \
         .filter(Task.resolution == None) \
         .order_by(Task.category, Task.created_at)
 
-    ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
+    future_tasks_cutoff = datetime.now()
+    ref_scope = TimeScope(future_tasks_cutoff.date().strftime("%G-ww%V.%u"))
+    if hide_future_tasks:
+        # TODO: This is a very simple filter that barely does what's requested.
+        query = query.filter(Task.first_scope < ref_scope)
+
     return render_template('task.html',
                            tasks_by_scope={ref_scope: query.all()},
                            to_details_html=to_details_html,

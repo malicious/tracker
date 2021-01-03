@@ -24,7 +24,14 @@ def create_app(settings_overrides: Dict = {}):
 
     @app.route("/report-open-tasks")
     def report_open_tasks():
-        return tasks.report.report_open_tasks()
+        hide_future_tasks = False
+
+        parsed_hide_future_tasks = escape(request.args.get('hide_future_tasks'))
+        # TODO: should use `inputs.boolean` from flask-restful
+        if parsed_hide_future_tasks == 'true':
+            hide_future_tasks = True
+
+        return tasks.report.report_open_tasks(hide_future_tasks=hide_future_tasks)
 
     @app.route("/report-tasks/<scope_str>")
     def report_tasks(scope_str):
