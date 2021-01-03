@@ -134,7 +134,7 @@ class TimeScopeUtils:
         raise ValueError(f"Unrecognized scope type: {repr(scope.type)}")
 
     @staticmethod
-    def child_scopes(scope: TimeScope) -> List[TimeScope]:
+    def child_scopes(scope: TimeScope, recurse: bool = True) -> List[TimeScope]:
         if scope.type == TimeScope.Type.day:
             return []
 
@@ -152,7 +152,8 @@ class TimeScopeUtils:
                     break
 
                 result.append(week_scope)
-                result.extend(TimeScopeUtils.child_scopes(week_scope))
+                if recurse:
+                    result.extend(TimeScopeUtils.child_scopes(week_scope))
                 child_time = child_time + timedelta(days=7)
 
             return result
