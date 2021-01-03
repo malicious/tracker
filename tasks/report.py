@@ -162,12 +162,9 @@ def report_open_tasks():
         .filter(Task.resolution == None) \
         .order_by(Task.category, Task.created_at)
 
-    time_scope_shortener = lambda task, ref: TimeScope(task.first_scope).shorten(ref)
-
     ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
     return render_template('task.html',
                            tasks_by_scope={ref_scope: query.all()},
-                           time_scope_shortener=time_scope_shortener,
                            to_details_html=to_details_html,
                            to_summary_html=to_summary_html)
 
@@ -205,13 +202,10 @@ def report_tasks(scope):
                       desc)
         return desc
 
-    time_scope_shortener = lambda task, ref: TimeScope(task.first_scope).shorten(ref)
-
     return render_template('task.html',
                            prev_scope=prev_scope_html,
                            next_scope=next_scope_html,
                            tasks_by_scope=tasks_by_scope,
                            link_replacer=mdown_desc_cleaner,
-                           time_scope_shortener=time_scope_shortener,
                            to_details_html=to_details_html,
                            to_summary_html=to_summary_html)

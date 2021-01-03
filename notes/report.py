@@ -218,11 +218,6 @@ def _format_as_html(scope, domain, response_by_quarter):
 
     kwargs["week_lengthener"] = week_lengthener
 
-    def time_scope_shortener(note, ref):
-        return TimeScope(note.time_scope_id).shorten(ref)
-
-    kwargs["time_scope_shortener"] = time_scope_shortener
-
     def desc_to_html(desc: str):
         # make HTML comments visible
         desc = re.sub(r'<!', r'&lt;!', desc)
