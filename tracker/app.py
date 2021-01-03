@@ -37,16 +37,16 @@ def create_app(settings_overrides: Dict = {}):
 
     @app.route("/report-notes")
     def report_notes_all():
-        scope = None
+        page_scope = None
         try:
             parsed_scope = TimeScope(escape(request.args.get('scope')))
             parsed_scope.get_type()
-            scope = parsed_scope
+            page_scope = parsed_scope
         except ValueError:
             pass
 
-        domain = request.args.get('domain')
+        page_domain = request.args.get('domain')
 
-        return notes.report.report_notes(scope=scope, domain=domain)
+        return notes.report.report_notes(page_scope=page_scope, page_domain=page_domain)
 
     return app

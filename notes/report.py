@@ -27,9 +27,9 @@ def report_one_note(note_id) -> Dict:
     }
 
 
-def report_notes(scope, domain):
-    response_by_quarter = _report_notes_for(scope, domain)
-    return _format_as_html(scope, domain, response_by_quarter)
+def report_notes(page_scope, page_domain):
+    response_by_quarter = _report_notes_for(page_scope, page_domain)
+    return _format_as_html(page_scope, page_domain, response_by_quarter)
 
 
 class NotesFormatter:
