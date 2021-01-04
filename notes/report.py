@@ -219,8 +219,8 @@ def _format_as_html(scope, domain, response_by_quarter):
     kwargs["week_lengthener"] = week_lengthener
 
     def desc_to_html(desc: str):
-        # make HTML comments visible
-        desc = re.sub(r'<!', r'&lt;!', desc)
+        # escape anything that makes the HTML weird
+        desc = re.sub(r'<', r'&lt;', desc)
         # make newlines have effect
         desc = re.sub('\r\n', r'<br />', desc)
         desc = re.sub('\n', r'<br />', desc)
