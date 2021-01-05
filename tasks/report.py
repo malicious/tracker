@@ -121,6 +121,8 @@ def _to_summary_html(t: Task, ref_scope: Optional[TimeScope]) -> str:
     if t.time_estimate is not None or t.time_actual is not None:
         response_html += f'\n<span class="task-time">{_to_time_html(t)}</span>'
 
+    response_html += f'\n<span class="task-id"><a href="/task/{t.task_id}">#{t.task_id}</a></span>'
+
     return response_html
 
 
