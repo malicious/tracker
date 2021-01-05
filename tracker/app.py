@@ -14,6 +14,14 @@ def create_app(settings_overrides: Dict = {}):
     db.init_app(app, settings_overrides)
     cli.init_app(app)
 
+    try:
+        from flask_debugtoolbar import DebugToolbarExtension
+
+        app.config['SECRET_KEY'] = 7
+        toolbar = DebugToolbarExtension(app)
+    except ImportError:
+        pass
+
     @app.route("/time_scope/<scope_str>")
     def get_time_scope(scope_str: str):
         return TimeScope(escape(scope_str)).to_json_dict()

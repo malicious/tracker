@@ -8,4 +8,5 @@ pytest-sugar
 pytest-cov
 pytest-responses
 pytest-icdiff
+flask-debugtoolbar
 
