@@ -13,15 +13,15 @@ def tasks_from_csv(csv_file):
     tasks.add.import_from_csv(csv_file, content_db.session)
 
 
-@click.command('add-task')
+@click.command('task-add-one')
 @with_appcontext
-def add_task():
+def task_add_one():
     tasks.add.add_from_cli(content_db.session)
 
 
-@click.command('add-tasks')
+@click.command('task-add-multiple')
 @with_appcontext
-def add_tasks():
+def task_add_multiple():
     try:
         while True:
             tasks.add.add_from_cli(content_db.session)
@@ -31,10 +31,20 @@ def add_tasks():
         pass
 
 
-@click.command('update-task')
+@click.command('task-update-batch')
+@click.option('--add-scope', 'scopes', multiple=True)
+@click.option('--category')
+@click.option('--resolution', 'resolution')
 @click.argument('task_id', type=click.INT)
 @with_appcontext
-def update_task(task_id: int):
+def task_update_batch(scopes, category, resolution, task_id: int):
+    tasks.add.update(content_db.session, scopes, category, resolution, task_id)
+
+
+@click.command('task-update-interactive')
+@click.argument('task_id', type=click.INT)
+@with_appcontext
+def task_update_interactive(task_id: int):
     tasks.add.update_from_cli(content_db.session, task_id)
 
 
@@ -47,7 +57,8 @@ def notes_from_csv(csv_file):
 
 def init_app(app):
     app.cli.add_command(tasks_from_csv)
-    app.cli.add_command(add_task)
-    app.cli.add_command(add_tasks)
-    app.cli.add_command(update_task)
+    app.cli.add_command(task_add_one)
+    app.cli.add_command(task_add_multiple)
+    app.cli.add_command(task_update_batch)
+    app.cli.add_command(task_update_interactive)
     app.cli.add_command(notes_from_csv)

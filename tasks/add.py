@@ -180,6 +180,36 @@ def add_from_cli(session):
     print(json.dumps(t.to_json_dict(), indent=4))
 
 
+def update(session, requested_scopes, category, resolution, task_id):
+    t: Task = Task.query.filter(Task.task_id == task_id).one()
+
+    if requested_scopes:
+        # TODO: This is redundant, should let sqlalchemy enforce the no-dupes
+        existing_scopes = tasks.report.matching_scopes(task_id)
+
+        for requested_scope in requested_scopes:
+            if TimeScope(requested_scope) not in existing_scopes:
+                session.add(TaskTimeScope(task_id=t.task_id, time_scope_id=requested_scope))
+
+    if category:
+        t.category = category
+        session.add(t)
+
+    if resolution:
+        t.resolution = resolution
+        session.add(t)
+
+    try:
+        session.commit()
+        print()
+        print(f"Updated task {t.task_id}")
+        print(json.dumps(t.to_json_dict(), indent=4))
+    except OperationalError as e:
+        print()
+        print(e)
+        return
+
+
 def update_from_cli(session, task_id):
     # Open relevant task
     t = Task.query.filter(Task.task_id == task_id).one()
@@ -217,4 +247,3 @@ def update_from_cli(session, task_id):
         print()
         print(e)
         return
-
