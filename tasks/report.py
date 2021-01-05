@@ -93,7 +93,7 @@ def to_details_html(task: Task):
     return as_text
 
 
-def _to_summary_html(t: Task, ref_scope: Optional[TimeScope]) -> str:
+def _to_summary_html(t: Task, ref_scope: Optional[TimeScope], print_task_id = False) -> str:
     def _link_replacer(mdown: str):
         return re.sub(r'\[(.+?)\]\((.+?)\)',
                       r"""[\1](<a href="\2">\2</a>)""",
@@ -121,7 +121,8 @@ def _to_summary_html(t: Task, ref_scope: Optional[TimeScope]) -> str:
     if t.time_estimate is not None or t.time_actual is not None:
         response_html += f'\n<span class="task-time">{_to_time_html(t)}</span>'
 
-    response_html += f'\n<span class="task-id"><a href="/task/{t.task_id}">#{t.task_id}</a></span>'
+    if print_task_id:
+        response_html += f'\n<span class="task-id"><a href="/task/{t.task_id}">#{t.task_id}</a></span>'
 
     return response_html
 
@@ -147,7 +148,7 @@ def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
 
     else:
         return '<summary class="task">\n' + \
-               _to_summary_html(t, ref_scope) + \
+               _to_summary_html(t, ref_scope, print_task_id=True) + \
                '</summary>'
 
 
