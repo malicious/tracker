@@ -35,10 +35,11 @@ def task_add_multiple():
 @click.option('--add-scope', 'scopes', multiple=True)
 @click.option('--category')
 @click.option('--resolution', 'resolution')
-@click.argument('task_id', type=click.INT)
+@click.argument('task_ids', type=click.INT, nargs=-1)
 @with_appcontext
-def task_update_batch(scopes, category, resolution, task_id: int):
-    tasks.add.update(content_db.session, scopes, category, resolution, task_id)
+def task_update_batch(scopes, category, resolution, task_ids):
+    for task_id in task_ids:
+        tasks.add.update(content_db.session, scopes, category, resolution, task_id)
 
 
 @click.command('task-update-interactive')
