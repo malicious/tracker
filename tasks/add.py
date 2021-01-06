@@ -150,10 +150,10 @@ def add_from_cli(session):
 
     # And a time_estimate
     time_estimate = input(f"Enter time_estimate: {Color.RED}")
-    if time_estimate is not None and time_estimate is not "":
+    if time_estimate is not None and time_estimate != "":
         if not re.fullmatch(r"\d+\.\d", time_estimate):
             print(Color.END, end='')
-            print("time_estimate must be in format like `12.0` (\"\d+\.\d\"), exiting")
+            print("time_estimate must be in format like `12.0` (\"\\d+\\.\\d\"), exiting")
             print()
             return
         t.time_estimate = time_estimate
