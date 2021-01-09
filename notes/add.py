@@ -31,6 +31,11 @@ def _add_domains_for(note_id, domain_str: str, session, do_commit: bool = True):
 
 
 def _add_note(session, domains: str, **kwargs) -> Optional[Note]:
+    # Skip blank rows.
+    # Happens sometimes when adding blank rows in a CSV editor
+    if len(kwargs) == 0:
+        return None
+
     unique_args = {}
     for field in ['source', 'type', 'sort_time', 'time_scope_id', 'short_desc', 'desc']:
         if field in kwargs and kwargs[field]:
