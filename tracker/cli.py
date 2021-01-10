@@ -43,10 +43,18 @@ def task_update_batch(scopes, category, resolution, task_ids):
 
 
 @click.command('task-update-interactive')
-@click.argument('task_id', type=click.INT)
+@click.argument('task_ids', type=click.INT, nargs=-1)
 @with_appcontext
-def task_update_interactive(task_id: int):
-    tasks.add.update_from_cli(content_db.session, task_id)
+def task_update_interactive(task_ids):
+    try:
+        for task_id in task_ids:
+            print(f"=== task_id: {task_id} ===")
+
+            tasks.add.update_from_cli(content_db.session, task_id)
+            print()
+
+    except KeyboardInterrupt:
+        pass
 
 
 @click.command('import-notes')
