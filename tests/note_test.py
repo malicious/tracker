@@ -1,7 +1,7 @@
 import io
 
 from notes.add import import_from_csv
-from notes.models import Note
+from notes.models import Note, NoteDomain
 from notes.report import _report_notes_for
 from tasks.time_scope import TimeScope
 
@@ -51,6 +51,30 @@ def test_report_emdash(session):
 2020-ww48.4,,day-long event,d1
 2020-ww48,,week-long,d1
 2020—Q4,,quarter-long,d1
+"""
+
+    import_from_csv(io.StringIO(csv_test_file), session)
+
+    dict = _report_notes_for(scope=TimeScope("2020—Q4"), domain=None)
+    assert dict
+    assert "2020—Q4" in dict
+    assert '2020-ww48' in dict["2020—Q4"]["child_scopes"]
+
+
+def test_blank_domains_import(session):
+    csv_test_file = """scope,desc,short_desc,domains
+2020-ww48.4,,day-long event,
+"""
+
+    import_from_csv(io.StringIO(csv_test_file), session)
+
+    nd: NoteDomain = NoteDomain.query
+    assert not nd.one_or_none()
+
+
+def test_blank_domains_reporting(session):
+    csv_test_file = """scope,desc,short_desc,domains
+2020-ww48.4,,day-long event,
 """
 
     import_from_csv(io.StringIO(csv_test_file), session)
