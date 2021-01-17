@@ -168,8 +168,7 @@ class NotesFormatter:
 
 
 def _report_notes_for(scope, domain):
-    base_query = Note.query \
-        .join(NoteDomain, Note.note_id == NoteDomain.note_id)
+    base_query = Note.query
 
     if scope:
         scopes = [
@@ -182,6 +181,7 @@ def _report_notes_for(scope, domain):
 
     if domain:
         base_query = base_query \
+            .join(NoteDomain, Note.note_id == NoteDomain.note_id) \
             .filter(NoteDomain.domain_id.like(domain + "%"))
 
     fmt = NotesFormatter()

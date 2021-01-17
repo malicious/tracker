@@ -178,7 +178,9 @@
                 {% elif note.source %}
                 <span class="title">{{ note.source }}</span>
                 {% endif %}
+                {% if match_domains(note) %}
                 <span class="domain">{{ match_domains(note)|safe }}</span>
+                {% endif %}
             </summary>
             <div class="desc">
                 {% if note.desc %}
