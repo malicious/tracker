@@ -13,11 +13,13 @@ def _add_domains_for(note_id, domain_str: str, session, do_commit: bool = True):
     """
     Pass `session` if you want this function to do the commit.
     """
-    sorted_domains = sorted([d.strip() for d in domain_str.split('&') if not None])
-    if not sorted_domains:
-        raise ValueError(f"No valid domains provided for Note")
+    split_domains = [d.strip() for d in domain_str.split('&')]
+    sorted_domains = sorted([d for d in split_domains if d is not ""])
 
     for domain_id in sorted_domains:
+        if not domain_id:
+            raise ValueError("Blank domain_id found, please check your parsing code (parsed from \"{domain_str}\")")
+
         new_link = NoteDomain(note_id=note_id, domain_id=domain_id)
         link = NoteDomain.query \
             .filter_by(note_id=note_id, domain_id=domain_id) \
@@ -67,10 +69,12 @@ def _add_note(session, domains: str, **kwargs) -> Optional[Note]:
     # Add domains, note to database
     try:
         _add_domains_for(n.note_id, domains, session)
-    except (ValueError, StatementError):
+    except (ValueError, StatementError) as e:
+        print("Hit exception when parsing domains:")
+        print(e)
         print("")
-        print("Hit exception when parsing:")
         print(json.dumps(n.to_json(), indent=4))
+        print("")
         session.rollback()
         return None
 
