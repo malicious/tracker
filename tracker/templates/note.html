@@ -84,6 +84,16 @@
             display: flex;
             flex-direction: column-reverse;
         }
+        /* generic domain styling */
+        .domain::before {
+            content: " "; /* these are nbsp's */
+        }
+        .domain, .domain a:link {
+            color: #aaa;
+        }
+        .domain a:hover {
+            color: blue;
+        }
 
         /* summary block styling */
         .summaries {
