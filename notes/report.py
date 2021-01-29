@@ -234,7 +234,12 @@ def _format_as_html(scope, domain, response_by_quarter):
 
     def pretty_print_note(note: Note):
         as_json = report_one_note(note.note_id)
-        as_json['note']['desc'] = '[truncated, see note_id link for details]'
+
+        # truncate long note descriptions
+        DESC_TRUNC_NOTICE = '[desc truncated, see note_id link for details]'
+        if 'desc' in as_json['note'] and len(as_json['note']['desc']) > len(DESC_TRUNC_NOTICE):
+            as_json['note']['desc'] = DESC_TRUNC_NOTICE
+
         # tag domain strings so we can turn them into links
         clickable_domains = [f'domain: {d}' for d in as_json['domains']]
         as_json['domains'] = clickable_domains
