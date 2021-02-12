@@ -148,6 +148,12 @@ def add_from_cli(session):
              first_scope=requested_scopes[0],
              created_at=datetime.now())
 
+    # And a category
+    category = input(f"Enter category: {Color.RED}")
+    if category is not None and category != "":
+        t.category = category
+    print(Color.END, end='', flush=True)
+
     # And a time_estimate
     time_estimate = input(f"Enter time_estimate: {Color.RED}")
     if time_estimate is not None and time_estimate != "":
