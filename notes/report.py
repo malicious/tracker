@@ -17,14 +17,20 @@ def _list_domains(note_id) -> Iterator:
 
 
 def report_one_note(note_id) -> Dict:
+    result_dict = {}
+
     note: Note = Note.query \
         .filter(Note.note_id == note_id) \
         .one()
+    result_dict["note"] = note.to_json()
 
-    return {
-        "note": note.to_json(),
-        "domains": _list_domains(note_id),
-    }
+    # Sometimes, a Note doesn't have any domains.
+    # In that case, don't print a domains entry at all.
+    domains = _list_domains(note_id)
+    if domains:
+        result_dict["domains"] = domains
+
+    return result_dict
 
 
 def report_notes(page_scope, page_domain):
@@ -241,8 +247,9 @@ def _format_as_html(scope, domain, response_by_quarter):
             as_json['note']['desc'] = DESC_TRUNC_NOTICE
 
         # tag domain strings so we can turn them into links
-        clickable_domains = [f'domain: {d}' for d in as_json['domains']]
-        as_json['domains'] = clickable_domains
+        if 'domains' in as_json:
+            clickable_domains = [f'domain: {d}' for d in as_json['domains']]
+            as_json['domains'] = clickable_domains
 
         as_text = json.dumps(as_json, indent=4, ensure_ascii=False)
         # make note_ids clickable
