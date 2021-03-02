@@ -144,16 +144,20 @@
 
 
 {% macro scope(scope_id, dict) -%}
+{% set ns = namespace() %}
 <div class="scope">
     <div class="scope-id">{{ week_lengthener(scope_id) }}</div>
 
     {# print summary notes #}
     {% if dict['summaries'] %}
     <div class="summaries">
+        {% set ns.prev_scope = None %}
         {% for note in dict['summaries'] %}
         <div class="row">
             <div class="time-scope">
+                {% if not ns.prev_scope or ns.prev_scope != note.time_scope_id %}
                 <a href="/note/{{ note.note_id }}">{{ note.time_scope_id }}</a>
+                {% endif %}
             </div>
 
             <div class="content-vertical">
@@ -169,6 +173,7 @@
                 </div>
             </div>{# content-vertical #}
         </div>{# row #}
+        {% set ns.prev_scope = note.time_scope_id %}
         {% endfor %}
     </div>{# summaries #}
     {% endif %}
