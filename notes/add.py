@@ -42,6 +42,8 @@ def _add_note(session, domains: str, **kwargs) -> Optional[Note]:
     for field in ['source', 'type', 'sort_time', 'time_scope_id', 'short_desc', 'desc']:
         if field in kwargs and kwargs[field]:
             unique_args[field] = kwargs[field]
+        else:
+            unique_args[field] = None
 
     # Check for an existing note
     try:
