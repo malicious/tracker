@@ -24,6 +24,7 @@ def init_app(app: Flask, settings_overrides: Dict):
     app.config['SQLALCHEMY_BINDS'] = {
         'notes': 'sqlite:///' + os.path.abspath(os.path.join(app.instance_path, 'notes.db')),
         'tasks': 'sqlite:///' + os.path.abspath(os.path.join(app.instance_path, 'tasks.db')),
+        'tasks_v2': 'sqlite:///' + os.path.abspath(os.path.join(app.instance_path, 'tasks_v2.db')),
     }
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 

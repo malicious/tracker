@@ -11,6 +11,7 @@ def test_app():
         'SQLALCHEMY_BINDS': {
             'notes': 'sqlite://',
             'tasks': 'sqlite://',
+            'tasks_v2': 'sqlite://',
         },
         #'SQLALCHEMY_DATABASE_URI': 'sqlite://',
         #'SQLALCHEMY_ECHO': True,
