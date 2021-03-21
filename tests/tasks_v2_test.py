@@ -1,3 +1,4 @@
+from tasks_v2.add import migrate
 from tasks_v2.models import Task, TaskLinkage
 
 
@@ -32,3 +33,7 @@ def test_linkage_create(session):
     session.commit()
 
     assert linkage.task_id
+
+
+def test_migration(session):
+    migrate(session)

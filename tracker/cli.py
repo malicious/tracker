@@ -3,6 +3,7 @@ from flask.cli import with_appcontext
 
 import notes
 import tasks
+import tasks_v2
 from tracker.db import content_db
 
 
@@ -57,6 +58,12 @@ def task_update_interactive(task_ids):
         pass
 
 
+@click.command('task-v2-migration')
+@with_appcontext
+def task_v2_migrate():
+    tasks_v2.add.migrate(content_db.session)
+
+
 @click.command('import-notes')
 @click.argument('csv_file', type=click.File('r'))
 @with_appcontext
@@ -70,4 +77,5 @@ def init_app(app):
     app.cli.add_command(task_add_multiple)
     app.cli.add_command(task_update_batch)
     app.cli.add_command(task_update_interactive)
+    app.cli.add_command(task_v2_migrate)
     app.cli.add_command(notes_from_csv)
