@@ -16,6 +16,7 @@ serve:
 .PHONY: install
 install: $(activate_script)
 	source $(activate_script) \
+		&& pip install --upgrade pip \
 		&& pip install --requirement requirements.txt
 
 %/bin/activate:
