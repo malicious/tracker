@@ -20,7 +20,7 @@ install: $(activate_script)
 
 %/bin/activate:
 	-brew install pyenv
-	pyenv install 3.7.5
+	-pyenv install 3.7.5
 	pyenv local 3.7.5 \
-		&& eval "$(pyenv init -)" \
+		&& eval "`pyenv init -`" \
 		&& python -m venv $*
