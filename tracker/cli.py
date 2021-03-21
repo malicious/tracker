@@ -61,7 +61,7 @@ def task_update_interactive(task_ids):
 @click.command('task-v2-migration')
 @with_appcontext
 def task_v2_migrate():
-    tasks_v2.add.migrate(content_db.session)
+    tasks_v2.add.migrate_tasks(content_db.session)
 
 
 @click.command('import-notes')
