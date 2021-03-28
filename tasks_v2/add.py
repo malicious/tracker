@@ -1,21 +1,33 @@
 from sqlalchemy.exc import StatementError
 
-from tasks.models import Task as Task_v1
-from tasks_v2.models import Task as Task_v2
+from tasks.models import Task as Task_v1, TaskTimeScope
+from tasks.time_scope import TimeScope
+from tasks_v2.models import Task as Task_v2, TaskLinkage
 
 
-def migrate_task(session, t1: Task_v1):
+def _migrate_parented_task():
+    pass
+
+
+def _migrate_task(session, t1: Task_v1):
+    print(f"importing: desc = {t1.desc}")
+
     # Create a new task that shares... enough
     new_t2 = Task_v2(desc=t1.desc, category=t1.category, created_at=t1.created_at, time_estimate=t1.time_estimate)
+    # TODO: Figure out what to do with parent_id fields
+    if t1.parent_id:
+        print("- task has a parent_id, skipping")
+        return None
 
     # Check for a pre-existing task before creating one
-    t2 = Task_v2.query \
+    t2 = session.query(Task_v2) \
         .filter_by(desc=new_t2.desc, created_at=new_t2.created_at) \
         .one_or_none()
     if not t2:
-        session.add(t2)
+        session.add(new_t2)
         t2 = new_t2
     else:
+        print("- task already exists, updating columns instead")
         t2.category = new_t2.category
 
     try:
@@ -24,19 +36,52 @@ def migrate_task(session, t1: Task_v1):
         print("Hit exception when parsing:")
         print(t1.as_json())
         session.rollback()
-        raise
+        return None
 
-    # TODO: Figure out what to do with parent_id fields
+    # And linkages
+    t1_linkages = session.query(TaskTimeScope) \
+        .filter_by(task_id=t1.task_id) \
+        .all()
+    if not t1_linkages:
+        print(f"- no TaskTimeScope found for #{tts.task_id}, this should be impossible")
+        print(f"- Task.first_scope is {t1.first_scope}")
+        raise ValueError
+
+    t1_scopes = [tts.time_scope_id for tts in t1_linkages]
+    if t1.first_scope not in t1_scopes:
+        print(f"- non-matching TaskTimeScope found for #{t1.task_id}: {t1.first_scope} not in {t1_scopes}")
+        raise ValueError
+
+    if len(t1_scopes) == 1:
+        print(f"- TimeScope: {t1.first_scope} is \"{t1.resolution}\"")
+        tl = TaskLinkage(task_id=t2.task_id, time_scope_id=t1.first_scope)
+        tl.created_at = None
+        tl.resolution = t1.resolution
+        tl.time_elapsed = t1.time_actual
+        session.add(tl)
+
+    for ts in t1_scopes:
+        tl = TaskLinkage(task_id=t2.task_id, time_scope_id=ts)
+        print(f"- TimeScope: {ts} is \"{t1.resolution}\"")
+
+    return t2
 
 
 def migrate_tasks(session):
     # TODO: First, clear any Task_v2's from the existing db
 
     # For every single task... migrate it
-    for t1 in Task_v1.query.all():
-        try:
-            migrate_task(session, t1)
-        except StatementError:
-            continue
+    successful_migrations = 0
 
-    print(f"Completed migration of {len(Task_v1.query.all())} tasks")
+    for idx, t1 in enumerate(Task_v1.query.all()):
+        if idx and idx % 5 == 0:
+            input(f"Migrated {idx} tasks ({successful_migrations} successfully), press enter to continue migrating")
+            print()
+            print()
+
+        t2 = _migrate_task(session, t1)
+        print()
+        if t2:
+            successful_migrations += 1
+
+    print(f"Completed migration of {successful_migrations}/{len(Task_v1.query.all())} tasks")
