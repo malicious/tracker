@@ -9,8 +9,21 @@ def _migrate_childed_task(session, t1: Task_v1):
     """
     Returns new parent task, plus count of total migrated tasks
     """
-    print(f"importing #{t1.task_id}: desc = {t1.desc}")
-    print(f"- this task has {len(t1.get_children())} children...")
+    def print_task_and_children(depth, t: Task_v1):
+        """
+        Recursive print. Also counts the number of prints.
+        """
+        print("  " * depth + f"- #{t.task_id}: {t.desc}")
+        task_count = 1
+
+        for child in t.get_children():
+            task_count += print_task_and_children(depth + 1, child)
+
+        return task_count
+
+    print(f"importing #{t1.task_id}, outline:")
+    task_v1_count = print_task_and_children(0, t1)
+
     print("- TODO: not implemented")
     return None, 0
 
