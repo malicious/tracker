@@ -70,18 +70,33 @@ def _migrate_task(session, t1: Task_v1):
 def migrate_tasks(session):
     # TODO: First, clear any Task_v2's from the existing db
 
+    # Helper functions for printing output
+    MIGRATION_BATCH_SIZE = 5
+
+    def print_header(next_task_id):
+        print("=" * 72)
+        print(f"Migrating up to {MIGRATION_BATCH_SIZE} tasks, starting with #{next_task_id}")
+        print("=" * 72)
+        print()
+
+    def end_of_batch(done_total, done_successfully):
+        input(f"Migrated {done_total} tasks ({done_successfully} successfully), press enter to continue migrating")
+        print()
+        print()
+
     # For every single task... migrate it
     successful_migrations = 0
 
     for idx, t1 in enumerate(Task_v1.query.all()):
-        if idx and idx % 5 == 0:
-            input(f"Migrated {idx} tasks ({successful_migrations} successfully), press enter to continue migrating")
-            print()
-            print()
+        if idx % MIGRATION_BATCH_SIZE == 0:
+            print_header(t1.task_id)
 
         t2 = _migrate_task(session, t1)
-        print()
         if t2:
             successful_migrations += 1
+
+        print()
+        if (idx+1) % MIGRATION_BATCH_SIZE == 0:
+            end_of_batch(idx+1, successful_migrations)
 
     print(f"Completed migration of {successful_migrations}/{len(Task_v1.query.all())} tasks")
