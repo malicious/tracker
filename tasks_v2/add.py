@@ -5,19 +5,30 @@ from tasks.time_scope import TimeScope
 from tasks_v2.models import Task as Task_v2, TaskLinkage
 
 
-def _migrate_parented_task():
-    pass
+def _migrate_childed_task(session, t1: Task_v1):
+    """
+    Returns new parent task, plus count of total migrated tasks
+    """
+    print(f"importing #{t1.task_id}: desc = {t1.desc}")
+    print(f"- this task has {len(t1.get_children())} children...")
+    print("- TODO: not implemented")
+    return None, 0
 
 
 def _migrate_task(session, t1: Task_v1):
-    print(f"importing: desc = {t1.desc}")
+    """
+    Create and commit corresponding Task_v2 and TaskLinkage entries
+
+    Expected to return None on failure, not raise exceptions
+    """
+
+    print(f"importing #{t1.task_id}: desc = {t1.desc}")
+    if t1.parent_id:
+        print("- has a parent task, skipping")
+        return None
 
     # Create a new task that shares... enough
     new_t2 = Task_v2(desc=t1.desc, category=t1.category, created_at=t1.created_at, time_estimate=t1.time_estimate)
-    # TODO: Figure out what to do with parent_id fields
-    if t1.parent_id:
-        print("- task has a parent_id, skipping")
-        return None
 
     # Check for a pre-existing task before creating one
     t2 = session.query(Task_v2) \
@@ -45,12 +56,12 @@ def _migrate_task(session, t1: Task_v1):
     if not t1_linkages:
         print(f"- no TaskTimeScope found for #{tts.task_id}, this should be impossible")
         print(f"- Task.first_scope is {t1.first_scope}")
-        raise ValueError
+        return None
 
     t1_scopes = [tts.time_scope_id for tts in t1_linkages]
     if t1.first_scope not in t1_scopes:
         print(f"- non-matching TaskTimeScope found for #{t1.task_id}: {t1.first_scope} not in {t1_scopes}")
-        raise ValueError
+        return None
 
     if len(t1_scopes) == 1:
         print(f"- TimeScope: {t1.first_scope} is \"{t1.resolution}\"")
@@ -59,10 +70,11 @@ def _migrate_task(session, t1: Task_v1):
         tl.resolution = t1.resolution
         tl.time_elapsed = t1.time_actual
         session.add(tl)
-
-    for ts in t1_scopes:
-        tl = TaskLinkage(task_id=t2.task_id, time_scope_id=ts)
-        print(f"- TimeScope: {ts} is \"{t1.resolution}\"")
+    else:
+        for ts in t1_scopes:
+            tl = TaskLinkage(task_id=t2.task_id, time_scope_id=ts)
+            print(f"- TimeScope: {ts} is \"{t1.resolution}\"")
+            session.add(tl)
 
     return t2
 
@@ -75,7 +87,7 @@ def migrate_tasks(session, delete_current: bool = True):
         session.commit()
 
     # Helper functions for printing output
-    MIGRATION_BATCH_SIZE = 5
+    MIGRATION_BATCH_SIZE = 10
 
     def print_header(next_task_id):
         print("=" * 72)
@@ -83,24 +95,38 @@ def migrate_tasks(session, delete_current: bool = True):
         print("=" * 72)
         print()
 
-    def end_of_batch(done_total, done_successfully):
-        input(f"Migrated {done_total} tasks ({done_successfully} successfully), press enter to continue migrating")
+    def end_of_batch(count_total, count_success):
+        input(f"Migrated {count_total} tasks ({count_success} successfully), press enter to continue migrating")
         print()
         print()
 
     # For every single task... migrate it
-    successful_migrations = 0
+    count_total = len(Task_v1.query.all())
+    count_success = 0
 
     for idx, t1 in enumerate(Task_v1.query.all()):
         if idx % MIGRATION_BATCH_SIZE == 0:
             print_header(t1.task_id)
 
-        t2 = _migrate_task(session, t1)
-        if t2:
-            successful_migrations += 1
+        # Check for parents and children
+        if t1.parent_id:
+            print(f"skipping #{t1.task_id}: has a parent_id ({t1.parent_id})")
+        elif t1.get_children():
+            t2, count_migrated = _migrate_childed_task(session, t1)
+            count_success += count_migrated
+        else:
+            t2 = _migrate_task(session, t1)
+            if t2:
+                count_success += 1
 
         print()
         if (idx+1) % MIGRATION_BATCH_SIZE == 0:
-            end_of_batch(idx+1, successful_migrations)
+            end_of_batch(idx+1, count_success)
 
-    print(f"Completed migration of {successful_migrations}/{len(Task_v1.query.all())} tasks")
+    # Evaluate success-ness
+    if count_total == count_success:
+        print("Successfully migrated all tasks.")
+        print()
+    else:
+        print(f"FAIL: Only migrated {count_success} of {count_total} tasks")
+        print()
