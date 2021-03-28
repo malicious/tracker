@@ -67,8 +67,12 @@ def _migrate_task(session, t1: Task_v1):
     return t2
 
 
-def migrate_tasks(session):
-    # TODO: First, clear any Task_v2's from the existing db
+def migrate_tasks(session, delete_current: bool = True):
+    # Clear any Task_v2's from the existing db
+    if delete_current:
+        session.query(TaskLinkage).delete()
+        session.query(Task_v2).delete()
+        session.commit()
 
     # Helper functions for printing output
     MIGRATION_BATCH_SIZE = 5
