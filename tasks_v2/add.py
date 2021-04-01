@@ -13,7 +13,13 @@ def _migrate_childed_task(session, t1: Task_v1):
         """
         Recursive print. Also counts the number of prints.
         """
+        linkages = session.query(TaskTimeScope) \
+            .filter_by(task_id=t.task_id) \
+            .all()
+        scopes = [tts.time_scope_id for tts in linkages]
+
         print("  " * depth + f"- #{t.task_id}: {t.desc}")
+        print("  " * depth + f"  scopes: {scopes}")
         task_count = 1
 
         for child in t.get_children():
@@ -23,6 +29,19 @@ def _migrate_childed_task(session, t1: Task_v1):
 
     print(f"importing #{t1.task_id}, outline:")
     task_v1_count = print_task_and_children(0, t1)
+
+    # plan:
+    # - import the parent task "normally"
+    # - for each child task:
+    #   - if the child task is unresolved, just do the link-in-text
+    #     - looks like there's only two options: link-in-text, or append to resolution
+    #   - if there's only one scope, add it as a linkage
+    #     - if the linkage already exists (which it should), append it to detailed_resolution
+    #       (with created_at formatted into markdown comment)
+    #   - if there's multiple scopes...
+    #     - deserves to be its own high-level task, link in text (" (child of #XXX)")
+    #       - which implies that "#%d" is an explicitly understood string, and we gotta check for it now
+    # - for things that were unclear, print and prompt for review
 
     print("- TODO: not implemented")
     return None, 0
@@ -63,6 +82,7 @@ def _migrate_task(session, t1: Task_v1):
         return None
 
     # And linkages
+    # TODO: add sorting option, in case database was weird
     t1_linkages = session.query(TaskTimeScope) \
         .filter_by(task_id=t1.task_id) \
         .all()
@@ -76,17 +96,26 @@ def _migrate_task(session, t1: Task_v1):
         print(f"- non-matching TaskTimeScope found for #{t1.task_id}: {t1.first_scope} not in {t1_scopes}")
         return None
 
-    if len(t1_scopes) == 1:
-        print(f"- TimeScope: {t1.first_scope} is \"{t1.resolution}\"")
-        tl = TaskLinkage(task_id=t2.task_id, time_scope_id=t1.first_scope)
-        tl.created_at = None
-        tl.resolution = t1.resolution
-        tl.time_elapsed = t1.time_actual
-        session.add(tl)
-    else:
-        for ts in t1_scopes:
+    final_scope = t1_scopes[-1]
+    for idx, ts in enumerate(t1_scopes):
+        # TODO: Turn "Quarter" scopes into something more specific
+        # Handle the _last_ TimeScope specially, since it's the only one where "resolution" applies
+        if ts == final_scope:
+            # TODO: If resolution is "info", prompt to figure out what to do
+            if t1.resolution == "info":
+                print("- TODO: \"info\" handling not implemented")
+                return None
+
             tl = TaskLinkage(task_id=t2.task_id, time_scope_id=ts)
-            print(f"- TimeScope: {ts} is \"{t1.resolution}\"")
+            tl.created_at = None
+            tl.resolution = t1.resolution
+            tl.time_elapsed = t1.time_actual
+            print(f"- {tl.time_scope_id}: \"{tl.resolution}\"")
+            session.add(tl)
+        else:
+            tl = TaskLinkage(task_id=t2.task_id, time_scope_id=ts)
+            tl.resolution = f"roll => {t1_scopes[idx+1]}"
+            print(f"- {tl.time_scope_id}: \"{tl.resolution}\"")
             session.add(tl)
 
     return t2
