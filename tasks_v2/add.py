@@ -5,7 +5,18 @@ from tasks.time_scope import TimeScope
 from tasks_v2.models import Task as Task_v2, TaskLinkage
 
 
-def _migrate_childed_task(session, t1: Task_v1):
+MIGRATION_BATCH_SIZE = 1000
+
+
+def _get_scopes(t: Task_v1):
+    linkages = TaskTimeScope.query \
+        .filter_by(task_id=t.task_id) \
+        .order_by(TaskTimeScope.time_scope_id) \
+        .all()
+    return [tts.time_scope_id for tts in linkages]
+
+
+def _migrate_childed_task(session, t1: Task_v1, print_fn):
     """
     Returns new parent task, plus count of total migrated tasks
     """
@@ -13,13 +24,8 @@ def _migrate_childed_task(session, t1: Task_v1):
         """
         Recursive print. Also counts the number of prints.
         """
-        linkages = session.query(TaskTimeScope) \
-            .filter_by(task_id=t.task_id) \
-            .all()
-        scopes = [tts.time_scope_id for tts in linkages]
-
-        print("  " * depth + f"- #{t.task_id}: {t.desc}")
-        print("  " * depth + f"  scopes: {scopes}")
+        print_fn("  " * depth + f"- #{t.task_id}: ({t.resolution}) {t.desc}")
+        print_fn("  " * depth + f"  scopes: {_get_scopes(t)}")
         task_count = 1
 
         for child in t.get_children():
@@ -27,8 +33,53 @@ def _migrate_childed_task(session, t1: Task_v1):
 
         return task_count
 
-    print(f"importing #{t1.task_id}, outline:")
+    print_fn(f"importing #{t1.task_id}, outline:")
+    print_fn()
     task_v1_count = print_task_and_children(0, t1)
+    print_fn()
+
+    # Start actual migration
+    t2 = Task_v2(desc=t1.desc, category=t1.category, created_at=t1.created_at, time_estimate=t1.time_estimate)
+    try:
+        session.add(t2)
+        session.commit()
+    except StatementError as e:
+        print("Hit exception when parsing:")
+        print(t1.as_json())
+        session.rollback()
+        return None
+
+    # TODO: de-duplicate this code with _migrate_task()
+    draft_linkages = {}
+
+    # Generate linkages for parent task
+    t1_scopes = _get_scopes(t1)
+    for index, scope in enumerate(t1_scopes):
+        tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
+        if scope == t1_scopes[-1]:
+            tl.resolution = t1.resolution
+            tl.time_elapsed = t1.time_actual
+        draft_linkages[scope] = tl
+
+    # Simple case: one child, which is an info type
+    t1_children = t1.get_children()
+    if len(t1_children) == 1 and t1.resolution == "info":
+        if t1_scopes != _get_scopes(t1_children[0]):
+            print("- get fukt")
+            return None, 0
+        else:
+            draft_linkages[t1_scopes[0]].detailed_resolution = t1_children[0].desc
+
+    for child in t1.get_children():
+        child_scopes = _get_scopes(child)
+        for index, scope in enumerate(child_scopes):
+            if not scope in draft_linkages:
+                tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
+                tl.detailed_resolution = child.desc
+                tl.time_elapsed = child.time_actual
+                draft_linkages[scope] = tl
+            else:
+                tl.detailed_resolution = child.desc
 
     # plan:
     # - import the parent task "normally"
@@ -43,37 +94,33 @@ def _migrate_childed_task(session, t1: Task_v1):
     #       - which implies that "#%d" is an explicitly understood string, and we gotta check for it now
     # - for things that were unclear, print and prompt for review
 
-    print("- TODO: not implemented")
+    for scope, tl in sorted(draft_linkages.items()):
+        print_fn(f"- {tl.time_scope_id}: \"{tl.resolution}\" / {tl.detailed_resolution}")
+        session.add(tl)
+    session.commit()
+
+    print("- TODO: not implemented,  press enter to continue")
+    input()
+    print()
     return None, 0
 
 
-def _migrate_task(session, t1: Task_v1):
+def _migrate_task(session, t1: Task_v1, print_fn):
     """
     Create and commit corresponding Task_v2 and TaskLinkage entries
 
     Expected to return None on failure, not raise exceptions
     """
 
-    print(f"importing #{t1.task_id}: desc = {t1.desc}")
+    print_fn(f"importing #{t1.task_id}: desc = {t1.desc}")
     if t1.parent_id:
-        print("- has a parent task, skipping")
+        print_fn("- has a parent task, skipping")
         return None
 
     # Create a new task that shares... enough
-    new_t2 = Task_v2(desc=t1.desc, category=t1.category, created_at=t1.created_at, time_estimate=t1.time_estimate)
-
-    # Check for a pre-existing task before creating one
-    t2 = session.query(Task_v2) \
-        .filter_by(desc=new_t2.desc, created_at=new_t2.created_at) \
-        .one_or_none()
-    if not t2:
-        session.add(new_t2)
-        t2 = new_t2
-    else:
-        print("- task already exists, updating columns instead")
-        t2.category = new_t2.category
-
+    t2 = Task_v2(desc=t1.desc, category=t1.category, created_at=t1.created_at, time_estimate=t1.time_estimate)
     try:
+        session.add(t2)
         session.commit()
     except StatementError as e:
         print("Hit exception when parsing:")
@@ -81,17 +128,13 @@ def _migrate_task(session, t1: Task_v1):
         session.rollback()
         return None
 
-    # And linkages
-    # TODO: add sorting option, in case database was weird
-    t1_linkages = session.query(TaskTimeScope) \
-        .filter_by(task_id=t1.task_id) \
-        .all()
-    if not t1_linkages:
-        print(f"- no TaskTimeScope found for #{tts.task_id}, this should be impossible")
-        print(f"- Task.first_scope is {t1.first_scope}")
+    # And linkages (sorted, in case database was weird)
+    t1_scopes = _get_scopes(t1)
+    if not t1_scopes:
+        print_fn(f"- no TaskTimeScope found for #{tts.task_id}, this should be impossible")
+        print_fn(f"- Task.first_scope is {t1.first_scope}")
         return None
 
-    t1_scopes = [tts.time_scope_id for tts in t1_linkages]
     if t1.first_scope not in t1_scopes:
         print(f"- non-matching TaskTimeScope found for #{t1.task_id}: {t1.first_scope} not in {t1_scopes}")
         return None
@@ -99,29 +142,25 @@ def _migrate_task(session, t1: Task_v1):
     final_scope = t1_scopes[-1]
     for idx, ts in enumerate(t1_scopes):
         # TODO: Turn "Quarter" scopes into something more specific
+
         # Handle the _last_ TimeScope specially, since it's the only one where "resolution" applies
         if ts == final_scope:
-            # TODO: If resolution is "info", prompt to figure out what to do
-            if t1.resolution == "info":
-                print("- TODO: \"info\" handling not implemented")
-                return None
-
             tl = TaskLinkage(task_id=t2.task_id, time_scope_id=ts)
             tl.created_at = None
             tl.resolution = t1.resolution
             tl.time_elapsed = t1.time_actual
-            print(f"- {tl.time_scope_id}: \"{tl.resolution}\"")
+            print_fn(f"- {tl.time_scope_id}: \"{tl.resolution}\"")
             session.add(tl)
         else:
             tl = TaskLinkage(task_id=t2.task_id, time_scope_id=ts)
             tl.resolution = f"roll => {t1_scopes[idx+1]}"
-            print(f"- {tl.time_scope_id}: \"{tl.resolution}\"")
+            print_fn(f"- {tl.time_scope_id}: \"{tl.resolution}\"")
             session.add(tl)
 
     return t2
 
 
-def migrate_tasks(session, delete_current: bool = True):
+def migrate_tasks(session, delete_current: bool = True, batch_size = MIGRATION_BATCH_SIZE, print_successful: bool = False):
     # Clear any Task_v2's from the existing db
     if delete_current:
         session.query(TaskLinkage).delete()
@@ -129,39 +168,48 @@ def migrate_tasks(session, delete_current: bool = True):
         session.commit()
 
     # Helper functions for printing output
-    MIGRATION_BATCH_SIZE = 10
-
     def print_header(next_task_id):
         print("=" * 72)
-        print(f"Migrating up to {MIGRATION_BATCH_SIZE} tasks, starting with #{next_task_id}")
+        print(f"Migrating up to {MIGRATION_BATCH_SIZE} tasks (reverse order, starting at #{next_task_id})")
         print("=" * 72)
         print()
 
     def end_of_batch(count_total, count_success):
-        input(f"Migrated {count_total} tasks ({count_success} successfully), press enter to continue migrating")
+        print(f"Migrated {count_total} tasks ({count_success} completed successfully)")
+        if count_success > count_total:
+            print("(Childed tasks are migrated with the parent, so success count may be larger)")
+        input("press enter to continue migrating")
         print()
         print()
 
     # For every single task... migrate it
-    count_total = len(Task_v1.query.all())
-    count_success = 0
+    v1_tasks = session.query(Task_v1) \
+        .order_by(Task_v1.task_id.desc()) \
+        .all()
 
-    for idx, t1 in enumerate(Task_v1.query.all()):
+    count_total = len(v1_tasks)
+    count_success = 0
+    print_fn = lambda *args, **kwargs: None
+    if print_successful:
+        print_fn = print
+
+    for idx, t1 in enumerate(v1_tasks):
         if idx % MIGRATION_BATCH_SIZE == 0:
             print_header(t1.task_id)
 
         # Check for parents and children
         if t1.parent_id:
-            print(f"skipping #{t1.task_id}: has a parent_id ({t1.parent_id})")
+            if print_successful:
+                print(f"skipping #{t1.task_id}: will be migrated with parent (#{t1.parent_id})")
         elif t1.get_children():
-            t2, count_migrated = _migrate_childed_task(session, t1)
+            t2, count_migrated = _migrate_childed_task(session, t1, print)
             count_success += count_migrated
         else:
-            t2 = _migrate_task(session, t1)
+            t2 = _migrate_task(session, t1, print_fn)
             if t2:
                 count_success += 1
 
-        print()
+        print_fn()
         if (idx+1) % MIGRATION_BATCH_SIZE == 0:
             end_of_batch(idx+1, count_success)
 
