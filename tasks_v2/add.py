@@ -160,7 +160,7 @@ def _migrate_task(session, t1: Task_v1, print_fn):
     return t2
 
 
-def migrate_tasks(session, delete_current: bool = True, batch_size = MIGRATION_BATCH_SIZE, print_successful: bool = False):
+def migrate_tasks(session, start_index, delete_current: bool = True, batch_size = MIGRATION_BATCH_SIZE, print_successful: bool = False):
     # Clear any Task_v2's from the existing db
     if delete_current:
         session.query(TaskLinkage).delete()
@@ -183,7 +183,10 @@ def migrate_tasks(session, delete_current: bool = True, batch_size = MIGRATION_B
         print()
 
     # For every single task... migrate it
-    v1_tasks = session.query(Task_v1) \
+    v1_tasks_query = session.query(Task_v1)
+    if start_index:
+        v1_tasks_query = v1_tasks_query.filter(Task_v1.task_id <= start_index)
+    v1_tasks = v1_tasks_query \
         .order_by(Task_v1.task_id.desc()) \
         .all()
 
