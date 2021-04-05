@@ -5,6 +5,7 @@ from markupsafe import escape
 
 import notes
 import tasks
+import tasks_v2
 from tasks.time_scope import TimeScope
 from . import cli, db
 
@@ -45,6 +46,22 @@ def create_app(settings_overrides: Dict = {}):
     def report_tasks(scope_str):
         scope = TimeScope(escape(scope_str))
         return tasks.report.report_tasks(scope)
+
+    @app.route("/task_v2/<task_id>")
+    def get_task_v2(task_id):
+        return tasks_v2.report.report_one_task(escape(task_id))
+
+    @app.route("/report-tasks-v2")
+    def report_tasks_v2():
+        page_scope = None
+        try:
+            parsed_scope = TimeScope(escape(request.args.get('scope')))
+            parsed_scope.get_type()
+            page_scope = parsed_scope
+        except ValueError:
+            pass
+
+        return tasks_v2.report.report_tasks(page_scope=page_scope)
 
     @app.route("/note/<note_id>")
     def get_note(note_id):
