@@ -18,7 +18,10 @@ def _get_scopes(t: Task_v1):
 
 def _construct_linkages(t1: Task_v1, t2: Task_v2):
     """
-    TODO: de-duplicate this code with _migrate_task()
+    Turn TaskTimeScopes and child tasks into TaskLinkages
+
+    - TODO: de-duplicate this code with _migrate_task()
+    - TODO: created_at times could get imported, too
     """
     t1_children = t1.get_children()
     draft_linkages = {}
@@ -27,51 +30,61 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
     t1_scopes = _get_scopes(t1)
     for index, scope in enumerate(t1_scopes):
         tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
+        draft_linkages[scope] = tl
+
+        # Put resolution info into final scope
         if scope == t1_scopes[-1]:
             tl.resolution = t1.resolution
             tl.time_elapsed = t1.time_actual
-        draft_linkages[scope] = tl
 
-    # Case: one child, info type
-    if len(t1_children) == 1 and t1_children[0].resolution == "info":
-        if t1_scopes != _get_scopes(t1_children[0]):
-            raise ValueError(f"Can't parse child task {t1_children[0].task_id}")
-
-        draft_linkages[t1_scopes[0]].detailed_resolution = t1_children[0].desc
-        return draft_linkages
-
-    # Case: one child, its own task
-    if len(t1_children) == 1 and t1_children[0].resolution == "done":
-        raise ValueError("Child is its own task, skipping")
+        # DEBUG
+        tl = None
 
     # Case: unclear, gonna do our best
-    for child in t1_children:
-        print(f"DEBUG: evaluating child #{child.task_id}")
-        child_scopes = _get_scopes(child)
-        if child.get_children():
-            raise ValueError("Can't handle recursive children yet")
+    def parse_child(t1: Task_v1):
+        for index, scope in enumerate(_get_scopes(t1)):
+            # print(f"DEBUG: evaluating #{t1.task_id}, scope {scope}")
 
-        for index, scope in enumerate(child_scopes):
-            print(f"DEBUG: evaluating child #{child.task_id}, scope {scope}")
             # Create a new linkage if child scopes aren't a subset
             if not scope in draft_linkages:
                 tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
-                tl.time_elapsed = child.time_actual
+                tl.time_elapsed = t1.time_actual
                 draft_linkages[scope] = tl
+                tl = None
 
             # Each child only gets to show up in its earliest scope
             if index == 0:
+                # Generate info string for child task
+                info_string = t1.desc
+                if not t1.resolution:
+                    raise ValueError(f"Child task #{t1.task_id} is still open, please handle this")
+                if t1.resolution != "info":
+                    info_string = f"({t1.resolution}) {t1.desc}"
+
+                # Set or append the info string
                 tl = draft_linkages[scope]
+
                 if tl.detailed_resolution:
-                    print(f"DEBUG: appending detailed_resolution to scope {scope}")
+                    # print(f"DEBUG: appending detailed_resolution to scope {scope}")
+
                     # Multiple child tasks, append together
                     if tl.detailed_resolution[0:2] != "- ":
                         tl.detailed_resolution = f"- {tl.detailed_resolution}"
-                    tl.detailed_resolution = f"{tl.detailed_resolution}\n- {child.desc}"
+                    tl.detailed_resolution = f"{tl.detailed_resolution}\n- {info_string}"
 
                 else:
-                    print(f"DEBUG: setting detailed_resolution for scope {scope}")
-                    tl.detailed_resolution = child.desc
+                    # print(f"DEBUG: setting detailed_resolution for scope {scope}")
+                    tl.detailed_resolution = info_string
+
+    def add_child_tasks(t1: Task_v1):
+        for child in t1.get_children():
+            # print(f"DEBUG: evaluating child #{child.task_id}")
+            parse_child(child)
+
+            # Tail recursion here
+            add_child_tasks(child)
+
+    add_child_tasks(t1)
 
     # Done, attempt to set the initial scope as "created_at", if possible
     if not draft_linkages[t1.first_scope].resolution:
@@ -86,6 +99,10 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
 
         if not tl.resolution:
             tl.resolution = f"roll => {draft_linkages_sorted[index+1][0]}"
+
+    # Sometimes child tasks have scopes that extend out past the parent
+    if t1.resolution and not draft_linkages_sorted[-1][1].resolution:
+        raise ValueError("Top-level resolution didn't propagate to final linkage")
 
     return draft_linkages
 
@@ -139,7 +156,7 @@ def _migrate_childed_task(session, t1: Task_v1, print_fn):
         t2_linkages = _construct_linkages(t1, t2)
     except ValueError as e:
         print(e)
-        input("Import failed, press enter to continue")
+        input(f"Import failed for task #{t1.task_id}, press enter to continue")
         return None, 0
 
     for scope, tl in sorted(t2_linkages.items()):
@@ -149,10 +166,7 @@ def _migrate_childed_task(session, t1: Task_v1, print_fn):
     print_fn()
     print_fn()
 
-    # Prompt for user input before committing to DB
-    input("If everything looks like it was imported correctly,  press enter to continue")
     session.commit()
-    print_fn()
     return t2, task_v1_count
 
 
@@ -256,7 +270,7 @@ def migrate_tasks(session, start_index, delete_current: bool = True, batch_size 
             if print_successful:
                 print(f"skipping #{t1.task_id}: will be migrated with parent (#{t1.parent_id})")
         elif t1.get_children():
-            t2, count_migrated = _migrate_childed_task(session, t1, print)
+            t2, count_migrated = _migrate_childed_task(session, t1, print_fn)
             count_success += count_migrated
         else:
             t2 = _migrate_task(session, t1, print_fn)
