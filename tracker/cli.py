@@ -59,10 +59,11 @@ def task_update_interactive(task_ids):
 
 
 @click.command('task-v2-migration')
+@click.option('--print-success', 'print_success', type=click.BOOL)
 @click.argument('start_index', type=click.INT, required=False)
 @with_appcontext
-def task_v2_migrate(start_index):
-    tasks_v2.add.migrate_tasks(content_db.session, start_index)
+def task_v2_migrate(start_index, print_success):
+    tasks_v2.add.migrate_tasks(content_db.session, start_index, print_success=print_success)
 
 
 @click.command('import-notes')

@@ -167,7 +167,7 @@ def _migrate_task(session, t1: Task_v1, print_fn):
 def migrate_tasks(session,
                   start_index,
                   delete_current: bool = True,
-                  print_successful: bool = True):
+                  print_success: bool = True):
     # Clear any Task_v2's from the existing db
     if delete_current:
         session.query(TaskLinkage).delete()
@@ -185,7 +185,6 @@ def migrate_tasks(session,
         print(f"Migrated {count_total} tasks ({count_success} completed successfully)")
         if count_success > count_total:
             print("(Childed tasks are migrated with the parent, so success count may be larger)")
-        input("press enter to continue migrating")
         print()
         print()
 
@@ -200,7 +199,7 @@ def migrate_tasks(session,
     count_total = len(v1_tasks)
     count_success = 0
     print_fn = lambda *args, **kwargs: None
-    if print_successful:
+    if print_success:
         print_fn = print
 
     for idx, t1 in enumerate(v1_tasks):
