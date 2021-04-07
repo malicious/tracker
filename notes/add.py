@@ -140,6 +140,12 @@ def _add_note(session, domains: str, **kwargs) -> Optional[Note]:
 
 
 def import_from_csv(csv_file, session):
+    # Import speed on current system is approx 100 rows/second
+    # TODO: Replace random numbers with an actual per-unit-time measurement
+    #       (max of time or rows, for rate limiting)
+    IMPORT_BATCH_SIZE = 200
+    rows_read = 0
+
     for csv_entry in csv.DictReader(csv_file):
         note_args = {}
 
@@ -159,3 +165,11 @@ def import_from_csv(csv_file, session):
                 note_args[field] = parser.parse(csv_entry[field])
 
         _add_note(session, csv_entry['domains'], **note_args)
+
+        # Print status messages, for long imports
+        rows_read += 1
+        if rows_read % IMPORT_BATCH_SIZE == 0:
+            print(f"Parsed CSV row: {rows_read}")
+
+    if rows_read >= IMPORT_BATCH_SIZE:
+        print(f"Finished importing {rows_read} rows")
