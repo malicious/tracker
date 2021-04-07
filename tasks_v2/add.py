@@ -1,3 +1,5 @@
+from datetime import datetime
+
 from sqlalchemy.exc import StatementError
 
 from tasks.models import Task as Task_v1, TaskTimeScope
@@ -27,6 +29,7 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
     t1_scopes = _get_scopes(t1)
     for index, scope in enumerate(t1_scopes):
         tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
+        tl.created_at = datetime.now()
         draft_linkages[scope] = tl
 
         # Put resolution info into final scope
@@ -36,36 +39,49 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
 
     # Case: unclear, gonna do our best
     def parse_child(child_task: Task_v1):
-        for index, scope in enumerate(_get_scopes(child_task)):
-            # Create a new linkage if child scopes aren't a subset
+        child_task_scopes = _get_scopes(child_task)
+        if len(child_task_scopes) < 1:
+            raise ValueError(f"ERROR: Task #{child_task.task_id} has no associated scopes")
+
+        populating_first_scope = child_task_scopes[0] not in draft_linkages
+
+        # Create a new linkage for each new child scope
+        for index, scope in enumerate(child_task_scopes):
             if not scope in draft_linkages:
-                # TODO: This seems to multiply the time_actual time by a lot
                 tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
-                tl.time_elapsed = child_task.time_actual
+                tl.created_at = datetime.now()
                 draft_linkages[scope] = tl
-                tl = None
 
-            # Each child only gets to show up in its earliest scope
-            if index == 0:
-                # Meld the resolution + desc into the TaskLinkage's resolution info
-                info_string = child_task.desc
-                if child_task.resolution != "info":
-                    info_string = f"({child_task.resolution}) {child_task.desc}"
+        # Then, dump all the child task info into the first associated scope
+        info_string = child_task.desc
 
-                if not child_task.resolution:
-                    # TODO: We might be able to just leave this open
-                    raise ValueError(f"ERROR: Task #{t1.task_id} has child #{child_task.task_id} still open, must be resolved manually")
+        if child_task.resolution != "info":
+            # Meld the resolution + desc into the TaskLinkage's resolution info
+            info_string = f"({child_task.resolution}) {child_task.desc}"
 
-                # Set or append the info string
-                tl = draft_linkages[scope]
-                # Multiple child tasks exist, append together
-                if tl.detailed_resolution:
-                    if tl.detailed_resolution[0:2] != "- ":
-                        tl.detailed_resolution = f"- {tl.detailed_resolution}"
-                    tl.detailed_resolution = f"{tl.detailed_resolution}\n- {info_string}"
+        if not child_task.resolution:
+            # TODO: We might be able to just leave this open
+            raise ValueError(f"ERROR: Task #{t1.task_id} has child #{child_task.task_id} still open, must be resolved manually")
 
-                else:
-                    tl.detailed_resolution = info_string
+        # Set or append the info string
+        tl_0 = draft_linkages[child_task_scopes[0]]
+        if not tl_0.detailed_resolution:
+            tl_0.detailed_resolution = info_string
+        else:
+            # If multiple child tasks existed, append info
+            if tl_0.detailed_resolution[0:2] != "- ":
+                tl_0.detailed_resolution = f"- {tl_0.detailed_resolution}"
+            tl_0.detailed_resolution = f"{tl_0.detailed_resolution}\n- {info_string}"
+
+        # Update accessory fields, if we can
+        if populating_first_scope:
+            tl_0.created_at = child_task.created_at
+
+        if child_task.time_actual:
+            if tl_0.time_elapsed:
+                tl_0.time_elapsed += child_task.time_actual
+            else:
+                tl_0.time_elapsed = child_task.time_actual
 
     def add_child_tasks(t1: Task_v1):
         for child in t1.get_children():
