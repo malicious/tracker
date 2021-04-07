@@ -35,29 +35,31 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
             tl.time_elapsed = t1.time_actual
 
     # Case: unclear, gonna do our best
-    def parse_child(t1: Task_v1):
-        for index, scope in enumerate(_get_scopes(t1)):
+    def parse_child(child_task: Task_v1):
+        for index, scope in enumerate(_get_scopes(child_task)):
             # Create a new linkage if child scopes aren't a subset
             if not scope in draft_linkages:
+                # TODO: This seems to multiply the time_actual time by a lot
                 tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
-                tl.time_elapsed = t1.time_actual
+                tl.time_elapsed = child_task.time_actual
                 draft_linkages[scope] = tl
                 tl = None
 
             # Each child only gets to show up in its earliest scope
             if index == 0:
-                # Generate info string for child task
-                info_string = t1.desc
-                if not t1.resolution:
-                    raise ValueError(f"Child task #{t1.task_id} is still open, please handle this")
-                if t1.resolution != "info":
-                    info_string = f"({t1.resolution}) {t1.desc}"
+                # Meld the resolution + desc into the TaskLinkage's resolution info
+                info_string = child_task.desc
+                if child_task.resolution != "info":
+                    info_string = f"({child_task.resolution}) {child_task.desc}"
+
+                if not child_task.resolution:
+                    # TODO: We might be able to just leave this open
+                    raise ValueError(f"ERROR: Task #{t1.task_id} has child #{child_task.task_id} still open, must be resolved manually")
 
                 # Set or append the info string
                 tl = draft_linkages[scope]
-
+                # Multiple child tasks exist, append together
                 if tl.detailed_resolution:
-                    # Multiple child tasks, append together
                     if tl.detailed_resolution[0:2] != "- ":
                         tl.detailed_resolution = f"- {tl.detailed_resolution}"
                     tl.detailed_resolution = f"{tl.detailed_resolution}\n- {info_string}"
@@ -90,8 +92,9 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
             tl.resolution = f"roll => {draft_linkages_sorted[index + 1][0]}"
 
     # Sometimes child tasks have scopes that extend out past the parent
-    if t1.resolution and not draft_linkages_sorted[-1][1].resolution:
-        print(f"WARN: parent task #{t1.task_id} resolved, but final scope exceeds its scopes")
+    final_linkage = draft_linkages_sorted[-1][1]
+    if t1.resolution and not final_linkage.resolution:
+            print(f"WARN: task #{t1.task_id} imported, but final child scope {final_linkage.time_scope_id} is later than final parent scope {t1.first_scope}")
 
     return draft_linkages
 
@@ -150,7 +153,7 @@ def _migrate_task(session, t1: Task_v1, print_fn):
         t2_linkages = _construct_linkages(t1, t2)
     except ValueError as e:
         print(e)
-        input(f"Import failed for task #{t1.task_id}, press enter to continue")
+        input(f"Import failed for task #{t1.task_id}, press enter to ignore bad import and continue")
         return None, 0
 
     for scope, tl in sorted(t2_linkages.items()):
