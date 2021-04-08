@@ -1,6 +1,6 @@
 from datetime import datetime
 
-from sqlalchemy.exc import StatementError
+from sqlalchemy.exc import IntegrityError, StatementError
 
 from tasks.models import Task as Task_v1, TaskTimeScope
 from tasks_v2.models import Task as Task_v2, TaskLinkage
@@ -146,17 +146,22 @@ def _migrate_task(session, t1: Task_v1, print_fn):
     print_fn()
 
     # Construct Task_v2
-    t2 = Task_v2(desc=t1.desc,
-                 category=t1.category,
-                 time_estimate=t1.time_estimate)
     try:
+        t2 = Task_v2(desc=t1.desc,
+                     category=t1.category,
+                     time_estimate=t1.time_estimate)
         session.add(t2)
         session.commit()
     except StatementError as e:
-        print("Hit exception when parsing:")
-        print(t1.as_json())
         session.rollback()
-        return None
+        print(f"ERROR: Hit exception when parsing task #{t1.task_id}, skipping")
+        print(t1.to_json_dict())
+        return None, 0
+    except IntegrityError as e:
+        session.rollback()
+        print(e)
+        print(t1.to_json_dict())
+        return None, 0
 
     # Print Task_v2 info
     print_fn(f"imported to Task_v2:")

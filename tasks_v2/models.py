@@ -12,9 +12,6 @@ class Task(db.Model):
     desc = db.Column(db.String, nullable=False)
     category = db.Column(db.String)
     time_estimate = db.Column(db.Float)
-    __table_args__ = (
-        db.UniqueConstraint('desc'),
-    )
 
     linkages = relationship('TaskLinkage', backref='Task')
 
