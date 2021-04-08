@@ -1,4 +1,5 @@
 import json
+from datetime import datetime
 from typing import Optional
 
 from flask import render_template
@@ -17,20 +18,26 @@ def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
     response_html += f'\n<span class="desc">{t.desc}</span>'
     response_html += f'\n<span class="task-id"><a href="/task-v2/{t.task_id}">#{t.task_id}</a></span>'
 
-    matching_linkages = [tl for tl in t.linkages if tl.time_scope_id == ref_scope]
-    if len(matching_linkages) != 1:
-        return {"error": f"Task #{t.task_id} had multiple matching scopes, check database: {matching_linkages}"}
+    tl_exact = None
 
-    tl = list(matching_linkages)[0]
-    if tl and tl.resolution:
+    # If we have a ref_scope, try to print out its specific TaskLinkage
+    if ref_scope:
+        matching_linkages = [tl for tl in t.linkages if tl.time_scope_id == ref_scope]
+        if len(matching_linkages) == 1:
+            tl_exact = list(matching_linkages)[0]
+
+    if tl_exact and tl_exact.resolution:
         return '<summary class="task-resolved">\n' + \
-            f'<span class="resolution">({tl.resolution}) </span>' + \
+            f'<span class="resolution">({tl_exact.resolution}) </span>' + \
             response_html + '\n' + \
             '</summary>'
 
+    # Otherwise, do our best to guess at additional info
+    short_scope_str = TimeScope(t.linkages[0].time_scope_id).shorten(ref_scope)
     return '<summary class="task">' + \
-           response_html + '\n' + \
-           '</summary>'
+            f'<span class="time-scope">{short_scope_str}</span>' + \
+            response_html + '\n' + \
+            '</summary>'
 
 
 def report_one_task(task_id):
@@ -44,27 +51,17 @@ def report_one_task(task_id):
     return f'<html><body><pre>{as_text}</pre></body></html>'
 
 
-def generate_tasks_by_scope(page_scope: Optional[TimeScope]):
+def generate_tasks_by_scope(page_scope: TimeScope):
     # Identify the scopes that we care about
-    page_scopes_all = []
+    linkages_query = TaskLinkage.query \
+        .filter(TaskLinkage.time_scope_id.like(page_scope + "%")) \
+        .order_by(TaskLinkage.time_scope_id)
 
-    if page_scope is not None:
-        linkages_query = TaskLinkage.query \
-            .filter(TaskLinkage.time_scope_id.like(page_scope + "%")) \
-            .order_by(TaskLinkage.time_scope_id)
-        page_scopes_all = [
-            *TimeScopeUtils.enclosing_scope(page_scope, recurse=True),
-            page_scope,
-            *[tl.time_scope_id for tl in linkages_query.all()],
-        ]
-    else:
-        # NB if no scope is provided, assume we want _open_ tasks
-        linkages_query = TaskLinkage.query \
-            .filter(TaskLinkage.resolution == None) \
-            .order_by(TaskLinkage.time_scope_id)
-        page_scopes_all = [
-            tl.time_scope_id for tl in linkages_query.all()
-        ]
+    page_scopes_all = [
+        *TimeScopeUtils.enclosing_scope(page_scope, recurse=True),
+        page_scope,
+        *[tl.time_scope_id for tl in linkages_query.all()],
+    ]
 
     # Identify all tasks within those scopes
     tasks_by_scope = {}
@@ -74,19 +71,30 @@ def generate_tasks_by_scope(page_scope: Optional[TimeScope]):
             .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
             .filter(TaskLinkage.time_scope_id == scope) \
             .order_by(TaskLinkage.time_scope_id, Task.category)
-        if not page_scope:
-            tasks_in_scope_query = tasks_in_scope_query \
-                .filter(TaskLinkage.resolution == None)
+
         tasks_by_scope[TimeScope(scope)] = tasks_in_scope_query.all()
 
     return tasks_by_scope
+
+
+def generate_open_tasks():
+    tasks_query = Task.query \
+        .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+        .filter(TaskLinkage.resolution == None) \
+        .order_by(Task.category, TaskLinkage.time_scope_id)
+
+    ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
+    return {ref_scope: tasks_query.all()}
 
 
 def report_tasks(page_scope: Optional[TimeScope]):
     render_kwargs = {}
 
     # Identify all tasks within those scopes
-    render_kwargs['tasks_by_scope'] = generate_tasks_by_scope(page_scope)
+    if page_scope:
+        render_kwargs['tasks_by_scope'] = generate_tasks_by_scope(page_scope)
+    else:
+        render_kwargs['tasks_by_scope'] = generate_open_tasks()
 
     # If there are previous/next links, add them
     if page_scope:
