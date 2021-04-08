@@ -40,7 +40,8 @@ def report_one_task(task_id):
     if not task:
         return {"error": f"invalid task_id: {task_id}"}
 
-    return task.to_json_dict()
+    as_text = json.dumps(task.to_json_dict(), indent=4, ensure_ascii=False)
+    return f'<html><body><pre>{as_text}</pre></body></html>'
 
 
 def generate_tasks_by_scope(page_scope: Optional[TimeScope]):
