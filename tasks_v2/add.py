@@ -20,7 +20,6 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
     """
     Turn TaskTimeScopes and child tasks into TaskLinkages
 
-    - TODO: created_at times could get imported, too
     - TODO: migrate or fail on quarter scoped-tasks
     """
     draft_linkages = {}
@@ -96,7 +95,6 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
     # Done, attempt to set the initial scope as "created_at", if possible
     if not draft_linkages[t1.first_scope].resolution:
         draft_linkages[t1.first_scope].resolution = "created_at"
-        draft_linkages[t1.first_scope].created_at = t1.created_at
 
     # Done with initial import pass, add additional info
     draft_linkages_sorted = sorted(draft_linkages.items())
@@ -150,7 +148,6 @@ def _migrate_task(session, t1: Task_v1, print_fn):
     # Construct Task_v2
     t2 = Task_v2(desc=t1.desc,
                  category=t1.category,
-                 created_at=t1.created_at,
                  time_estimate=t1.time_estimate)
     try:
         session.add(t2)

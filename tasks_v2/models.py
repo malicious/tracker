@@ -11,10 +11,9 @@ class Task(db.Model):
     task_id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
     desc = db.Column(db.String, nullable=False)
     category = db.Column(db.String)
-    created_at = db.Column(db.DateTime)
     time_estimate = db.Column(db.Float)
     __table_args__ = (
-        db.UniqueConstraint('desc', 'created_at'),
+        db.UniqueConstraint('desc'),
     )
 
     linkages = relationship('TaskLinkage', backref='Task')
@@ -24,9 +23,6 @@ class Task(db.Model):
             'task_id': self.task_id,
             'desc': self.desc,
         }
-
-        if self.created_at is not None:
-            response_dict['created_at'] = str(self.created_at)
 
         for field in ['category', 'time_estimate']:
             if getattr(self, field) is not None:

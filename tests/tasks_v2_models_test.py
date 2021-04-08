@@ -16,6 +16,11 @@ def test_task_create(session):
     assert task.task_id
 
 
+def test_task_lacks_created_at():
+    task = Task(desc="created_at test task")
+    assert not hasattr(task, 'created_at')
+
+
 def test_linkage_constructor():
     task = Task(desc="task 2")
     linkage = TaskLinkage(task_id=task.task_id)
