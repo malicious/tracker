@@ -92,10 +92,6 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
 
     add_child_tasks(t1)
 
-    # Done, attempt to set the initial scope as "created_at", if possible
-    if not draft_linkages[t1.first_scope].resolution:
-        draft_linkages[t1.first_scope].resolution = "created_at"
-
     # Done with initial import pass, add additional info
     draft_linkages_sorted = sorted(draft_linkages.items())
     for index, (scope, tl) in enumerate(draft_linkages_sorted):
