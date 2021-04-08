@@ -3,24 +3,33 @@ from datetime import datetime
 from sqlalchemy.exc import IntegrityError, StatementError
 
 from tasks.models import Task as Task_v1, TaskTimeScope
+from tasks.time_scope import TimeScope, TimeScopeUtils
 from tasks_v2.models import Task as Task_v2, TaskLinkage
 
 MIGRATION_BATCH_SIZE = 100
 
 
 def _get_scopes(t: Task_v1):
-    linkages = TaskTimeScope.query \
+    def trim_quarter_scopes(scope_str):
+        maybe_quarter_scope = TimeScope(scope_str)
+        if maybe_quarter_scope.type != TimeScope.Type.quarter:
+            return scope_str
+
+        # Convert "quarter" scopes into their first day
+        scope = maybe_quarter_scope.start.strftime("%G-ww%V.%u")
+        print(f"INFO: task #{t.task_id} has quarter scope {scope_str}, downsizing to {scope}")
+        return scope
+
+    tts_query = TaskTimeScope.query \
         .filter_by(task_id=t.task_id) \
-        .order_by(TaskTimeScope.time_scope_id) \
-        .all()
-    return [tts.time_scope_id for tts in linkages]
+        .order_by(TaskTimeScope.time_scope_id)
+
+    return [trim_quarter_scopes(tts.time_scope_id) for tts in tts_query.all()]
 
 
 def _construct_linkages(t1: Task_v1, t2: Task_v2):
     """
     Turn TaskTimeScopes and child tasks into TaskLinkages
-
-    - TODO: migrate or fail on quarter scoped-tasks
     """
     draft_linkages = {}
 
