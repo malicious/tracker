@@ -101,9 +101,9 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
             if not tl.resolution:
                 tl.resolution = f"roll => {draft_linkages_sorted[index + 1][0]}"
 
-        # add "imported from" note, where applicable
+        # add "migrated from" note, where applicable
         if not tl.detailed_resolution:
-            tl.detailed_resolution = f"imported from Task_v1 #{t1.task_id}"
+            tl.detailed_resolution = f"migrated from Task_v1 #{t1.task_id}"
 
     # Sometimes child tasks have scopes that extend out past the parent
     final_linkage = draft_linkages_sorted[-1][1]
@@ -141,29 +141,38 @@ def _migrate_task(session, t1: Task_v1, print_fn):
     print_fn()
     print_fn()
 
-    # Construct Task_v2
-    try:
-        t2 = Task_v2(desc=t1.desc,
-                     category=t1.category,
-                     time_estimate=t1.time_estimate)
-        session.add(t2)
-        session.commit()
-    except StatementError as e:
-        session.rollback()
-        print(f"ERROR: Hit exception when parsing task #{t1.task_id}, skipping")
-        print(t1.to_json_dict())
-        return None, 0
-    except IntegrityError as e:
-        session.rollback()
-        print(e)
-        print(t1.to_json_dict())
-        return None, 0
+    # Check if Task_v2 already exists
+    existing_t2 = Task_v2.query \
+        .filter(Task_v2.desc == t1.desc) \
+        .one_or_none()
+    if not existing_t2:
+        # Construct Task_v2
+        try:
+            t2 = Task_v2(desc=t1.desc,
+                         category=t1.category,
+                         time_estimate=t1.time_estimate)
+            session.add(t2)
+            session.commit()
+        except StatementError as e:
+            session.rollback()
+            print(f"ERROR: Hit exception when parsing task #{t1.task_id}, skipping")
+            print(t1.to_json_dict())
+            return None, 0
+        except IntegrityError as e:
+            session.rollback()
+            print(e)
+            print(t1.to_json_dict())
+            return None, 0
 
-    # Print Task_v2 info
-    print_fn(f"imported to Task_v2:")
+    print_fn("migrating to Task_v2, new info:")
     print_fn("-" * 72)
     print_fn()
 
+    if existing_t2:
+        print(f"WARN: #{t1.task_id} matches existing Task_v2 #{existing_t2.task_id}, reusing")
+        t2 = existing_t2
+
+    # Print Task_v2 info
     print_fn(f"{t2.desc}")
     print_fn()
 
