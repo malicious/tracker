@@ -47,7 +47,7 @@ def create_app(settings_overrides: Dict = {}):
         scope = TimeScope(escape(scope_str))
         return tasks.report.report_tasks(scope)
 
-    @app.route("/task_v2/<task_id>")
+    @app.route("/task-v2/<task_id>")
     def get_task_v2(task_id):
         return tasks_v2.report.report_one_task(escape(task_id))
 
