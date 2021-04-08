@@ -48,33 +48,35 @@ def generate_tasks_by_scope(page_scope: Optional[TimeScope]):
     page_scopes_all = []
 
     if page_scope is not None:
-        page_scope_linkages = TaskLinkage.query \
+        linkages_query = TaskLinkage.query \
             .filter(TaskLinkage.time_scope_id.like(page_scope + "%")) \
-            .order_by(TaskLinkage.time_scope_id) \
-            .all()
+            .order_by(TaskLinkage.time_scope_id)
         page_scopes_all = [
             *TimeScopeUtils.enclosing_scope(page_scope, recurse=True),
             page_scope,
-            *[tl.time_scope_id for tl in page_scope_linkages],
+            *[tl.time_scope_id for tl in linkages_query.all()],
         ]
     else:
-        page_scope_linkages = TaskLinkage.query \
-            .order_by(TaskLinkage.time_scope_id) \
-            .all()
+        # NB if no scope is provided, assume we want _open_ tasks
+        linkages_query = TaskLinkage.query \
+            .filter(TaskLinkage.resolution == None) \
+            .order_by(TaskLinkage.time_scope_id)
         page_scopes_all = [
-            tl.time_scope_id for tl in page_scope_linkages
+            tl.time_scope_id for tl in linkages_query.all()
         ]
 
     # Identify all tasks within those scopes
     tasks_by_scope = {}
 
     for scope in page_scopes_all:
-        tasks = Task.query \
+        tasks_in_scope_query = Task.query \
             .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
             .filter(TaskLinkage.time_scope_id == scope) \
-            .order_by(TaskLinkage.time_scope_id, Task.category) \
-            .all()
-        tasks_by_scope[TimeScope(scope)] = tasks
+            .order_by(TaskLinkage.time_scope_id, Task.category)
+        if not page_scope:
+            tasks_in_scope_query = tasks_in_scope_query \
+                .filter(TaskLinkage.resolution == None)
+        tasks_by_scope[TimeScope(scope)] = tasks_in_scope_query.all()
 
     return tasks_by_scope
 
