@@ -17,6 +17,17 @@ def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
     response_html += f'\n<span class="desc">{t.desc}</span>'
     response_html += f'\n<span class="task-id"><a href="/task-v2/{t.task_id}">#{t.task_id}</a></span>'
 
+    matching_linkages = [tl for tl in t.linkages if tl.time_scope_id == ref_scope]
+    if len(matching_linkages) != 1:
+        return {"error": f"Task #{t.task_id} had multiple matching scopes, check database: {matching_linkages}"}
+
+    tl = list(matching_linkages)[0]
+    if tl and tl.resolution:
+        return '<summary class="task-resolved">\n' + \
+            f'<span class="resolution">({tl.resolution}) </span>' + \
+            response_html + '\n' + \
+            '</summary>'
+
     return '<summary class="task">' + \
            response_html + '\n' + \
            '</summary>'
