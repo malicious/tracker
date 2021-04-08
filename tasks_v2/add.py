@@ -96,16 +96,20 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
     # Done, attempt to set the initial scope as "created_at", if possible
     if not draft_linkages[t1.first_scope].resolution:
         draft_linkages[t1.first_scope].resolution = "created_at"
+        draft_linkages[t1.first_scope].created_at = t1.created_at
 
-    # Done with import attempt, fill in "roll =>" entries
+    # Done with initial import pass, add additional info
     draft_linkages_sorted = sorted(draft_linkages.items())
     for index, (scope, tl) in enumerate(draft_linkages_sorted):
-        # Skip the last entry in the set
-        if index == len(draft_linkages_sorted) - 1:
-            continue
+        # attempt to fill in "roll =>" entries
+        if index < len(draft_linkages_sorted) - 1:
+            # Skip the last entry in the set
+            if not tl.resolution:
+                tl.resolution = f"roll => {draft_linkages_sorted[index + 1][0]}"
 
-        if not tl.resolution:
-            tl.resolution = f"roll => {draft_linkages_sorted[index + 1][0]}"
+        # add "imported from" note, where applicable
+        if not tl.detailed_resolution:
+            tl.detailed_resolution = f"imported from Task_v1 #{t1.task_id}"
 
     # Sometimes child tasks have scopes that extend out past the parent
     final_linkage = draft_linkages_sorted[-1][1]
