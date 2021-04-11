@@ -16,7 +16,7 @@ def to_details_html(t: Task):
 def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
     response_html = ""
     response_html += f'\n<span class="desc">{t.desc}</span>'
-    response_html += f'\n<span class="task-id"><a href="{url_for(".get_task", task_id=t.task_id)}">#{t.task_id}</a></span>'
+    response_html += f'\n<span class="task-id"><a href="{url_for(".edit_task", task_id=t.task_id)}">#{t.task_id}</a></span>'
 
     tl_exact = None
 

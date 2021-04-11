@@ -8,7 +8,7 @@
             margin-right: 7.5%;
         }
 
-        .task-id, .task-id > a {
+        .task-id {
             color: #bbb;
         }
 
@@ -38,7 +38,12 @@
     {{ task_form.hidden_tag() }}
     <div class="task-row">
         <div class="label">task_id</div>
-        <div class="task-id">#{{ task.task_id }}</div>
+        <div class="task-id">
+            #{{task.task_id }}
+            {% if json_link %}
+            (<a href="{{ json_link }}">json</a>)
+            {% endif %}
+        </div>
     </div>
     <div class="task-row">
         <div class="label">desc</div>
