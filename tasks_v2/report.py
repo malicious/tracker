@@ -2,7 +2,7 @@ import json
 from datetime import datetime
 from typing import Optional
 
-from flask import render_template
+from flask import render_template, url_for
 
 from tasks.time_scope import TimeScope, TimeScopeUtils
 from tasks_v2.models import Task, TaskLinkage
@@ -16,7 +16,7 @@ def to_details_html(t: Task):
 def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
     response_html = ""
     response_html += f'\n<span class="desc">{t.desc}</span>'
-    response_html += f'\n<span class="task-id"><a href="/task-v2/{t.task_id}">#{t.task_id}</a></span>'
+    response_html += f'\n<span class="task-id"><a href="{url_for(".get_task", task_id=t.task_id)}">#{t.task_id}</a></span>'
 
     tl_exact = None
 
@@ -99,9 +99,9 @@ def report_tasks(page_scope: Optional[TimeScope]):
     # If there are previous/next links, add them
     if page_scope:
         prev_scope = TimeScopeUtils.prev_scope(page_scope)
-        render_kwargs['prev_scope'] = f'<a href="/report-tasks-v2?scope={prev_scope}">{prev_scope}</a>'
+        render_kwargs['prev_scope'] = f'<a href="{url_for(".report_tasks", scope=prev_scope)}">{prev_scope}</a>'
         next_scope = TimeScopeUtils.next_scope(page_scope)
-        render_kwargs['next_scope'] = f'<a href="/report-tasks-v2?scope={next_scope}">{next_scope}</a>'
+        render_kwargs['next_scope'] = f'<a href="{url_for(".report_tasks", scope=next_scope)}">{next_scope}</a>'
 
     # Tell template about how to format Tasks
     render_kwargs['to_details_html'] = to_details_html
