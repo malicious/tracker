@@ -1,0 +1,70 @@
+{% extends "base.html" %}
+
+{% block head %}
+    {{ super() }}
+    <style type="text/css">
+        body {
+            margin-left: 7.5%;
+            margin-right: 7.5%;
+            margin-bottom: 50em;
+        }
+
+        .date-scope {
+            font-size: 200%;
+            margin-bottom: 0.8em;
+            border-bottom: 1pt solid dimgrey;
+            position: sticky;
+            top: 0px;
+            height: 1.6em;
+            color: black;
+            background-color: #eee;
+        }
+        .category {
+            font-size: 150%;
+            margin-top: 0.8em;
+            margin-bottom: 0.8em;
+            position: sticky;
+            top: 2.5em;
+            background-color: #eee;
+        }
+
+        /* task formatting */
+        details {
+            padding: 0.5em;
+        }
+        .time-scope {
+            color: #bbb;
+        }
+        .task-time {
+          color: brown;
+        }
+        .task-id, .task-id > a {
+            color: #bbb;
+        }
+        .task-resolved, .task-resolved .task-time, .task-resolved .time-scope {
+            color: rgb(200, 200, 200);
+        }
+        .task-details {
+            margin: 1.3em 0.7em 0.7em 1.3em;
+            background-color: rgb(246,246,246);
+        }
+        .task-details .created_at {
+            color: forestgreen;
+            margin-top: 1em;
+        }
+    </style>
+{% endblock %}
+
+
+
+{% block content %}
+
+<form method="POST">
+    {{ task_form.hidden_tag() }}
+    {{ task.desc }} {{ task_form.desc(id='task') }}
+    {{ task.category }} {{ task_form.category() }}
+    {{ task_form.time_estimate() }}
+    {{ task_form.submit() }}
+</form>
+
+{% endblock %}
