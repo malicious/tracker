@@ -1,1 +1,1 @@
-from . import add, models, report
+from . import add, blueprint, models, report
