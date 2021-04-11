@@ -6,51 +6,26 @@
         body {
             margin-left: 7.5%;
             margin-right: 7.5%;
-            margin-bottom: 50em;
         }
 
-        .date-scope {
-            font-size: 200%;
-            margin-bottom: 0.8em;
-            border-bottom: 1pt solid dimgrey;
-            position: sticky;
-            top: 0px;
-            height: 1.6em;
-            color: black;
-            background-color: #eee;
-        }
-        .category {
-            font-size: 150%;
-            margin-top: 0.8em;
-            margin-bottom: 0.8em;
-            position: sticky;
-            top: 2.5em;
-            background-color: #eee;
-        }
-
-        /* task formatting */
-        details {
-            padding: 0.5em;
-        }
-        .time-scope {
-            color: #bbb;
-        }
-        .task-time {
-          color: brown;
-        }
         .task-id, .task-id > a {
             color: #bbb;
         }
-        .task-resolved, .task-resolved .task-time, .task-resolved .time-scope {
-            color: rgb(200, 200, 200);
+
+        .task-row, .task-row-final {
+            display: flex;
+            flow-direction: row;
+            padding: 0.5em;
         }
-        .task-details {
-            margin: 1.3em 0.7em 0.7em 1.3em;
-            background-color: rgb(246,246,246);
+        .task-row {
+            border-bottom: 1pt solid #bbb;
         }
-        .task-details .created_at {
-            color: forestgreen;
-            margin-top: 1em;
+        .task-row div {
+            .flex: 1 2 auto;
+            padding-left: 1.3rem;
+        }
+        .task-row .label {
+            min-width: 10em;
         }
     </style>
 {% endblock %}
@@ -61,10 +36,45 @@
 
 <form method="POST">
     {{ task_form.hidden_tag() }}
-    {{ task.desc }} {{ task_form.desc(id='task') }}
-    {{ task.category }} {{ task_form.category() }}
-    {{ task_form.time_estimate() }}
-    {{ task_form.submit() }}
+    <div class="task-row">
+        <div class="label">task_id</div>
+        <div class="task-id">#{{ task.task_id }}</div>
+    </div>
+    <div class="task-row">
+        <div class="label">desc</div>
+        <div>
+            {{ task.desc }}
+            <hr />
+            {{ task_form.desc() }}
+        </div>
+    </div>
+    <div class="task-row">
+        <div class="label">category</div>
+        <div>
+            {{ task.category }}
+            <hr />
+            {{ task_form.category() }}
+        </div>
+    </div>
+    <div class="task-row">
+        <div class="label">time_estimate</div>
+        <div>
+            {{ task.time_estimate }}
+            <hr />
+            {{ task_form.time_estimate() }}
+        </div>
+    </div>
+    <div class="task-row-final">
+        <div class="label"></div>
+        <div>
+            {{ task_form.submit() }}
+        </div>
+    </div>
 </form>
+
+{# add links to edit all the linkages #}
+{% for linkage in task.linkages %}
+<div><a href="#linkage">{{ linkage.to_json_dict() }}</a></div>
+{% endfor %}
 
 {% endblock %}
