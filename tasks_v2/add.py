@@ -39,11 +39,14 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
         tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
         tl.created_at = datetime.now()
         draft_linkages[scope] = tl
+    del index, scope
 
-        # Put resolution info into final scope
-        if scope == t1_scopes[-1]:
-            tl.resolution = t1.resolution
-            tl.time_elapsed = t1.time_actual
+    # Put resolution info into final scope
+    tl_final = draft_linkages[t1_scopes[-1]]
+    tl_final.resolution = t1.resolution
+    tl_final.time_elapsed = t1.time_actual
+    del tl_final
+    del t1_scopes
 
     # Case: unclear, gonna do our best
     def parse_child(child_task: Task_v1):
@@ -51,7 +54,7 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
         if len(child_task_scopes) < 1:
             raise ValueError(f"ERROR: Task #{child_task.task_id} has no associated scopes")
 
-        populating_first_scope = child_task_scopes[0] not in draft_linkages
+        should_populate_first_scope = child_task_scopes[0] not in draft_linkages
 
         # Create a new linkage for each new child scope
         for index, scope in enumerate(child_task_scopes):
@@ -59,6 +62,7 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
                 tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
                 tl.created_at = datetime.now()
                 draft_linkages[scope] = tl
+        del index, scope
 
         # Then, dump all the child task info into the first associated scope
         info_string = child_task.desc
@@ -81,8 +85,10 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
                 tl_0.detailed_resolution = f"- {tl_0.detailed_resolution}"
             tl_0.detailed_resolution = f"{tl_0.detailed_resolution}\n- {info_string}"
 
+        del info_string
+
         # Update accessory fields, if we can
-        if populating_first_scope:
+        if should_populate_first_scope:
             tl_0.created_at = child_task.created_at
 
         if child_task.time_actual:
@@ -95,8 +101,6 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
         for child in t1.get_children():
             # print(f"DEBUG: evaluating child #{child.task_id}")
             parse_child(child)
-
-            # Tail recursion here
             add_child_tasks(child)
 
     add_child_tasks(t1)
@@ -104,20 +108,21 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
     # Done with initial import pass, add additional info
     draft_linkages_sorted = sorted(draft_linkages.items())
     for index, (scope, tl) in enumerate(draft_linkages_sorted):
-        # attempt to fill in "roll =>" entries
+        # attempt to fill in "roll =>" entries (skip the last entry in the set, though)
         if index < len(draft_linkages_sorted) - 1:
-            # Skip the last entry in the set
             if not tl.resolution:
                 tl.resolution = f"roll => {draft_linkages_sorted[index + 1][0]}"
 
         # add "migrated from" note, where applicable
         if not tl.detailed_resolution:
             tl.detailed_resolution = f"migrated from Task_v1 #{t1.task_id}"
+    del index, scope, tl
 
     # Sometimes child tasks have scopes that extend out past the parent
     final_linkage = draft_linkages_sorted[-1][1]
     if t1.resolution and not final_linkage.resolution:
             print(f"WARN: task #{t1.task_id} imported, but final child scope {final_linkage.time_scope_id} is later than final parent scope {t1.first_scope}")
+    del final_linkage
 
     return draft_linkages
 
