@@ -3,7 +3,7 @@ import re
 from collections import defaultdict
 from typing import Dict, Iterator
 
-from flask import render_template
+from flask import render_template, url_for
 
 from notes.models import Note, NoteDomain
 from tasks.time_scope import TimeScopeUtils, TimeScope
@@ -207,9 +207,9 @@ def _format_as_html(scope, domain, response_by_quarter):
 
         def domain_to_html(d):
             if scope:
-                return f'<a href="/report-notes?scope={scope}&domain={d}">{d.replace(" ", "&nbsp;")}</a>'
+                return f'<a href="{url_for(".report_notes_all", scope=scope, domain=d)}">{d.replace(" ", "&nbsp;")}</a>'
             else:
-                return f'<a href="/report-notes?domain={d}">{d.replace(" ", "&nbsp;")}</a>'
+                return f'<a href="{url_for(".report_notes_all", domain=d)}">{d.replace(" ", "&nbsp;")}</a>'
 
         domains = [domain_to_html(d) for d in domains]
         return ", ".join(domains)
@@ -294,9 +294,9 @@ def _format_as_html(scope, domain, response_by_quarter):
     if scope:
         prev_scope = TimeScopeUtils.prev_scope(scope)
         if domain:
-            kwargs["prev_scope"] = f'<a href="/report-notes?scope={prev_scope}&domain={domain}">{prev_scope}</a>'
+            kwargs["prev_scope"] = f'<a href="{url_for(".report_notes_all", scope=prev_scope, domain=domain)}">{prev_scope}</a>'
         else:
-            kwargs["prev_scope"] = f'<a href="/report-notes?scope={prev_scope}">{prev_scope}</a>'
+            kwargs["prev_scope"] = f'<a href="{url_for(".report_notes_all", scope=prev_scope)}">{prev_scope}</a>'
 
         next_scope = TimeScopeUtils.next_scope(scope)
         if domain:
