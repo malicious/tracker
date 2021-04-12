@@ -237,7 +237,7 @@ def migrate_tasks(session,
     if start_index:
         v1_tasks_query = v1_tasks_query.filter(Task_v1.task_id <= start_index)
     v1_tasks = v1_tasks_query \
-        .order_by(Task_v1.task_id.desc()) \
+        .order_by(Task_v1.task_id) \
         .all()
 
     count_total = len(v1_tasks)
