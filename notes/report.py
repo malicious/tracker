@@ -3,7 +3,7 @@ import re
 from collections import defaultdict
 from typing import Dict, Iterator
 
-from flask import render_template
+from flask import render_template, url_for
 from markupsafe import escape
 
 from notes.models import Note, NoteDomain
@@ -276,9 +276,9 @@ def _format_as_html(scope, domain, response_by_quarter):
     if scope:
         prev_scope = TimeScopeUtils.prev_scope(scope)
         if domain:
-            kwargs["prev_scope"] = f'<a href="/report-notes?scope={prev_scope}&domain={domain}">{prev_scope}</a>'
+            kwargs["prev_scope"] = f'<a href="{url_for(".report_notes_all", scope=prev_scope, domain=domain)}">{prev_scope}</a>'
         else:
-            kwargs["prev_scope"] = f'<a href="/report-notes?scope={prev_scope}">{prev_scope}</a>'
+            kwargs["prev_scope"] = f'<a href="{url_for(".report_notes_all", scope=prev_scope)}">{prev_scope}</a>'
 
         next_scope = TimeScopeUtils.next_scope(scope)
         if domain:
