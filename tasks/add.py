@@ -219,9 +219,12 @@ def update(session, requested_scopes, category, resolution, task_id):
 def update_from_cli(session, task_id):
     # Open relevant task
     t: Task = Task.query.filter(Task.task_id == task_id).one()
-    task_name = t.desc[:70] if len(t.desc) > 70 else t.desc
-    print(task_name)
-    print()
+    if len(t.desc) <= 70:
+        print(t.desc)
+        print()
+    else:
+        print(t.desc[:60] + "…")
+        print()
 
     matching_scopes = tasks.report.matching_scopes(task_id)
     print(f"Existing scopes => {', '.join(matching_scopes)}")
