@@ -1,8 +1,9 @@
 import itertools
+from functools import reduce
 
 from tasks.time_scope import TimeScope
 from tasks_v2.models import Task, TaskLinkage
-from tasks_v2.report import generate_tasks_by_scope, report_one_task
+from tasks_v2.report import generate_tasks_by_scope, report_one_task, generate_open_tasks
 
 
 def test_report_one_empty():
@@ -17,17 +18,19 @@ def test_report_one_simple(session):
     session.add(t2)
     session.commit()
 
-    json_dict = report_one_task(t2.task_id)
+    json_dict = report_one_task(t2.task_id, return_bare_dict=True)
     assert json_dict
     assert "task_id" in json_dict
+    print(json_dict)
     assert json_dict["task_id"] == t2.task_id
 
 
 def test_report_empty():
-    tasks_by_scope = generate_tasks_by_scope(page_scope=None)
-
+    tasks_by_scope = generate_open_tasks()
     assert tasks_by_scope is not None
-    assert not tasks_by_scope
+
+    returned_tasks = reduce(lambda a, b: a.extend(b) or a, tasks_by_scope.values(), [])
+    assert not returned_tasks
 
 
 def test_report_simple(session):
@@ -39,7 +42,7 @@ def test_report_simple(session):
     tl = TaskLinkage(task_id=t2.task_id, time_scope_id=TEST_SCOPE)
     session.add(tl)
 
-    tasks_by_scope = generate_tasks_by_scope(page_scope=None)
+    tasks_by_scope = generate_tasks_by_scope(page_scope=TimeScope("2021-ww14"))
     assert tasks_by_scope
     assert TEST_SCOPE in tasks_by_scope
     assert len(tasks_by_scope[TEST_SCOPE]) == 1
@@ -60,8 +63,8 @@ def test_report_simple_2(session):
 
     session.commit()
 
-    tasks_by_scope = generate_tasks_by_scope(page_scope=None)
-    assert len(tasks_by_scope.items()) == 2
+    tasks_by_scope = generate_tasks_by_scope(page_scope=TimeScope("2021-ww14"))
+    assert len(tasks_by_scope.items()) >= 2
 
     assert TEST_SCOPE_MONDAY in tasks_by_scope
     assert len(tasks_by_scope[TEST_SCOPE_MONDAY]) == 1

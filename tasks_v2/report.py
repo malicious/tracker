@@ -28,24 +28,27 @@ def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
 
     if tl_exact and tl_exact.resolution:
         return '<summary class="task-resolved">\n' + \
-            f'<span class="resolution">({tl_exact.resolution}) </span>' + \
-            response_html + '\n' + \
-            '</summary>'
+               f'<span class="resolution">({tl_exact.resolution}) </span>' + \
+               response_html + '\n' + \
+               '</summary>'
 
     # Otherwise, do our best to guess at additional info
     short_scope_str = TimeScope(t.linkages[0].time_scope_id).shorten(ref_scope)
     return '<summary class="task">' + \
-            f'<span class="time-scope">{short_scope_str}</span>' + \
-            response_html + '\n' + \
-            '</summary>'
+           f'<span class="time-scope">{short_scope_str}</span>' + \
+           response_html + '\n' + \
+           '</summary>'
 
 
-def report_one_task(task_id):
+def report_one_task(task_id, return_bare_dict=False):
     task: Task = Task.query \
         .filter(Task.task_id == task_id) \
         .one_or_none()
     if not task:
         return {"error": f"invalid task_id: {task_id}"}
+
+    if return_bare_dict:
+        return task.to_json_dict()
 
     as_text = json.dumps(task.to_json_dict(), indent=4, ensure_ascii=False)
     return f'<html><body><pre>{as_text}</pre></body></html>'
