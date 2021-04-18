@@ -17,7 +17,7 @@ def create_app(settings_overrides: Dict = {}):
     try:
         from flask_debugtoolbar import DebugToolbarExtension
 
-        app.config['SECRET_KEY'] = 7
+        app.config['SECRET_KEY'] = '7'
         toolbar = DebugToolbarExtension(app)
     except ImportError:
         pass
