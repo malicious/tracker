@@ -9,13 +9,6 @@ from notes.models import Note, NoteDomain
 from tasks_v1.time_scope import TimeScopeUtils, TimeScope
 
 
-def _list_domains(note_id) -> Iterator:
-    note_domains = NoteDomain.query \
-        .filter(NoteDomain.note_id == note_id) \
-        .all()
-    return [nd.domain_id for nd in note_domains]
-
-
 def report_one_note(note_id) -> Dict:
     result_dict = {}
 
@@ -26,9 +19,8 @@ def report_one_note(note_id) -> Dict:
 
     # Sometimes, a Note doesn't have any domains.
     # In that case, don't print a domains entry at all.
-    domains = _list_domains(note_id)
-    if domains:
-        result_dict["domains"] = domains
+    if note.domains:
+        result_dict["domains"] = note.domains
 
     return result_dict
 
@@ -200,10 +192,13 @@ def _report_notes_for(scope, domain):
 def _format_as_html(scope, domain, response_by_quarter):
     kwargs = {}
 
-    def match_domains(n: Note) -> str:
-        domains = filter(lambda x: x != domain, _list_domains(n.note_id))
-        if not domains:
-            return ""
+    def list_matching_domains(n: Note) -> str:
+        matching_domains = n.domains
+        # remove mentions of the page-wide domain, if applicable
+        if domain:
+            domains = filter(lambda x: x.domain_id != domain, matching_domains)
+            if not matching_domains:
+                return ""
 
         def domain_to_html(d):
             if scope:
@@ -211,10 +206,10 @@ def _format_as_html(scope, domain, response_by_quarter):
             else:
                 return f'<a href="/report-notes?domain={d}">{d.replace(" ", "&nbsp;")}</a>'
 
-        domains = [domain_to_html(d) for d in domains]
-        return ", ".join(domains)
+        matching_domains_as_html = [domain_to_html(d.domain_id) for d in matching_domains]
+        return ", ".join(matching_domains_as_html)
 
-    kwargs["match_domains"] = match_domains
+    kwargs["match_domains"] = list_matching_domains
 
     def week_lengthener(scope) -> str:
         if scope.type == TimeScope.Type.week:

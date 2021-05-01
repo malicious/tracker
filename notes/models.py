@@ -1,5 +1,7 @@
 from typing import Dict
 
+from sqlalchemy.orm import relationship
+
 from tracker.db import content_db as db
 
 
@@ -32,6 +34,8 @@ class Note(db.Model):
         db.Index("import-notes-index-1", 'time_scope_id', 'short_desc'),
         db.Index("import-notes-index-2", 'source', 'type', 'sort_time', 'time_scope_id', 'short_desc', 'desc'),
     )
+
+    domains = relationship('NoteDomain', backref='Note')
 
     def to_json(self) -> Dict:
         response_dict = {
