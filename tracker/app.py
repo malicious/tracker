@@ -3,9 +3,11 @@ from typing import Dict
 from flask import Flask, request
 from markupsafe import escape
 
+import json
 import notes
 import tasks_v1
 import tasks_v2
+from notes.models import Note
 from tasks_v1.time_scope import TimeScope
 from . import cli, db
 
@@ -31,7 +33,11 @@ def create_app(settings_overrides: Dict = {}):
 
     @app.route("/note/<note_id>")
     def get_note(note_id):
-        return notes.report.report_one_note(escape(note_id))
+        note: Note = Note.query \
+            .filter(Note.note_id == note_id) \
+            .one()
+
+        return note.to_json(include_domains=True)
 
     @app.route("/report-notes")
     def report_notes_all():

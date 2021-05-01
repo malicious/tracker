@@ -9,22 +9,6 @@ from notes.models import Note, NoteDomain
 from tasks_v1.time_scope import TimeScopeUtils, TimeScope
 
 
-def report_one_note(note_id) -> Dict:
-    result_dict = {}
-
-    note: Note = Note.query \
-        .filter(Note.note_id == note_id) \
-        .one()
-    result_dict["note"] = note.to_json()
-
-    # Sometimes, a Note doesn't have any domains.
-    # In that case, don't print a domains entry at all.
-    if note.domains:
-        result_dict["domains"] = note.domains
-
-    return result_dict
-
-
 def report_notes(page_scope, page_domain):
     response_by_quarter = _report_notes_for(page_scope, page_domain)
     return _format_as_html(page_scope, page_domain, response_by_quarter)
@@ -234,7 +218,9 @@ def _format_as_html(scope, domain, response_by_quarter):
     kwargs["desc_to_html"] = desc_to_html
 
     def pretty_print_note(note: Note):
-        as_json = report_one_note(note.note_id)
+        as_json = {
+            "note": note.to_json(include_domains=False),
+        }
 
         # truncate long note descriptions
         DESC_TRUNC_NOTICE = '[desc truncated, see note_id link for details]'
@@ -242,11 +228,11 @@ def _format_as_html(scope, domain, response_by_quarter):
             as_json['note']['desc'] = DESC_TRUNC_NOTICE
 
         # tag domain strings so we can turn them into links
-        if 'domains' in as_json:
-            clickable_domains = [f'domain: {d}' for d in as_json['domains']]
+        if note.domains:
+            clickable_domains = [f'domain: {nd.domain_id}' for nd in note.domains]
             as_json['domains'] = clickable_domains
 
-        as_text = json.dumps(as_json, indent=4, ensure_ascii=False)
+        as_text = json.dumps(as_json, indent=4, ensure_ascii=False, default=str)
         # make note_ids clickable
         as_text = re.sub(r'"note_id": (\d*),',
                          r'<a href="/note/\1">"note_id": \1</a>,',

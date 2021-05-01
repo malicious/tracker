@@ -37,21 +37,20 @@ class Note(db.Model):
 
     domains = relationship('NoteDomain', backref='Note')
 
-    def to_json(self) -> Dict:
+    def to_json(self, include_domains: bool = False) -> Dict:
         response_dict = {
             'note_id': self.note_id,
             'time_scope_id': self.time_scope_id,
         }
 
-        for field in ['source', 'type', 'short_desc', 'desc']:
+        for field in ['source', 'type', 'short_desc', 'desc', 'created_at', 'sort_time']:
             value = getattr(self, field)
             if value:
-                response_dict[field] = repr(value)
+                response_dict[field] = value
 
-        for field in ['created_at', 'sort_time']:
-            value = getattr(self, field)
-            if value:
-                response_dict[field] = str(value)
+        if include_domains:
+            if self.domains:
+                response_dict['domains'] = [nd.domain_id for nd in self.domains]
 
         return response_dict
 
