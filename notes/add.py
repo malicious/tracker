@@ -3,6 +3,7 @@ import json
 from typing import Optional
 
 from dateutil import parser
+from sqlalchemy import exists
 from sqlalchemy.exc import StatementError
 from sqlalchemy.orm.exc import MultipleResultsFound
 
@@ -20,38 +21,26 @@ def _add_domains_for(note_id, domain_str: str, session, do_commit: bool = True):
         if not domain_id:
             raise ValueError("Blank domain_id found, please check your parsing code (parsed from \"{domain_str}\")")
 
-        new_link = NoteDomain(note_id=note_id, domain_id=domain_id)
-        link = NoteDomain.query \
-            .filter_by(note_id=note_id, domain_id=domain_id) \
-            .one_or_none()
-        if not link:
+        link_exists = session.query( \
+            NoteDomain.query \
+                .filter_by(note_id=note_id, domain_id=domain_id) \
+                .exists()
+            ).scalar()
+        if not link_exists:
+            new_link = NoteDomain(note_id=note_id, domain_id=domain_id)
             session.add(new_link)
-            link = new_link
 
     if do_commit:
         session.commit()
 
 
-def _find_existing_note(all_fields, fields_allow_list):
+def _generate_note_query(all_fields, fields_allow_list):
     unique_args = {}
     for field in fields_allow_list:
         if field in all_fields and all_fields[field] is not None:
             unique_args[field] = all_fields[field]
-        else:
-            # This helps with some kind of search error in the below `.filter_by` call,
-            # specifically when a datetime (created_at?) doesn't exist, then a later
-            # json.dumps() call fails because it doesn't know what to do with default-created datetimes.
-            #
-            # I think.
-            unique_args[field] = None
 
-    n = Note.query \
-        .filter_by(**unique_args) \
-        .one_or_none()
-    # TODO: multiple isn't _that_ exceptional, handle the case without exceptions
-    # - replace one_or_none() with all() and length checks (maybe)
-    return n
-
+    return Note.query.filter_by(**unique_args)
 
 
 def _add_note(session, domains: str, **kwargs) -> Optional[Note]:
@@ -60,50 +49,47 @@ def _add_note(session, domains: str, **kwargs) -> Optional[Note]:
     if len(kwargs) == 0:
         return None
 
-    # Check for an existing note
-    try:
-        # Do fast check for existing notes (sub-minimal set of unique fields)
-        n = _find_existing_note(kwargs, ['time_scope_id', 'short_desc'])
-
+    # Do fast check for existing notes (sub-minimal set of unique fields)
+    inexact_match_exists = session.query( \
+        _generate_note_query(kwargs, ['time_scope_id', 'short_desc']) \
+            .exists()
+        ).scalar()
+    if not inexact_match_exists:
         # Fast part: if nothing exists, just create a new note
-        if not n:
-            n = Note(**kwargs)
-            session.add(n)
+        n = Note(**kwargs)
+        session.add(n)
 
-            try:
-                session.commit()
-            except StatementError as e:
-                print(f"Hit exception when parsing: {e}")
-                print(json.dumps(n.to_json(), indent=4))
-                session.rollback()
-                return None
-
-    # If fast check returned multiple notes, do a more thorough check
-    except MultipleResultsFound as e:
         try:
-            n = _find_existing_note(kwargs, ['source', 'type', 'sort_time', 'time_scope_id', 'short_desc', 'desc'])
-        except MultipleResultsFound as e:
-            # super-failure case: multiple entries exist, just skip it
-            print(e)
-            print(json.dumps(kwargs, indent=4))
+            session.commit()
+        except StatementError as e:
+            print(f"Hit exception when parsing: {e}")
+            print(json.dumps(n.to_json(), indent=4))
+            session.rollback()
             return None
 
-        # simpler case: exactly one note already exists
-        if n is not None:
-            pass
+    # If any results were returned, do a more thorough check
+    thorough_query = _generate_note_query(kwargs, ['source', 'type', 'sort_time', 'time_scope_id', 'short_desc'])
+    results_exist = session.query(thorough_query.exists()).scalar()
+    if results_exist:
+        results = thorough_query.all()
+        if len(results) > 1:
+            print("Multiple results found for query")
+            print(json.dumps(kwargs, indent=4, default=str))
+            return None
 
+        n = results[0]
+    else:
         # final case: just create a new note
-        else:
-            n = Note(**kwargs)
-            session.add(n)
+        n = Note(**kwargs)
+        session.add(n)
 
-            try:
-                session.commit()
-            except StatementError as e:
-                print(f"Hit exception when parsing: {e}")
-                print(json.dumps(n.to_json(), indent=4))
-                session.rollback()
-                return None
+        try:
+            session.commit()
+        except StatementError as e:
+            print(f"Hit exception when parsing: {e}")
+            print(json.dumps(n.to_json(), indent=4))
+            session.rollback()
+            return None
 
     # Of all the fields we could care about, only domains are potentially updated.
     try:
