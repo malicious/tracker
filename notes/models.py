@@ -9,7 +9,7 @@ class Note(db.Model):
     __tablename__ = 'Notes'
     __bind_key__ = 'notes'
     note_id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
-    time_scope_id = db.Column(db.String(20), nullable=False)
+    time_scope_id = db.Column(db.String(20), nullable=False, index=True)
 
     # source info (mostly URL, sometimes manually labeled)
     source = db.Column(db.String)
@@ -58,8 +58,10 @@ class Note(db.Model):
 class NoteDomain(db.Model):
     __tablename__ = 'NoteDomains'
     __bind_key__ = 'notes'
-    note_id = db.Column(db.Integer, db.ForeignKey('Notes.note_id'), primary_key=True, nullable=False)
-    domain_id = db.Column(db.String, primary_key=True, nullable=False)
+    note_id = db.Column(db.Integer, db.ForeignKey('Notes.note_id'), primary_key=True, nullable=False, index=True)
+    domain_id = db.Column(db.String, primary_key=True, nullable=False, index=True)
     __table_args__ = (
         db.UniqueConstraint('note_id', 'domain_id'),
+        db.Index("note-domain-index", 'note_id', 'domain_id'),
+        db.Index("domain-note-index", 'domain_id', 'note_id'),
     )
