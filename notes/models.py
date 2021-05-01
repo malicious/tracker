@@ -29,6 +29,8 @@ class Note(db.Model):
     __table_args__ = (
         db.UniqueConstraint('source', 'type', 'sort_time', 'time_scope_id', 'short_desc'),
         db.CheckConstraint('NOT(short_desc IS NULL AND desc IS NULL)'),
+        db.Index("import-notes-index-1", 'time_scope_id', 'short_desc'),
+        db.Index("import-notes-index-2", 'source', 'type', 'sort_time', 'time_scope_id', 'short_desc', 'desc'),
     )
 
     def to_json(self) -> Dict:
