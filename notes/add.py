@@ -10,11 +10,44 @@ from sqlalchemy.orm.exc import MultipleResultsFound
 from notes.models import Note, NoteDomain
 
 
+def _special_tokenize(domain_str):
+    split_domains = []
+    token = ""
+    token_index = 0
+
+    while True:
+        #print(f"remaining: \"{token}\" + \"{domain_str[token_index:]}\"")
+        current_index = domain_str.find('&', token_index)
+        if current_index == -1:
+            token += domain_str[token_index:]
+            split_domains.append(token)
+            break
+
+        # If this ampersand is part of a pair, split the first chunk into token parser
+        if domain_str[current_index:current_index+2] == '&&':
+            token += domain_str[token_index:current_index+1]
+            token_index = current_index+2
+            continue
+        # Otherwise, it just gets to be its own token
+        else:
+            token += domain_str[token_index:current_index]
+            split_domains.append(token)
+            token = ""
+            token_index = current_index+1
+
+    return split_domains
+
 def _add_domains_for(note_id, domain_str: str, session, do_commit: bool = True):
     """
     Pass `session` if you want this function to do the commit.
+
+    CSV files can use "&&" as an escape, as we handle that specially.
     """
-    split_domains = [d.strip() for d in domain_str.split('&')]
+    if "&&" in domain_str:
+        split_domains = [d.strip() for d in _special_tokenize(domain_str)]
+    else:
+        split_domains = [d.strip() for d in domain_str.split('&')]
+
     sorted_domains = sorted([d for d in split_domains if d != ""])
 
     for domain_id in sorted_domains:
