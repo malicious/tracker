@@ -4,6 +4,7 @@ from collections import defaultdict
 from typing import Dict, Iterator
 
 from flask import render_template
+from markupsafe import escape
 
 from notes.models import Note, NoteDomain
 from tasks_v1.time_scope import TimeScopeUtils, TimeScope
@@ -186,9 +187,9 @@ def _format_as_html(scope, domain, response_by_quarter):
 
         def domain_to_html(d):
             if scope:
-                return f'<a href="/report-notes?scope={scope}&domain={d}">{d.replace(" ", "&nbsp;")}</a>'
+                return f'<a href="/report-notes?scope={scope}&domain={escape(d)}">{d}</a>'
             else:
-                return f'<a href="/report-notes?domain={d}">{d.replace(" ", "&nbsp;")}</a>'
+                return f'<a href="/report-notes?domain={escape(d)}">{d}</a>'
 
         matching_domains_as_html = [domain_to_html(d.domain_id) for d in matching_domains]
         return ", ".join(matching_domains_as_html)
