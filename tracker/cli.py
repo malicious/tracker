@@ -2,7 +2,7 @@ import click
 from flask.cli import with_appcontext
 
 import notes
-import tasks
+import tasks_v1
 from tracker.db import content_db
 
 
@@ -10,13 +10,13 @@ from tracker.db import content_db
 @click.argument('csv_file', type=click.File('r'))
 @with_appcontext
 def tasks_from_csv(csv_file):
-    tasks.add.import_from_csv(csv_file, content_db.session)
+    tasks_v1.add.import_from_csv(csv_file, content_db.session)
 
 
 @click.command('task-add-one')
 @with_appcontext
 def task_add_one():
-    tasks.add.add_from_cli(content_db.session)
+    tasks_v1.add.add_from_cli(content_db.session)
 
 
 @click.command('task-add-multiple')
@@ -24,7 +24,7 @@ def task_add_one():
 def task_add_multiple():
     try:
         while True:
-            tasks.add.add_from_cli(content_db.session)
+            tasks_v1.add.add_from_cli(content_db.session)
             print()
             print("=== starting next task ===")
     except KeyboardInterrupt:
@@ -39,7 +39,7 @@ def task_add_multiple():
 @with_appcontext
 def task_update_batch(scopes, category, resolution, task_ids):
     for task_id in task_ids:
-        tasks.add.update(content_db.session, scopes, category, resolution, task_id)
+        tasks_v1.add.update(content_db.session, scopes, category, resolution, task_id)
 
 
 @click.command('task-update-interactive')
@@ -50,7 +50,7 @@ def task_update_interactive(task_ids):
         for task_id in task_ids:
             print(f"=== task_id: {task_id} ===")
 
-            tasks.add.update_from_cli(content_db.session, task_id)
+            tasks_v1.add.update_from_cli(content_db.session, task_id)
             print()
 
     except KeyboardInterrupt:

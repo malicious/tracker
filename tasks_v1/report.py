@@ -6,8 +6,8 @@ from typing import Iterator, Dict, Optional
 from flask import render_template
 from sqlalchemy.orm import Query
 
-from tasks.models import Task, TaskTimeScope
-from tasks.time_scope import TimeScope, TimeScopeUtils
+from tasks_v1.models import Task, TaskTimeScope
+from tasks_v1.time_scope import TimeScope, TimeScopeUtils
 
 
 def matching_scopes(task_id) -> Iterator:

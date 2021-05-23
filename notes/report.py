@@ -6,7 +6,7 @@ from typing import Dict, Iterator
 from flask import render_template
 
 from notes.models import Note, NoteDomain
-from tasks.time_scope import TimeScopeUtils, TimeScope
+from tasks_v1.time_scope import TimeScopeUtils, TimeScope
 
 
 def _list_domains(note_id) -> Iterator:

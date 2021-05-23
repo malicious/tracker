@@ -3,7 +3,7 @@ import io
 from notes.add import import_from_csv
 from notes.models import Note, NoteDomain
 from notes.report import _report_notes_for
-from tasks.time_scope import TimeScope
+from tasks_v1.time_scope import TimeScope
 
 
 def test_note_constructor():

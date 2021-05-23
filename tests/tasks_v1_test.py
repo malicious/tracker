@@ -1,10 +1,10 @@
 import io
 
-import tasks
-from tasks.add import import_from_csv
-from tasks.models import Task
-from tasks.report import matching_scopes, latest_scope
-from tasks.time_scope import TimeScope
+import tasks_v1
+from tasks_v1.add import import_from_csv
+from tasks_v1.models import Task
+from tasks_v1.report import matching_scopes, latest_scope
+from tasks_v1.time_scope import TimeScope
 
 
 def test_task_constructor():
@@ -38,7 +38,7 @@ def test_dict_import():
         "first_scope": TEST_SCOPE,
     }
 
-    t = tasks.add.from_csv(csv_entry)
+    t = tasks_v1.add.from_csv(csv_entry)
     assert t.desc == TEST_DESC
     assert t.category == TEST_CAT
     assert t.first_scope == TEST_SCOPE

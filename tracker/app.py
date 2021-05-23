@@ -4,8 +4,8 @@ from flask import Flask, request
 from markupsafe import escape
 
 import notes
-import tasks
-from tasks.time_scope import TimeScope
+import tasks_v1
+from tasks_v1.time_scope import TimeScope
 from . import cli, db
 
 
@@ -28,7 +28,7 @@ def create_app(settings_overrides: Dict = {}):
 
     @app.route("/task/<task_id>")
     def get_task(task_id):
-        return tasks.report.report_one_task(escape(task_id))
+        return tasks_v1.report.report_one_task(escape(task_id))
 
     @app.route("/report-open-tasks")
     def report_open_tasks():
@@ -39,12 +39,12 @@ def create_app(settings_overrides: Dict = {}):
         if parsed_hide_future_tasks == 'true':
             hide_future_tasks = True
 
-        return tasks.report.report_open_tasks(hide_future_tasks=hide_future_tasks)
+        return tasks_v1.report.report_open_tasks(hide_future_tasks=hide_future_tasks)
 
     @app.route("/report-tasks/<scope_str>")
     def report_tasks(scope_str):
         scope = TimeScope(escape(scope_str))
-        return tasks.report.report_tasks(scope)
+        return tasks_v1.report.report_tasks(scope)
 
     @app.route("/note/<note_id>")
     def get_note(note_id):
