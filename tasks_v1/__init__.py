@@ -22,7 +22,7 @@ def init_app(app: Flask, legacy_mode=False):
         return os.path.abspath(os.path.join(app.instance_path, name))
 
     if legacy_mode:
-        _try_migrate(_generate_instance_path, preserve_target_db=False)
+        _try_migrate(_generate_instance_path, preserve_target_db=True)
         _register_endpoints(app)
         _register_cli(app)
     else:

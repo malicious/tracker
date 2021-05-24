@@ -4,15 +4,15 @@ from tracker.db import content_db as db
 
 
 class Task(db.Model):
-    __tablename__ = 'Tasks'
-    __bind_key__ = 'tasks'
+    __tablename__ = 'Tasks-v1'
+    __bind_key__ = 'tasks-v1'
     task_id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
     desc = db.Column(db.String, nullable=False)
     first_scope = db.Column(db.String(20), nullable=False)
     category = db.Column(db.String)
     created_at = db.Column(db.DateTime)
     resolution = db.Column(db.String)
-    parent_id = db.Column(db.Integer, db.ForeignKey('Tasks.task_id'))
+    parent_id = db.Column(db.Integer, db.ForeignKey('Tasks-v1.task_id'))
     time_estimate = db.Column(db.Float)
     time_actual = db.Column(db.Float)
     __table_args__ = (
@@ -49,9 +49,9 @@ class Task(db.Model):
 
 
 class TaskTimeScope(db.Model):
-    __tablename__ = 'TaskTimeScopes'
-    __bind_key__ = 'tasks'
-    task_id = db.Column(db.Integer, db.ForeignKey("Tasks.task_id"), primary_key=True, nullable=False)
+    __tablename__ = 'TaskTimeScopes-v1'
+    __bind_key__ = 'tasks-v1'
+    task_id = db.Column(db.Integer, db.ForeignKey("Tasks-v1.task_id"), primary_key=True, nullable=False)
     time_scope_id = db.Column(db.String, primary_key=True, nullable=False)
     __table_args__ = (
         db.UniqueConstraint('task_id', 'time_scope_id'),
