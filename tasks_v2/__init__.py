@@ -8,19 +8,26 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from . import models
 from .models import Base, Task
 
+db_session = None
+
 
 def init_app(app: Flask):
-    _load_v2_models(os.path.abspath(os.path.join(app.instance_path, 'tasks-v2.db')))
+    load_v2_models(os.path.abspath(os.path.join(app.instance_path, 'tasks-v2.db')))
     _register_endpoints(app)
     _register_rest_endpoints(app)
 
 
-def _load_v2_models(current_db_path: str):
+def load_v2_models(current_db_path: str):
     engine = sqlalchemy.create_engine('sqlite:///' + current_db_path)
 
     Base.metadata.create_all(bind=engine)
 
     # Create a Session object and bind it to the declarative_base
+    global db_session
+    if db_session:
+        print("WARN: db_session already exists, creating a new one anyway")
+        db_session = None
+
     db_session = scoped_session(sessionmaker(autocommit=False,
                                              autoflush=False,
                                              bind=engine))

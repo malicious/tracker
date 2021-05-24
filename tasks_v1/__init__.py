@@ -19,6 +19,8 @@ from .time_scope import TimeScope
 LEGACY_DB_NAME = 'tasks.db'
 CURRENT_DB_NAME = 'tasks-v1.db'
 
+db_session = None
+
 
 def init_app(app: Flask, legacy_mode=False, readonly_mode=True):
     """
@@ -33,12 +35,12 @@ def init_app(app: Flask, legacy_mode=False, readonly_mode=True):
 
     if legacy_mode:
         _try_migrate(_generate_instance_path, preserve_target_db=True)
-        _load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
+        load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
         _register_endpoints(app)
         _register_cli(app)
     elif readonly_mode:
         _try_migrate(_generate_instance_path, preserve_target_db=True)
-        _load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
+        load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
         _register_endpoints(app)
     else:
         pass
@@ -81,12 +83,13 @@ def _try_migrate(generate_path: Callable[[str], str], preserve_target_db: bool):
     print(f"INFO: done migrating legacy database file to {current_db_path}")
 
 
-def _load_v1_models(current_db_path: str):
+def load_v1_models(current_db_path: str):
     engine = sqlalchemy.create_engine('sqlite:///' + current_db_path)
 
     Base.metadata.create_all(bind=engine)
 
     # Create a Session object and bind it to the declarative_base
+    global db_session
     db_session = scoped_session(sessionmaker(autocommit=False,
                                              autoflush=False,
                                              bind=engine))
