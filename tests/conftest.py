@@ -10,7 +10,6 @@ def test_app():
         'TESTING': True,
         'SQLALCHEMY_BINDS': {
             'notes': 'sqlite://',
-            'tasks-v1': 'sqlite://',
         },
         #'SQLALCHEMY_DATABASE_URI': 'sqlite://',
         #'SQLALCHEMY_ECHO': True,

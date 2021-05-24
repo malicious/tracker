@@ -4,30 +4,44 @@ import sqlite3
 from typing import Callable
 
 import click
+import sqlalchemy
 from flask import Flask, Blueprint, request
 from flask.cli import with_appcontext
 from markupsafe import escape
+from sqlalchemy.orm import scoped_session, sessionmaker
 
 from tracker.db import content_db
 # noinspection PyUnresolvedReferences
 from . import add, models, report, time_scope
+from .models import Base
 from .time_scope import TimeScope
 
 LEGACY_DB_NAME = 'tasks.db'
 CURRENT_DB_NAME = 'tasks-v1.db'
 
 
-def init_app(app: Flask, legacy_mode=False):
+def init_app(app: Flask, legacy_mode=False, readonly_mode=True):
+    """
+    Maybe-init the Tasks_v1 schemas
+
+    - legacy mode allows read/write
+    - read-only allows endpoint access
+    - with both set to False, database + v1 schema aren't loaded at all
+    """
     def _generate_instance_path(name: str) -> str:
         return os.path.abspath(os.path.join(app.instance_path, name))
 
     if legacy_mode:
         _try_migrate(_generate_instance_path, preserve_target_db=True)
+        _load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
         _register_endpoints(app)
         _register_cli(app)
-    else:
+    elif readonly_mode:
         _try_migrate(_generate_instance_path, preserve_target_db=True)
+        _load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
         _register_endpoints(app)
+    else:
+        pass
 
 
 def _try_migrate(generate_path: Callable[[str], str], preserve_target_db: bool):
