@@ -1,12 +1,14 @@
 import os
 
+import click
 import sqlalchemy
 from flask import Flask, Blueprint, request
+from flask.cli import with_appcontext
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 # noinspection PyUnresolvedReferences
-from . import models, report
+from . import migrate, models, report
 from .models import Base, Task
 from tasks_v1.time_scope import TimeScope
 
@@ -17,6 +19,15 @@ def init_app(app: Flask):
     load_v2_models(os.path.abspath(os.path.join(app.instance_path, 'tasks-v2.db')))
     _register_endpoints(app)
     _register_rest_endpoints(app)
+
+    @click.command('tasks_v2-migrate')
+    @click.argument('start_index', type=click.INT, required=False)
+    @with_appcontext
+    def tasks_v2_migrate(start_index):
+        from tasks_v1 import db_session as tasks_v1_session
+        migrate.migrate_tasks(tasks_v1_session, db_session, start_index)
+
+    app.cli.add_command(tasks_v2_migrate)
 
 
 def load_v2_models(current_db_path: str):
