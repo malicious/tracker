@@ -14,7 +14,7 @@ def _add_domains_for(note_id, domain_str: str, session, do_commit: bool = True):
     Pass `session` if you want this function to do the commit.
     """
     split_domains = [d.strip() for d in domain_str.split('&')]
-    sorted_domains = sorted([d for d in split_domains if d is not ""])
+    sorted_domains = sorted([d for d in split_domains if d != ""])
 
     for domain_id in sorted_domains:
         if not domain_id:
