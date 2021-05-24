@@ -5,6 +5,7 @@ from markupsafe import escape
 
 import notes
 import tasks_v1
+import tasks_v2
 from tasks_v1.time_scope import TimeScope
 from . import cli, db
 
@@ -13,6 +14,7 @@ def create_app(settings_overrides: Dict = {}):
     app = Flask(__name__, instance_relative_config=True)
     db.init_app(app, settings_overrides)
     tasks_v1.init_app(app)
+    tasks_v2.init_app(app)
     cli.init_app(app)
 
     try:

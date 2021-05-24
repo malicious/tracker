@@ -67,6 +67,19 @@ def _try_migrate(generate_path: Callable[[str], str], preserve_target_db: bool):
     print(f"INFO: done migrating legacy database file to {current_db_path}")
 
 
+def _load_v1_models(current_db_path: str):
+    engine = sqlalchemy.create_engine('sqlite:///' + current_db_path)
+
+    Base.metadata.create_all(bind=engine)
+
+    # Create a Session object and bind it to the declarative_base
+    db_session = scoped_session(sessionmaker(autocommit=False,
+                                             autoflush=False,
+                                             bind=engine))
+
+    Base.query = db_session.query_property()
+
+
 def _register_endpoints(app: Flask):
     tasks_v1_bp = Blueprint('tasks-v1', __name__)
 
