@@ -1,22 +1,25 @@
 from typing import Dict
 
-from tracker.db import content_db as db
+from sqlalchemy import String, Column, Integer, ForeignKey, UniqueConstraint, DateTime, Float
+from sqlalchemy.orm import declarative_base
+
+Base = declarative_base()
 
 
-class Task(db.Model):
-    __tablename__ = 'Tasks'
-    __bind_key__ = 'tasks'
-    task_id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
-    desc = db.Column(db.String, nullable=False)
-    first_scope = db.Column(db.String(20), nullable=False)
-    category = db.Column(db.String)
-    created_at = db.Column(db.DateTime)
-    resolution = db.Column(db.String)
-    parent_id = db.Column(db.Integer, db.ForeignKey('Tasks.task_id'))
-    time_estimate = db.Column(db.Float)
-    time_actual = db.Column(db.Float)
+class Task(Base):
+    __tablename__ = 'Tasks-v1'
+
+    task_id = Column(Integer, primary_key=True, nullable=False, unique=True)
+    desc = Column(String, nullable=False)
+    first_scope = Column(String(20), nullable=False)
+    category = Column(String)
+    created_at = Column(DateTime)
+    resolution = Column(String)
+    parent_id = Column(Integer, ForeignKey('Tasks-v1.task_id'))
+    time_estimate = Column(Float)
+    time_actual = Column(Float)
     __table_args__ = (
-        db.UniqueConstraint('desc', 'created_at'),
+        UniqueConstraint('desc', 'created_at'),
     )
 
     def get_children(self):
@@ -48,11 +51,11 @@ class Task(db.Model):
         return response_dict
 
 
-class TaskTimeScope(db.Model):
-    __tablename__ = 'TaskTimeScopes'
-    __bind_key__ = 'tasks'
-    task_id = db.Column(db.Integer, db.ForeignKey("Tasks.task_id"), primary_key=True, nullable=False)
-    time_scope_id = db.Column(db.String, primary_key=True, nullable=False)
+class TaskTimeScope(Base):
+    __tablename__ = 'TaskTimeScopes-v1'
+
+    task_id = Column(Integer, ForeignKey("Tasks-v1.task_id"), primary_key=True, nullable=False)
+    time_scope_id = Column(String, primary_key=True, nullable=False)
     __table_args__ = (
-        db.UniqueConstraint('task_id', 'time_scope_id'),
+        UniqueConstraint('task_id', 'time_scope_id'),
     )

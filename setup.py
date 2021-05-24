@@ -7,6 +7,7 @@ requirements = [
     'flask',
     'flask-sqlalchemy',
     'python-dateutil',
+    'sqlalchemy',
 ]
 
 setup(name='tracker',

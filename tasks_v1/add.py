@@ -7,9 +7,9 @@ from typing import List
 from dateutil import parser
 from sqlalchemy.exc import OperationalError, StatementError
 
-import tasks
-from tasks.models import Task, TaskTimeScope
-from tasks.time_scope import TimeScope
+import tasks_v1
+from tasks_v1.models import Task, TaskTimeScope
+from tasks_v1.time_scope import TimeScope
 
 
 def from_csv(csv_entry) -> Task:
@@ -191,7 +191,7 @@ def update(session, requested_scopes, category, resolution, task_id):
 
     if requested_scopes:
         # TODO: This is redundant, should let sqlalchemy enforce the no-dupes
-        existing_scopes = tasks.report.matching_scopes(task_id)
+        existing_scopes = tasks_v1.report.matching_scopes(task_id)
 
         for requested_scope in requested_scopes:
             if TimeScope(requested_scope) not in existing_scopes:
@@ -226,7 +226,7 @@ def update_from_cli(session, task_id):
         print(t.desc[:60] + "…")
         print()
 
-    matching_scopes = tasks.report.matching_scopes(task_id)
+    matching_scopes = tasks_v1.report.matching_scopes(task_id)
     print(f"Existing scopes => {', '.join(matching_scopes)}")
 
     # Read relevant scopes

@@ -23,7 +23,6 @@ def reset_db():
 def init_app(app: Flask, settings_overrides: Dict):
     app.config['SQLALCHEMY_BINDS'] = {
         'notes': 'sqlite:///' + os.path.abspath(os.path.join(app.instance_path, 'notes.db')),
-        'tasks': 'sqlite:///' + os.path.abspath(os.path.join(app.instance_path, 'tasks.db')),
     }
     app.config['SQLALCHEMY_TRACK_MODIFICATIONS'] = False
 
