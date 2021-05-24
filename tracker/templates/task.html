@@ -3,68 +3,130 @@
 {% block head %}
 {{ super() }}
 <style type="text/css">
-  body {
-    margin-left: 7.5%;
-    margin-right: 7.5%;
-    margin-bottom: 50em;
-  }
+body {
+  overflow-wrap: anywhere;
+  word-break: break-word; /* Safari */
 
-  .date-scope {
-    font-size: 200%;
-    margin-bottom: 0.8em;
-    border-bottom: 1pt solid dimgrey;
-    position: sticky;
-    top: 0px;
-    height: 1.6em;
-    color: black;
-    background-color: #eee;
-  }
-  .category {
-    font-size: 150%;
-    margin-top: 0.8em;
-    margin-bottom: 0.8em;
-    position: sticky;
-    top: 2.5em;
-    background-color: #eee;
-  }
+  margin-bottom: 50em;
+}
 
-  /* task formatting */
-  details {
-    padding: 0.5em;
-  }
-  .time-scope {
-    color: #bbb;
-  }
-  .task-time {
-    color: brown;
-  }
-  .task-id, .task-id > a {
-    color: #bbb;
-  }
-  .task-resolved, .task-resolved .task-time, .task-resolved .time-scope {
-    color: rgb(200, 200, 200);
-  }
-  .task-details {
-    margin: 1.3em 0.7em 0.7em 1.3em;
-    background-color: rgb(246,246,246);
-  }
-  .task-details .created_at {
-    color: forestgreen;
-    margin-top: 1em;
-  }
+.date-scope {
+  font-size: 200%;
+  margin-bottom: 0.8em;
+  border-bottom: 1pt solid dimgrey;
+  margin-left: 7.5%;
+  margin-right: 7.5%;
+  position: sticky;
+  top: 0px;
+  height: 1.6em;
+  color: black;
+  background-color: #eee;
+}
+.category {
+  font-size: 150%;
+  margin-top: 0.8em;
+  margin-bottom: 0.8em;
+  margin-left: 7.5%;
+  margin-right: 7.5%;
+  position: sticky;
+  top: 2.5em;
+  background-color: #eee;
+}
+
+.task-and-details {
+  width: 85%;
+  padding-left: 7.5%;
+  padding-right: 7.5%;
+
+  -webkit-transform: translate3d(0, 0, 0);
+}
+.task-and-details:hover {
+  background: #ddd;
+}
+
+.task-only {
+  padding: 0.5em;
+  display: flex;
+}
+.task-only > .task-scope {
+  flex-shrink: 0;
+  padding-right: 0.8em;
+  text-align: right;
+}
+.task-only > .task-desc {
+  flex: 1 1 0;
+  flex-grow: 1;
+}
+.task-scope {
+  color: #bbb;
+}
+.bonus-options {
+  width: 100%;
+  position: relative;
+}
+.bonus-options label {
+  position: absolute;
+  top: calc(-2.5em); /* TODO: should be with a line height */
+}
+.bonus-options label.show-json {
+  right: 0;
+  color: #bbb;
+  padding: 0.5em 0.5em 0.5em 0.5em;
+}
+
+input {
+  display: none;
+}
+.task-json {
+  background-color: rgb(246,246,246);
+  padding: 0.5em;
+  margin-bottom: 0.5em; /* TODO: this is wrong, makes highlighting weird */
+
+  display: none;
+}
+.task-json > pre {
+  margin: 0; /* Safari? */
+}
+input:checked ~ label.show-json {
+  background-color: rgb(246,246,246);
+}
+input:checked ~ .task-json {
+  display: inherit;
+}
+
+.task-time {
+  color: brown;
+}
+.task-resolved, .task-resolved .task-time, .task-resolved .time-scope {
+  color: rgb(200, 200, 200);
+}
+.task-details .created_at {
+  color: forestgreen;
+  margin-top: 1em;
+}
 </style>
 {% endblock %}
 
 
 
-{% macro render_task(task, scope) %}
-<details>
-  {{ to_summary_html(task, scope)|safe }}
-
-  <div class="task-details">
-    <pre>{{ to_details_html(task)|safe }}</pre>
+{% macro render_task(t, scope) %}
+<div class="task-and-details">
+  <div class="task-only">
+  {% if short_scope(t, scope) %}
+    <div class="task-scope">{{ short_scope(t, scope) }}</div>
+  {% endif %}
+    <div class="task-desc">{{ t.desc }}</div>
   </div>
-</details>
+  <div class="bonus-options">
+    <input type="checkbox" id="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
+    <label for="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
+      <span>#{{ t.task_id }}</span>
+    </label>
+    <div class="task-json">
+      <pre>{{ to_details_html(t)|safe }}</pre>
+    </div>
+  </div>
+</div>
 
 {% endmacro %}
 

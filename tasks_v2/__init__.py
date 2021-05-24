@@ -1,12 +1,14 @@
 import os
 
 import sqlalchemy
-from flask import Flask, Blueprint
+from flask import Flask, Blueprint, request
+from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 # noinspection PyUnresolvedReferences
-from . import models
+from . import models, report
 from .models import Base, Task
+from tasks_v1.time_scope import TimeScope
 
 db_session = None
 
@@ -54,20 +56,18 @@ def _register_rest_endpoints(app: Flask):
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>")
     def get_task(task_id):
-        task: Task = Task.query \
-            .filter_by(task_id=task_id) \
-            .one_or_none()
-        if not task:
-            return {"error": f"invalid task_id: {task_id}"}
-
-        return task.as_json()
-
-    @tasks_v2_rest_bp.route("/task/<int:task_id>/edit", methods=['GET', 'POST'])
-    def edit_task(task_id):
-        pass
+        return report.report_one_task(escape(task_id))
 
     @tasks_v2_rest_bp.route("/tasks")
     def get_all_tasks():
-        pass
+        page_scope = None
+        try:
+            parsed_scope = TimeScope(escape(request.args.get('scope')))
+            parsed_scope.get_type()
+            page_scope = parsed_scope
+        except ValueError:
+            pass
+
+        return report.report_tasks(page_scope=page_scope)
 
     app.register_blueprint(tasks_v2_rest_bp, url_prefix='/v2')
