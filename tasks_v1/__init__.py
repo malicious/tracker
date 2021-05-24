@@ -1,26 +1,70 @@
+import os
+import shutil
+import sqlite3
+from typing import Callable
+
 import click
 from flask import Flask, Blueprint, request
 from flask.cli import with_appcontext
 from markupsafe import escape
 
 from tracker.db import content_db
-from .time_scope import TimeScope
 # noinspection PyUnresolvedReferences
 from . import add, models, report, time_scope
+from .time_scope import TimeScope
+
+LEGACY_DB_NAME = 'tasks.db'
+CURRENT_DB_NAME = 'tasks-v1.db'
 
 
 def init_app(app: Flask, legacy_mode=False):
+    def _generate_instance_path(name: str) -> str:
+        return os.path.abspath(os.path.join(app.instance_path, name))
+
     if legacy_mode:
-        _try_migrate(overwrite_temp_db=False)
+        _try_migrate(_generate_instance_path, preserve_target_db=False)
         _register_endpoints(app)
         _register_cli(app)
     else:
-        _try_migrate(overwrite_temp_db=True)
+        _try_migrate(_generate_instance_path, preserve_target_db=True)
         _register_endpoints(app)
 
 
-def _try_migrate(overwrite_temp_db: bool):
-    pass
+def _try_migrate(generate_path: Callable[[str], str], preserve_target_db: bool):
+    """
+    Prep to migrate content from tasks_v1 to tasks_v2.
+
+    - Moves database from tasks.db => tasks-v1.db, if needed.
+    - Also renames the SQL tables, appending a "-v1" suffix.
+
+    A within-database migration might be easier, but there's no use cases at the moment.
+    """
+    current_db_path = generate_path(CURRENT_DB_NAME)
+    if preserve_target_db and os.path.exists(current_db_path):
+        print(f"WARN: ignoring current database file at {current_db_path}")
+        return
+
+    legacy_db_path = generate_path(LEGACY_DB_NAME)
+    if not os.path.exists(legacy_db_path):
+        print(f"INFO: no legacy database file, can't migrate from {legacy_db_path}")
+        return
+
+    # Copy to a temporary file, while we alter the table
+    temp_current_db_path = current_db_path + '-tmp'
+    shutil.copy2(legacy_db_path, temp_current_db_path)
+
+    # Alter the table
+    connection = sqlite3.connect(temp_current_db_path)
+    cur = connection.cursor()
+    try:
+        cur.execute('ALTER TABLE Tasks RENAME TO "Tasks-v1"')
+        cur.execute('ALTER TABLE TaskTimeScopes RENAME TO "TaskTimeScopes-v1"')
+    finally:
+        cur.close()
+
+    # Put it in its final position as `tasks-v1.db`
+    shutil.move(temp_current_db_path, current_db_path)
+    print(f"INFO: done migrating legacy database file to {current_db_path}")
 
 
 def _register_endpoints(app: Flask):
