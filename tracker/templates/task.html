@@ -1,59 +1,72 @@
 {% extends "base.html" %}
 
 {% block head %}
-    {{ super() }}
-    <style type="text/css">
-        body {
-            margin-left: 7.5%;
-            margin-right: 7.5%;
-            margin-bottom: 50em;
-        }
+{{ super() }}
+<style type="text/css">
+  body {
+    margin-left: 7.5%;
+    margin-right: 7.5%;
+    margin-bottom: 50em;
+  }
 
-        .date-scope {
-            font-size: 200%;
-            margin-bottom: 0.8em;
-            border-bottom: 1pt solid dimgrey;
-            position: sticky;
-            top: 0px;
-            height: 1.6em;
-            color: black;
-            background-color: #eee;
-        }
-        .category {
-            font-size: 150%;
-            margin-top: 0.8em;
-            margin-bottom: 0.8em;
-            position: sticky;
-            top: 2.5em;
-            background-color: #eee;
-        }
+  .date-scope {
+    font-size: 200%;
+    margin-bottom: 0.8em;
+    border-bottom: 1pt solid dimgrey;
+    position: sticky;
+    top: 0px;
+    height: 1.6em;
+    color: black;
+    background-color: #eee;
+  }
+  .category {
+    font-size: 150%;
+    margin-top: 0.8em;
+    margin-bottom: 0.8em;
+    position: sticky;
+    top: 2.5em;
+    background-color: #eee;
+  }
 
-        /* task formatting */
-        details {
-            padding: 0.5em;
-        }
-        .time-scope {
-            color: #bbb;
-        }
-        .task-time {
-          color: brown;
-        }
-        .task-id, .task-id > a {
-            color: #bbb;
-        }
-        .task-resolved, .task-resolved .task-time, .task-resolved .time-scope {
-            color: rgb(200, 200, 200);
-        }
-        .task-details {
-            margin: 1.3em 0.7em 0.7em 1.3em;
-            background-color: rgb(246,246,246);
-        }
-        .task-details .created_at {
-            color: forestgreen;
-            margin-top: 1em;
-        }
-    </style>
+  /* task formatting */
+  details {
+    padding: 0.5em;
+  }
+  .time-scope {
+    color: #bbb;
+  }
+  .task-time {
+    color: brown;
+  }
+  .task-id, .task-id > a {
+    color: #bbb;
+  }
+  .task-resolved, .task-resolved .task-time, .task-resolved .time-scope {
+    color: rgb(200, 200, 200);
+  }
+  .task-details {
+    margin: 1.3em 0.7em 0.7em 1.3em;
+    background-color: rgb(246,246,246);
+  }
+  .task-details .created_at {
+    color: forestgreen;
+    margin-top: 1em;
+  }
+</style>
 {% endblock %}
+
+
+
+{% macro render_task(task, scope) %}
+<details>
+  {{ to_summary_html(task, scope)|safe }}
+
+  <div class="task-details">
+    <pre>{{ to_details_html(task)|safe }}</pre>
+  </div>
+</details>
+
+{% endmacro %}
 
 
 
@@ -63,29 +76,22 @@
 {% set ns.prev_scope = None %}
 {% for scope, scope_tasks in tasks_by_scope.items() if scope_tasks %}
 <div class="scope-container">
-    <div class="date-scope">## {{ scope }}</div>
+  <div class="date-scope">## {{ scope }}</div>
 
-    {% set ns.prev_task = None %}
-    {% for task in scope_tasks %}
-        {# if this is the start of a new category, print heading #}
-        {% if task.category
-           and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
-        <div class="category">### {{ task.category }}</div>
-        {% endif %}
+  {% set ns.prev_task = None %}
+  {% for task in scope_tasks %}
+    {# if this is the start of a new category, print heading #}
+    {% if task.category
+       and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
+    <div class="category">### {{ task.category }}</div>
+    {% endif %}
 
-        <details>
-            {{ to_summary_html(task, scope)|safe }}
-
-            <div class="task-details">
-                <pre>{{ to_details_html(task)|safe }}</pre>
-            </div>
-        </details>
-
-        {% set ns.prev_task = task %}
-    {% endfor %}
-    {# trailing whitespace for end of scope block #}
-    <br /><br /><br />
-    {% set ns.prev_scope = scope %}
+    {{ render_task(task, scope) }}
+    {% set ns.prev_task = task %}
+  {% endfor %}
+  {# trailing whitespace for end of scope block #}
+  <br /><br /><br />
+  {% set ns.prev_scope = scope %}
 
 </div> {# scope-container #}
 {% endfor %}
