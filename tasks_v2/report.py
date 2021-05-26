@@ -82,7 +82,7 @@ def generate_open_tasks():
     tasks_query = Task.query \
         .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
         .filter(TaskLinkage.resolution == None) \
-        .order_by(Task.category, TaskLinkage.time_scope_id)
+        .order_by(Task.category)
 
     today = datetime.now().date()
     return {today.strftime("%G-ww%V.%u"): tasks_query.all()}
