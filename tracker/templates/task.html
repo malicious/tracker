@@ -112,7 +112,9 @@ input:checked ~ .task-json {
 {% macro render_task(t, scope) %}
 <div class="task-and-details">
   <div class="task-only">
-  {% if short_scope(t, scope) %}
+  {% if render_scope %}
+    {{ render_scope(t.linkages[0].time_scope_id, scope) | safe }}
+  {% elif short_scope(t, scope) %}
     <div class="task-scope">{{ short_scope(t, scope) }}</div>
   {% endif %}
     <div class="task-desc">{{ t.desc }}</div>
