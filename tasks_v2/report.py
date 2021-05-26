@@ -1,5 +1,5 @@
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Optional
 
 from flask import render_template, url_for
@@ -84,8 +84,42 @@ def generate_open_tasks():
         .filter(TaskLinkage.resolution == None) \
         .order_by(Task.category, TaskLinkage.time_scope_id)
 
-    ref_scope = TimeScope(datetime.now().date().strftime("%G-ww%V.%u"))
-    return {ref_scope: tasks_query.all()}
+    today = datetime.now().date()
+    return {today.strftime("%G-ww%V.%u"): tasks_query.all()}
+
+
+def render_scope(task_date, section_date_str: str):
+    section_date = datetime.strptime(section_date_str, "%G-ww%V.%u").date()
+
+    days_old = (section_date - task_date).days
+    color_intensity = 1 / 100.0 * min(100, max(days_old, 0))
+
+    if days_old < 0:
+        # Just do normal styling
+        color_intensity = 0
+    elif days_old == 0:
+        # For the same day, we don't care what the day was
+        return ''
+    elif days_old > 0 and days_old < 370:
+        # For this middle ground, do things normally
+        pass
+    elif days_old > 370:
+        # For something over a year old, drop the intensity back to zero
+        color_intensity = 0
+
+    # If the year is the same, render as "ww06.5"
+    short_date_str = task_date.strftime("%G-ww%V.%u")
+    if short_date_str[0:5] == section_date_str[0:5]:
+        short_date_str = short_date_str[5:]
+
+    # And the styling
+    color_rgb = (200 +  25 * color_intensity,
+                 200 - 100 * color_intensity,
+                 200 - 100 * color_intensity)
+    return f'''
+<div class="task-scope" style="color: rgb({color_rgb[0]}, {color_rgb[1]}, {color_rgb[2]})">
+  {short_date_str}
+</div>'''
 
 
 def report_tasks(page_scope: Optional[TimeScope]):
@@ -113,6 +147,8 @@ def report_tasks(page_scope: Optional[TimeScope]):
         return short_scope_str
 
     render_kwargs['short_scope'] = short_scope
+
+    render_kwargs['render_scope'] = render_scope
 
     # Tell template about how to format Tasks
     def to_details_html(t: Task):
