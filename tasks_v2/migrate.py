@@ -10,21 +10,26 @@ MIGRATION_BATCH_SIZE = 100
 
 
 def _get_scopes(t: Task_v1):
-    def trim_quarter_scopes(scope_str):
-        maybe_quarter_scope = TimeScope(scope_str)
-        if maybe_quarter_scope.type != TimeScope.Type.quarter:
-            return scope_str
+    def trim_scope(scope_str):
+        maybe_scope = TimeScope(scope_str)
+        if maybe_scope.type == TimeScope.Type.quarter:
+            # Convert "quarter" scopes into their first day
+            scope = maybe_scope.start.strftime("%G-ww%V.%u")
+            print(f"INFO: task #{t.task_id} has quarter scope {scope_str}, downsizing to {scope}")
+            return scope
+        elif maybe_scope.type == TimeScope.Type.week:
+            # Convert "week" scopes into their first day
+            scope = maybe_scope.start.strftime("%G-ww%V.%u")
+            print(f"INFO: task #{t.task_id} has week scope {scope_str}, downsizing to {scope}")
+            return scope
 
-        # Convert "quarter" scopes into their first day
-        scope = maybe_quarter_scope.start.strftime("%G-ww%V.%u")
-        print(f"INFO: task #{t.task_id} has quarter scope {scope_str}, downsizing to {scope}")
-        return scope
+        return scope_str
 
     tts_query = TaskTimeScope.query \
         .filter_by(task_id=t.task_id) \
         .order_by(TaskTimeScope.time_scope_id)
 
-    return [trim_quarter_scopes(tts.time_scope_id) for tts in tts_query.all()]
+    return [trim_scope(tts.time_scope_id) for tts in tts_query.all()]
 
 
 def _construct_linkages(t1: Task_v1, t2: Task_v2):
