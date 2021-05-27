@@ -69,6 +69,10 @@ def _register_rest_endpoints(app: Flask):
     def get_task(task_id):
         return report.report_one_task(escape(task_id))
 
+    @tasks_v2_rest_bp.route("/task/<int:task_id>/edit")
+    def edit_task(task_id):
+        pass
+
     @tasks_v2_rest_bp.route("/tasks")
     def get_all_tasks():
         page_scope = None
