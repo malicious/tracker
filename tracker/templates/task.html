@@ -64,20 +64,24 @@ body {
   width: 100%;
   position: relative;
 }
-.bonus-options label {
+.bonus-options > label {
   position: absolute;
   top: calc(-2.5em); /* TODO: should be with a line height */
-}
-.bonus-options label.show-json {
-  right: 0;
+
   color: #bbb;
   padding: 0.5em 0.5em 0.5em 0.5em;
 }
+.bonus-options > label.show-json {
+  right: 0;
+}
+.bonus-options > label.show-edit {
+  right: 3em;
+}
 
-input {
+.bonus-options > input {
   display: none;
 }
-.task-json {
+.task-json, .task-edit {
   background-color: rgb(246,246,246);
   padding: 0.5em;
   margin-bottom: 0.5em; /* TODO: this is wrong, makes highlighting weird */
@@ -87,10 +91,10 @@ input {
 .task-json > pre {
   margin: 0; /* Safari? */
 }
-input:checked ~ label.show-json {
+input.show-json:checked ~ label.show-json, input.show-edit:checked ~ label.show-edit {
   background-color: rgb(246,246,246);
 }
-input:checked ~ .task-json {
+input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
   display: inherit;
 }
 
@@ -104,8 +108,99 @@ input:checked ~ .task-json {
   color: forestgreen;
   margin-top: 1em;
 }
+
+.task-edit div {
+  padding-top: 0.25em;
+  padding-bottom: 0.25em;
+}
+.task-edit label {
+  display: inline-block;
+  text-align: right;
+  width: 9em;
+}
+.task-edit textarea {
+  width: 35em;
+  height: 5em;
+  vertical-align: top;
+
+  line-height: 1.2;
+}
+.task-edit input {
+  width: 20em;
+}
 </style>
+
+<script>
+document.addEventListener("submit", sendData);
+
+function sendData(e) {
+  e.preventDefault();
+  const task_id = -1;
+  const desc = document.querySelector("#add_token").value;
+
+  fetch("{{url_for("tasks-v2-rest.edit_task", task_id=-1)}}", {
+    method: "POST",
+    headers: {
+      Accept: "application/json",
+      "Content-Type": "application/json"
+    },
+    body: JSON.stringify({
+      task_id: task_id,
+      desc: desc,
+      category: category,
+      time_estimate: time_estimate,
+    })
+  })
+    .then(res => res.json())
+    .then(data => {
+      document.querySelector("#update-task-result").innerText = JSON.stringify(data);
+    })
+    .catch(err => console.log(err));
+}
+
+</script>
 {% endblock %}
+
+
+
+{% macro linkage_block(tl) %}
+<div>
+  <label>time_scope_id</label>
+  <input value="{{tl.time_scope_id}}">
+</div>
+{% endmacro %}
+
+
+
+{% macro edit_block(t) %}
+<form action="{{url_for("tasks-v2-rest.edit_task", task_id=-1)}}" method="post">
+  <div>
+    <label>task_id</label>
+    <input type="text" value="{{t.task_id}}" disabled>
+  </div>
+  <div>
+    <label>desc</label>
+    <textarea id="desc">{{t.desc}}</textarea>
+  </div>
+  <div>
+    <label>category</label>
+    <input id="category" type="text" value="{{t.category if t.category}}">
+  </div>
+  <div>
+    <label>time_estimate</label>
+    <input id="time_estimate" type="text" value="{{t.time_estimate if t.time_estimate}}">
+  </div>
+  <div>
+    <label></label>
+    <input type="submit" value="update">
+  </div>
+  {% for tl in t.linkages %}
+  {{ linkage_block(tl) }}
+  {% endfor %}
+  <hr />
+  <div id="update-task-result">[waiting for form submission]</div>
+</form>
+{% endmacro %}
 
 
 
@@ -119,6 +214,7 @@ input:checked ~ .task-json {
   {% endif %}
     <div class="task-desc">{{ t.desc }}</div>
   </div>
+
   <div class="bonus-options">
     <input type="checkbox" id="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
     <label for="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
@@ -127,6 +223,13 @@ input:checked ~ .task-json {
     <div class="task-json">
       <pre>{{ to_details_html(t)|safe }}</pre>
     </div>
+
+    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
+    <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
+      <span>edit</span>
+    </label>
+    <div class="task-edit">{{ edit_block(t) }}</div>
+
   </div>
 </div>
 
