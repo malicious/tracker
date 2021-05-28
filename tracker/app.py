@@ -23,6 +23,7 @@ def create_app(settings_overrides: Dict = {}):
         from flask_debugtoolbar import DebugToolbarExtension
 
         app.config['SECRET_KEY'] = '7'
+        app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
         toolbar = DebugToolbarExtension(app)
     except ImportError:
         pass
