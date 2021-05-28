@@ -1,8 +1,9 @@
+from datetime import datetime
 import os
 
 import click
 import sqlalchemy
-from flask import Flask, Blueprint, request
+from flask import Flask, Blueprint, abort, redirect, request
 from flask.cli import with_appcontext
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -69,9 +70,21 @@ def _register_rest_endpoints(app: Flask):
     def get_task(task_id):
         return report.report_one_task(escape(task_id))
 
-    @tasks_v2_rest_bp.route("/task/<int:task_id>/edit")
+    @tasks_v2_rest_bp.route("/task/<int:task_id>/edit", methods=['get', 'post'])
     def edit_task(task_id):
-        pass
+        if not request.args and not request.form and not request.json:
+            abort(400)
+
+        if request.json:
+            print(request.json) # sometimes request.data, need to check with unicode
+            return {
+                "date": datetime.now(),
+                "ok": "this was an async request with JS enabled, here's your vaunted output",
+            }
+
+        print(request.args)
+        print(request.form)
+        return redirect(request.referrer)
 
     @tasks_v2_rest_bp.route("/tasks")
     def get_all_tasks():

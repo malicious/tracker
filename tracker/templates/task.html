@@ -143,13 +143,33 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
 </style>
 
 <script>
-document.addEventListener("submit", sendData);
+document.addEventListener("submit", sendData_JSON);
 
 function sendData(e) {
   e.preventDefault();
-  const task_id = -1;
+  f = e.target.closest('form');
 
-  fetch("{{url_for("tasks-v2-rest.edit_task", task_id=-1)}}", {
+  fetch(`/v2/task/${task_id}/edit`, {
+    method: 'post',
+    body: new FormData(f)
+  })
+  .then(res => res.json())
+  .then(data => {
+    f.querySelector("#update-task-result").innerText = JSON.stringify(data);
+  })
+  .catch(err => console.log(err));
+}
+
+function sendData_JSON(e) {
+  e.preventDefault();
+  f = e.target.closest('form');
+  const task_id = f.querySelector("input[name='task_id']").value;
+  const desc = f.querySelector('.desc').value;
+  const category = f.querySelector('.category').value;
+  const time_estimate = f.querySelector('.time_estimate').value;
+
+  {# this really should be url_for(), but i don't wanna generate per-task_id code #}
+  fetch(`/v2/task/${task_id}/edit`, {
     method: "POST",
     headers: {
       Accept: "application/json",
@@ -162,11 +182,11 @@ function sendData(e) {
       time_estimate: time_estimate,
     })
   })
-    .then(res => res.json())
-    .then(data => {
-      document.querySelector("#update-task-result").innerText = JSON.stringify(data);
-    })
-    .catch(err => console.log(err));
+  .then(res => res.json())
+  .then(data => {
+    f.querySelector("#update-task-result").innerText = JSON.stringify(data);
+  })
+  .catch(err => console.log(err));
 }
 
 </script>
@@ -178,13 +198,13 @@ function sendData(e) {
 <div class="task-linkage">
 <div>
   <label>time_scope_id</label>
-  <input value="{{tl.time_scope_id}}">
+  <input name="time_scope_id" value="{{tl.time_scope_id}}">
   <label>created_at</label>
-  <input value="{{tl.created_at}}" disabled>
+  <input name="created_at[{{tl.time_scope_id}}]" value="{{tl.created_at}}" readonly="readonly">
 </div>
 <div>
   <label>resolution</label>
-  <input value="{{tl.resolution if tl.resolution}}">
+  <input name="resolution[{{tl.time_scope_id}}]" value="{{tl.resolution if tl.resolution}}">
   <label>time_elapsed</label>
   <input value="{{tl.time_elapsed if tl.time_elapsed}}">
 </div>
@@ -198,28 +218,29 @@ function sendData(e) {
 
 
 {% macro edit_block(t) %}
-<form action="{{url_for("tasks-v2-rest.edit_task", task_id=-1)}}" method="post">
+<form action="{{url_for("tasks-v2-rest.edit_task", task_id=t.task_id)}}" method="post">
 
 <div class="task-edit-task-only">
   <div>
     <label>task_id</label>
-    <input type="text" value="{{t.task_id}}" disabled>
+    <input type="text" value="{{t.task_id}}" name="task_id" readonly="readonly">
   </div>
   <div>
     <label>desc</label>
-    <textarea id="desc">{{t.desc}}</textarea>
+    <textarea class="desc" name="desc">{{t.desc}}</textarea>
   </div>
   <div>
     <label>category</label>
-    <input id="category" type="text" value="{{t.category if t.category}}">
+    <input class="category" type="text" value="{{t.category if t.category}}">
   </div>
   <div>
     <label>time_estimate</label>
-    <input id="time_estimate" type="text" value="{{t.time_estimate if t.time_estimate}}">
+    <input class="time_estimate" type="text" value="{{t.time_estimate if t.time_estimate}}">
   </div>
   <div>
     <label></label>
-    <input type="submit" value="update">
+    {# TODO: Replace this with a <button> #}
+    <input type="submit">update</input>
   </div>
 </div>
 
@@ -255,7 +276,7 @@ function sendData(e) {
       <pre>{{ to_details_html(t)|safe }}</pre>
     </div>
 
-    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
+    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
     <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
       <span>edit</span>
     </label>
