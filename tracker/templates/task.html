@@ -128,6 +128,18 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
 .task-edit input {
   width: 20em;
 }
+.task-edit-task-only {
+  top: 0;
+  position: sticky;
+}
+.task-linkage {
+  border: 1px solid rgba(29,28,29,.13);
+  border-radius: 6px;
+  margin: 0.5em;
+}
+.task-linkage:hover {
+  background-color: rgb(255,255,255);
+}
 </style>
 
 <script>
@@ -136,7 +148,6 @@ document.addEventListener("submit", sendData);
 function sendData(e) {
   e.preventDefault();
   const task_id = -1;
-  const desc = document.querySelector("#add_token").value;
 
   fetch("{{url_for("tasks-v2-rest.edit_task", task_id=-1)}}", {
     method: "POST",
@@ -164,9 +175,23 @@ function sendData(e) {
 
 
 {% macro linkage_block(tl) %}
+<div class="task-linkage">
 <div>
   <label>time_scope_id</label>
   <input value="{{tl.time_scope_id}}">
+  <label>created_at</label>
+  <input value="{{tl.created_at}}" disabled>
+</div>
+<div>
+  <label>resolution</label>
+  <input value="{{tl.resolution if tl.resolution}}">
+  <label>time_elapsed</label>
+  <input value="{{tl.time_elapsed if tl.time_elapsed}}">
+</div>
+<div>
+  <label>detailed_resolution</label>
+  <textarea>{{tl.detailed_resolution}}</textarea>
+</div>
 </div>
 {% endmacro %}
 
@@ -174,6 +199,8 @@ function sendData(e) {
 
 {% macro edit_block(t) %}
 <form action="{{url_for("tasks-v2-rest.edit_task", task_id=-1)}}" method="post">
+
+<div class="task-edit-task-only">
   <div>
     <label>task_id</label>
     <input type="text" value="{{t.task_id}}" disabled>
@@ -194,11 +221,15 @@ function sendData(e) {
     <label></label>
     <input type="submit" value="update">
   </div>
-  {% for tl in t.linkages %}
-  {{ linkage_block(tl) }}
-  {% endfor %}
-  <hr />
-  <div id="update-task-result">[waiting for form submission]</div>
+</div>
+
+{% for tl in t.linkages %}
+{{ linkage_block(tl) }}
+{% endfor %}
+
+<hr />
+<div id="update-task-result">[waiting for form submission]</div>
+
 </form>
 {% endmacro %}
 
@@ -224,7 +255,7 @@ function sendData(e) {
       <pre>{{ to_details_html(t)|safe }}</pre>
     </div>
 
-    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
+    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
     <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
       <span>edit</span>
     </label>
