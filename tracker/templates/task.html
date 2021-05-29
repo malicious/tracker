@@ -264,6 +264,7 @@ function sendData_JSON(e) {
 
 {% macro render_task(t, scope) %}
 <div class="task-and-details">
+<label for="toggle-edit-{{t.task_id}}-{{scope}}">
   <div class="task-only">
   {% if render_scope %}
     {{ render_scope(t.linkages[0].time_scope_id, scope) | safe }}
@@ -272,6 +273,7 @@ function sendData_JSON(e) {
   {% endif %}
     <div class="task-desc">{{ t.desc }}</div>
   </div>
+</label>
 
   <div class="bonus-options">
     <input type="checkbox" id="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
