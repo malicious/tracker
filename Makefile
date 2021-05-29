@@ -7,7 +7,7 @@ app := tracker.app
 .PHONY: serve
 serve:
 	source $(activate_script) \
-		&& FLASK_APP=$(app) FLASK_ENV=development flask run --port 7528
+		&& FLASK_APP=$(app) FLASK_ENV=development flask run --port 7529
 
 
 
