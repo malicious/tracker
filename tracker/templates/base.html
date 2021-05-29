@@ -4,12 +4,18 @@
     {% block head %}
     <meta charset="UTF-8">
     <style type="text/css">
+        :root {
+            --default-bg-color: #eee;
+            --default-fg-color: dimgray;
+            --default-hover-color: #ddd;
+        }
         body {
             font-family: 'Source Code Pro', monospace;
             line-height: 1.55;
             overflow-wrap: break-word;
-            color: dimgray;
-            background-color: #eee;
+            color: var(--default-fg-color);
+            background-color: var(--default-bg-color);
+            margin: 0;
         }
         a {
             color: blue;
