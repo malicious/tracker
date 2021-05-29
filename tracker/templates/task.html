@@ -130,8 +130,19 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
   vertical-align: top;
   line-height: 1.2;
 }
-.task-edit input:hover {
-  background-color: var(--default-hover-color);
+.task-edit input, .task-edit textarea {
+  background-color: var(--tab-selected-bg-color);
+}
+.task-edit input:hover, .task-edit textarea:hover {
+  background-color: rgb(255, 255, 255);
+  outline: 5px auto -webkit-focus-ring-color;
+  outline-offset: -2px;
+}
+.task-edit button:hover {
+  text-shadow:
+    0 0  5px rgba(0,0,0,1.0),
+    0 0 12px rgba(0,0,0,0.8),
+    0 0 20px rgba(0,0,0,0.4);
 }
 .linkage-block {
   border: 1px solid rgba(29,28,29,.13);
@@ -141,6 +152,11 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
   /* TODO: this could be a responsive table, with multi-line rows */
   display: grid;
   grid-template-columns: min-content min-content max-content min-content min-content auto;
+}
+.linkage-header-row > div, .linkage-footer-row {
+  /* TODO: this has to be a responsive table */
+  max-height: 4ex;
+  overflow-y: hidden;
 }
 .linkage-row, .linkage-header-row, .linkage-footer-row {
   display: contents;
@@ -202,7 +218,10 @@ function sendData_JSON(e) {
 
 {% macro linkage_row(tl) %}
 <div class="linkage-row">
-  <button>x</button>
+  <div>
+    <button>存</button>
+    <button>x</button>
+  </div>
   <input name="time_scope_id" value="{{tl.time_scope_id}}">
   <input name="created_at[{{tl.time_scope_id}}]" value="{{tl.created_at}}" readonly="readonly">
   <input value="{{tl.time_elapsed if tl.time_elapsed}}">
@@ -256,7 +275,7 @@ function sendData_JSON(e) {
 
   <div class="linkage-footer-row">
     <div></div>
-    <input type="button" value="new">
+    <button>new</button>
     <input type="submit">
   </div>
 </div>
@@ -291,7 +310,11 @@ function sendData_JSON(e) {
       <pre>{{ to_details_html(t)|safe }}</pre>
     </div>
 
+    {% if t.linkages|length > 1%}
+    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
+    {% else %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
+    {% endif %}
     <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
       <span>edit</span>
     </label>
