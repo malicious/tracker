@@ -3,6 +3,12 @@
 {% block head %}
 {{ super() }}
 <style type="text/css">
+:root {
+  --tab-label-fg-color: #77f;
+  --tab-selected-bg-color: rgb(246,246,246);
+  --default-left-right-margin: 8.0%;
+}
+
 body {
   overflow-wrap: anywhere;
   word-break: break-word; /* Safari */
@@ -10,38 +16,37 @@ body {
   margin-bottom: 50em;
 }
 
-.date-scope {
+.scope-header {
   font-size: 200%;
   margin-bottom: 0.8em;
   border-bottom: 1pt solid dimgrey;
-  margin-left: 7.5%;
-  margin-right: 7.5%;
+  margin-left: var(--default-left-right-margin);
+  margin-right: var(--default-left-right-margin);
   position: sticky;
-  top: 0px;
+  top: 0;
   height: 1.6em;
   color: black;
-  background-color: #eee;
+  background-color: var(--default-bg-color);
 }
-.category {
+.category-header {
   font-size: 150%;
   margin-top: 0.8em;
   margin-bottom: 0.8em;
-  margin-left: 7.5%;
-  margin-right: 7.5%;
+  margin-left: var(--default-left-right-margin);
+  margin-right: var(--default-left-right-margin);
   position: sticky;
   top: 2.5em;
-  background-color: #eee;
+  background-color: var(--default-bg-color);
 }
 
 .task-and-details {
-  width: 85%;
-  padding-left: 7.5%;
-  padding-right: 7.5%;
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
 
   -webkit-transform: translate3d(0, 0, 0);
 }
 .task-and-details:hover {
-  background: #ddd;
+  background: var(--default-hover-color);
 }
 
 .task-only {
@@ -66,23 +71,25 @@ body {
 }
 .bonus-options > label {
   position: absolute;
-  top: calc(-2.5em); /* TODO: should be with a line height */
+  top: calc(-2.3em); /* TODO: should be with a line height */
 
-  color: #bbb;
+  color: var(--tab-label-fg-color);
   padding: 0.5em 0.5em 0.5em 0.5em;
-}
-.bonus-options > label.show-json {
-  right: 0;
+  text-align: center;
 }
 .bonus-options > label.show-edit {
-  right: 3em;
+  width: 3em;
+  right: 0;
+}
+.bonus-options > label.show-json {
+  right: 4em;
 }
 
 .bonus-options > input {
   display: none;
 }
 .task-json, .task-edit {
-  background-color: rgb(246,246,246);
+  background-color: var(--tab-selected-bg-color);
   padding: 0.5em;
   margin-bottom: 0.5em; /* TODO: this is wrong, makes highlighting weird */
 
@@ -92,7 +99,7 @@ body {
   margin: 0; /* Safari? */
 }
 input.show-json:checked ~ label.show-json, input.show-edit:checked ~ label.show-edit {
-  background-color: rgb(246,246,246);
+  background-color: var(--tab-selected-bg-color);
 }
 input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
   display: inherit;
@@ -128,9 +135,8 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
 .task-edit input {
   width: 20em;
 }
-.task-edit-task-only {
-  top: 0;
-  position: sticky;
+.task-edit input:hover {
+  background-color: var(--default-hover-color);
 }
 .task-linkage {
   border: 1px solid rgba(29,28,29,.13);
@@ -138,7 +144,7 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
   margin: 0.5em;
 }
 .task-linkage:hover {
-  background-color: rgb(255,255,255);
+  background-color: var(--default-hover-color);
 }
 </style>
 
@@ -270,13 +276,13 @@ function sendData_JSON(e) {
   <div class="bonus-options">
     <input type="checkbox" id="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
     <label for="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
-      <span>#{{ t.task_id }}</span>
+      <span>json</span>
     </label>
     <div class="task-json">
       <pre>{{ to_details_html(t)|safe }}</pre>
     </div>
 
-    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
+    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
     <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
       <span>edit</span>
     </label>
@@ -292,27 +298,28 @@ function sendData_JSON(e) {
 {% block content %}
 
 {% set ns = namespace() %}
-{% set ns.prev_scope = None %}
 {% for scope, scope_tasks in tasks_by_scope.items() if scope_tasks %}
 <div class="scope-container">
-  <div class="date-scope">## {{ scope }}</div>
-
+  <div class="scope-header">## {{ scope }}</div>
+  <div class="category-container">
   {% set ns.prev_task = None %}
   {% for task in scope_tasks %}
+    {% if ns.prev_task and task.category != ns.prev_task.category %}
+  </div>{# category-container #}
+  <div class="category-container">
+    {% endif %}
+
     {# if this is the start of a new category, print heading #}
     {% if task.category
        and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
-    <div class="category">### {{ task.category }}</div>
+    <div class="category-header">### {{ task.category }}</div>
     {% endif %}
 
     {{ render_task(task, scope) }}
     {% set ns.prev_task = task %}
   {% endfor %}
-  {# trailing whitespace for end of scope block #}
-  <br /><br /><br />
-  {% set ns.prev_scope = scope %}
-
-</div> {# scope-container #}
+  </div>{# category-container #}
+</div>{# scope-container #}
 {% endfor %}
 
 {% endblock %}
