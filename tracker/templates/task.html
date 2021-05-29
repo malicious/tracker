@@ -91,6 +91,7 @@ body {
 .task-json, .task-edit {
   background-color: var(--tab-selected-bg-color);
   padding: 0.5em;
+  font-size: 80%;
   margin-bottom: 0.5em; /* TODO: this is wrong, makes highlighting weird */
 
   display: none;
@@ -126,25 +127,24 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
   width: 9em;
 }
 .task-edit textarea {
-  width: 35em;
-  height: 5em;
   vertical-align: top;
-
   line-height: 1.2;
-}
-.task-edit input {
-  width: 20em;
 }
 .task-edit input:hover {
   background-color: var(--default-hover-color);
 }
-.task-linkage {
+.linkage-block {
   border: 1px solid rgba(29,28,29,.13);
   border-radius: 6px;
   margin: 0.5em;
+
+  /* TODO: this could be a responsive table, with multi-line rows */
+  display: grid;
+  grid-template-columns: min-content min-content max-content min-content min-content auto;
 }
-.task-linkage:hover {
-  background-color: var(--default-hover-color);
+.linkage-row, .linkage-header-row, .linkage-footer-row {
+  display: contents;
+  grid-column: 1 / 5;
 }
 </style>
 
@@ -200,24 +200,14 @@ function sendData_JSON(e) {
 
 
 
-{% macro linkage_block(tl) %}
-<div class="task-linkage">
-<div>
-  <label>time_scope_id</label>
+{% macro linkage_row(tl) %}
+<div class="linkage-row">
+  <button>x</button>
   <input name="time_scope_id" value="{{tl.time_scope_id}}">
-  <label>created_at</label>
   <input name="created_at[{{tl.time_scope_id}}]" value="{{tl.created_at}}" readonly="readonly">
-</div>
-<div>
-  <label>resolution</label>
-  <input name="resolution[{{tl.time_scope_id}}]" value="{{tl.resolution if tl.resolution}}">
-  <label>time_elapsed</label>
   <input value="{{tl.time_elapsed if tl.time_elapsed}}">
-</div>
-<div>
-  <label>detailed_resolution</label>
+  <input name="resolution[{{tl.time_scope_id}}]" value="{{tl.resolution if tl.resolution}}">
   <textarea>{{tl.detailed_resolution}}</textarea>
-</div>
 </div>
 {% endmacro %}
 
@@ -229,15 +219,15 @@ function sendData_JSON(e) {
 <div class="task-edit-task-only">
   <div>
     <label>task_id</label>
-    <input type="text" value="{{t.task_id}}" name="task_id" readonly="readonly">
-  </div>
-  <div>
-    <label>desc</label>
-    <textarea class="desc" name="desc">{{t.desc}}</textarea>
+    <span>{{t.task_id}}
   </div>
   <div>
     <label>category</label>
     <input class="category" type="text" value="{{t.category if t.category}}">
+  </div>
+  <div>
+    <label>desc</label>
+    <textarea class="desc" name="desc">{{t.desc}}</textarea>
   </div>
   <div>
     <label>time_estimate</label>
@@ -246,13 +236,30 @@ function sendData_JSON(e) {
   <div>
     <label></label>
     {# TODO: Replace this with a <button> #}
-    <input type="submit">update</input>
+    <input type="submit">
   </div>
 </div>
 
+<div class="linkage-block">
+  <div class="linkage-header-row">
+    <div></div>
+    <div>time_scope_id</div>
+    <div>created_at</div>
+    <div>time_elapsed</div>
+    <div>resolution</div>
+    <div>detailed_resolution</div>
+  </div>
+
 {% for tl in t.linkages %}
-{{ linkage_block(tl) }}
+  {{ linkage_row(tl) }}
 {% endfor %}
+
+  <div class="linkage-footer-row">
+    <div></div>
+    <input type="button" value="new">
+    <input type="submit">
+  </div>
+</div>
 
 <hr />
 <div id="update-task-result">[waiting for form submission]</div>
