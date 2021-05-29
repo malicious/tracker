@@ -1,4 +1,5 @@
 import json
+import re
 from datetime import datetime, timedelta
 from typing import Optional
 
@@ -52,10 +53,21 @@ def report_one_task(task_id, return_bare_dict=False):
     return f'<html><body><pre>{as_text}</pre></body></html>'
 
 
-def generate_tasks_by_scope(page_scope: TimeScope):
-    # Identify the scopes that we care about
-    linkages_query = TaskLinkage.query \
-        .filter(TaskLinkage.time_scope_id.like(page_scope + "%")) \
+def generate_tasks_by_scope(page_scope: str):
+    def generate_tl_query(scope: str):
+        m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d)", scope)
+        if m:
+            raise ValueError("TODO: week queries not supported")
+
+        m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d).(\d)", scope)
+        if m:
+            start = datetime.strptime(scope, "%G-ww%V.%u")
+            return TaskLinkage.query \
+                .filter_by(time_scope_id=start)
+
+        raise ValueError(f"TODO: no idea how to handle {scope}")
+
+    linkages_query = generate_tl_query(page_scope) \
         .order_by(TaskLinkage.time_scope_id)
 
     page_scopes_all = [
@@ -73,7 +85,7 @@ def generate_tasks_by_scope(page_scope: TimeScope):
             .filter(TaskLinkage.time_scope_id == scope) \
             .order_by(TaskLinkage.time_scope_id, Task.category)
 
-        tasks_by_scope[TimeScope(scope)] = tasks_in_scope_query.all()
+        tasks_by_scope[scope] = tasks_in_scope_query.all()
 
     return tasks_by_scope
 
@@ -128,9 +140,9 @@ def report_tasks(page_scope: Optional[TimeScope]):
     # If there are previous/next links, add them
     if page_scope:
         prev_scope = TimeScopeUtils.prev_scope(page_scope)
-        render_kwargs['prev_scope'] = f'<a href="{url_for(".report_tasks", scope=prev_scope)}">{prev_scope}</a>'
+        render_kwargs['prev_scope'] = f'<a href="{url_for(".get_tasks", scope=prev_scope)}">{prev_scope}</a>'
         next_scope = TimeScopeUtils.next_scope(page_scope)
-        render_kwargs['next_scope'] = f'<a href="{url_for(".report_tasks", scope=next_scope)}">{next_scope}</a>'
+        render_kwargs['next_scope'] = f'<a href="{url_for(".get_tasks", scope=next_scope)}">{next_scope}</a>'
 
     # Identify all tasks within those scopes
     if page_scope:

@@ -73,6 +73,8 @@ def _register_rest_endpoints(app: Flask):
     @tasks_v2_rest_bp.route("/task/<int:task_id>/edit", methods=['get', 'post'])
     def edit_task(task_id):
         if not request.args and not request.form and not request.json:
+            # Assume this was a raw/direct browser request
+            # TODO: serve a "single note" template
             abort(400)
 
         if request.json:
@@ -87,7 +89,7 @@ def _register_rest_endpoints(app: Flask):
         return redirect(request.referrer)
 
     @tasks_v2_rest_bp.route("/tasks")
-    def get_all_tasks():
+    def get_tasks():
         page_scope = None
         try:
             parsed_scope = TimeScope(escape(request.args.get('scope')))
