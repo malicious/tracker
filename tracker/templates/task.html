@@ -1,4 +1,8 @@
+{% import "task-macros.jinja" as task_macros %}
+
 {% extends "base.html" %}
+
+
 
 {% block head %}
 {{ super() }}
@@ -117,181 +121,13 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
   margin-top: 1em;
 }
 
-.task-edit div {
-  padding-top: 0.25em;
-  padding-bottom: 0.25em;
-}
-.task-edit label {
-  display: inline-block;
-  text-align: right;
-  width: 9em;
-}
-.task-edit textarea {
-  vertical-align: top;
-  line-height: 1.2;
-}
-.task-edit input, .task-edit textarea {
-  background-color: var(--tab-selected-bg-color);
-}
-.task-edit input:disabled {
-  border: 0;
-}
-.task-edit input:enabled:hover, .task-edit textarea:hover {
-  background-color: rgb(255, 255, 255);
-  outline: 5px auto -webkit-focus-ring-color;
-  outline-offset: -2px;
-}
-.task-edit button:hover {
-  text-shadow:
-    0 0  5px rgba(0,0,0,1.0),
-    0 0 12px rgba(0,0,0,0.8),
-    0 0 20px rgba(0,0,0,0.4);
-}
-.linkage-block {
-  border: 1px solid rgba(29,28,29,.13);
-  border-radius: 6px;
-  margin: 0.5em;
-
-  /* TODO: this could be a responsive table, with multi-line rows */
-  display: grid;
-  grid-template-columns: min-content min-content max-content min-content min-content auto;
-}
-.linkage-header-row > div, .linkage-footer-row {
-  /* TODO: this has to be a responsive table */
-  max-height: 4ex;
-  overflow-y: hidden;
-}
-.linkage-row, .linkage-header-row, .linkage-footer-row {
-  display: contents;
-  grid-column: 1 / 5;
-}
+{{ task_macros.task_edit_css }}
 </style>
 
 <script>
-//document.addEventListener("submit", sendData_JSON);
-
-function sendData(e) {
-  e.preventDefault();
-  f = e.target.closest('form');
-
-  fetch(`/v2/task/${task_id}/edit`, {
-    method: 'post',
-    body: new FormData(f)
-  })
-  .then(res => res.json())
-  .then(data => {
-    f.querySelector("#update-task-result").innerText = JSON.stringify(data);
-  })
-  .catch(err => console.log(err));
-}
-
-function sendData_JSON(e) {
-  e.preventDefault();
-  f = e.target.closest('form');
-  const task_id = f.querySelector("input[name='task_id']").value;
-  const desc = f.querySelector('.desc').value;
-  const category = f.querySelector('.category').value;
-  const time_estimate = f.querySelector('.time_estimate').value;
-
-  {# this really should be url_for(), but i don't wanna generate per-task_id code #}
-  fetch(`/v2/task/${task_id}/edit`, {
-    method: "POST",
-    headers: {
-      Accept: "application/json",
-      "Content-Type": "application/json"
-    },
-    body: JSON.stringify({
-      task_id: task_id,
-      desc: desc,
-      category: category,
-      time_estimate: time_estimate,
-    })
-  })
-  .then(res => res.json())
-  .then(data => {
-    f.querySelector("#update-task-result").innerText = JSON.stringify(data);
-  })
-  .catch(err => console.log(err));
-}
-
+{{ task_macros.task_edit_js }}
 </script>
 {% endblock %}
-
-
-
-{% macro linkage_row(tl) %}
-<div class="linkage-row">
-  <div>
-    <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
-    <button class="delete" disabled>x</button>
-  </div>
-  <div>
-    <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}" disabled>
-  </div>
-  <div>
-    <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}" disabled>
-  </div>
-  <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}">
-  <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution if tl.resolution}}">
-  <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
-</div>
-{% endmacro %}
-
-
-
-{% macro edit_block(t, backlink) %}
-<form action="{{url_for("tasks-v2-rest.edit_task", task_id=t.task_id)}}" method="post">
-<input type="hidden" name="backlink" value="{{backlink}}">
-
-<div class="task-edit-task-only">
-  <div>
-    <label>task_id</label>
-    <span>{{t.task_id}}</span>
-  </div>
-  <div>
-    <label>category</label>
-    <input class="category" name="task-category" value="{{t.category if t.category}}">
-  </div>
-  <div>
-    <label>desc</label>
-    <textarea class="desc" name="task-desc">{{t.desc}}</textarea>
-  </div>
-  <div>
-    <label>time_estimate</label>
-    <input class="time_estimate" name="task-time_estimate" value="{{t.time_estimate if t.time_estimate}}">
-  </div>
-  <div>
-    <label></label>
-    {# TODO: Replace this with a <button> #}
-    <input type="submit">
-  </div>
-</div>
-
-<div class="linkage-block">
-  <div class="linkage-header-row">
-    <div></div>
-    <div>time_scope_id</div>
-    <div>created_at</div>
-    <div>time_elapsed</div>
-    <div>resolution</div>
-    <div>detailed_resolution</div>
-  </div>
-
-{% for tl in t.linkages|reverse %}
-  {{ linkage_row(tl) }}
-{% endfor %}
-
-  <div class="linkage-footer-row">
-    <div></div>
-    <button class="new" disabled>new</button>
-  </div>
-</div>
-
-<hr />
-<div id="update-task-result">[waiting for form submission]</div>
-
-</form>
-{% endmacro %}
 
 
 
@@ -325,7 +161,7 @@ function sendData_JSON(e) {
     <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
       <span>edit</span>
     </label>
-    <div class="task-edit">{{ edit_block(t, "task-{}-{}".format(t.task_id, scope)) }}</div>
+    <div class="task-edit">{{ task_macros.edit_block(t, backlink="task-{}-{}".format(t.task_id, scope)) }}</div>
 
   </div>
 </div>
