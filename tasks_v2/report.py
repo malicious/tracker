@@ -102,6 +102,8 @@ def generate_open_tasks():
 
 
 def update_task(session, task_id, form_data):
+    print(json.dumps(form_data.to_dict(flat=False), indent=2))
+
     # First, check if any of the Task data was updated
     task: Task = Task.query \
         .filter_by(task_id=task_id) \

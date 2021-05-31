@@ -169,7 +169,7 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
 </style>
 
 <script>
-document.addEventListener("submit", sendData_JSON);
+//document.addEventListener("submit", sendData_JSON);
 
 function sendData(e) {
   e.preventDefault();
@@ -236,8 +236,9 @@ function sendData_JSON(e) {
 
 
 
-{% macro edit_block(t) %}
+{% macro edit_block(t, backlink) %}
 <form action="{{url_for("tasks-v2-rest.edit_task", task_id=t.task_id)}}" method="post">
+<input type="hidden" name="backlink" value="{{backlink}}">
 
 <div class="task-edit-task-only">
   <div>
@@ -292,7 +293,7 @@ function sendData_JSON(e) {
 
 
 {% macro render_task(t, scope) %}
-<div class="task-and-details">
+<div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
 <label for="toggle-edit-{{t.task_id}}-{{scope}}">
   <div class="task-only">
   {% if render_scope %}
@@ -321,7 +322,7 @@ function sendData_JSON(e) {
     <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
       <span>edit</span>
     </label>
-    <div class="task-edit">{{ edit_block(t) }}</div>
+    <div class="task-edit">{{ edit_block(t, "task-{}-{}".format(t.task_id, scope)) }}</div>
 
   </div>
 </div>
