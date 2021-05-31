@@ -85,7 +85,7 @@ def _register_rest_endpoints(app: Flask):
             }
 
         report.update_task(db_session, task_id, request.form)
-        return redirect(request.referrer)
+        return redirect(f"{request.referrer}#{request.form['backlink']}")
 
     @tasks_v2_rest_bp.route("/tasks")
     def get_tasks():

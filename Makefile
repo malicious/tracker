@@ -18,7 +18,7 @@ re-import: $(activate_script)
 	rm -f instance/tasks-v1.db
 	source $(activate_script) \
 		&& flask tasks_v2-migrate \
-		&& FLASK_APP=$(app) flask run --port 7529
+		&& FLASK_APP=$(app) FLASK_ENV=development flask run --port 7529
 
 .PHONY: install
 install: $(activate_script)
