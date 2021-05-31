@@ -136,7 +136,8 @@ def update_task(session, task_id, form_data):
     # (we can't really detect linkage changes, like at all)
     existing_tl = list(task.linkages)
 
-    for tl_ts in form_data.getlist("tl-time_scope_id"):
+    submitted_tl = [parser.parse(key[3:-14]).date() for (key, value) in form_data.items(multi=True) if key[-14:] == "-time_scope_id"]
+    for tl_ts in submitted_tl:
         # Check if TL even exists
         tl: TaskLinkage = TaskLinkage.query \
             .filter_by(task_id=task_id, time_scope_id=tl_ts) \
@@ -156,6 +157,8 @@ def update_task(session, task_id, form_data):
 
             # If it's different, try setting it
             elif form_data[f'tl-{tl_ts}-{field}'] != getattr(tl, field):
+                if field == 'time_scope_id' and str(tl.time_scope_id) != form_data[f'tl-{tl_ts}-{field}']:
+                    raise ValueError(f"Can't change time_scope_id yet")
                 # TODO: check that created_at is valid and not None at import time
                 if field == 'created_at' and form_data[f'tl-{tl_ts}-{field}'] == 'None':
                     tl.created_at = None
