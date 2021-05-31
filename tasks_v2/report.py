@@ -100,6 +100,39 @@ def generate_open_tasks():
     return {today.strftime("%G-ww%V.%u"): tasks_query.all()}
 
 
+def update_task(session, task_id, form_data):
+    print(json.dumps(form_data.to_dict(), indent=2))
+
+    # First, check if any of the Task data was updated
+    task: Task = Task.query \
+        .filter_by(task_id=task_id) \
+        .one()
+
+    for attribute in ['category', 'desc', 'time_estimate']:
+        if f'task-{attribute}' not in form_data:
+            raise ValueError(f"Couldn't find {task}.{attribute} in HTTP form data")
+
+        # If the value's empty, we're probably trying to clear it
+        if not form_data[f'task-{attribute}']:
+            if getattr(task, attribute):
+                print(f"DEBUG: clearing {task}.{attribute} to None")
+            setattr(task, attribute, None)
+
+        # If it's different, try setting it
+        elif form_data[f'task-{attribute}'] != getattr(task, attribute):
+            print(f"DEBUG: updating {task}.{attribute} to {form_data[f'task-{attribute}']}")
+            setattr(task, attribute, form_data[f'task-{attribute}'])
+
+        # Finally, delete from the map, because we expect that map to be cleared
+        #del form_data[f'task-{attribute}']
+
+    session.add(task)
+    session.commit() # TODO: Remove this after implementation
+
+    #for time_scope in [key in form_data.keys() if key]:
+    #    print(time_scope)
+
+
 def render_scope(task_date, section_date_str: str):
     section_date = datetime.strptime(section_date_str, "%G-ww%V.%u").date()
 

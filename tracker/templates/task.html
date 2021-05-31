@@ -162,6 +162,10 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
   display: contents;
   grid-column: 1 / 5;
 }
+.linkage-row button.delete, .linkage-footer-row button.new {
+  /* leave invisible unless javascript is on */
+  display: none;
+}
 </style>
 
 <script>
@@ -220,13 +224,13 @@ function sendData_JSON(e) {
 <div class="linkage-row">
   <div>
     <button>存</button>
-    <button>x</button>
+    <button class="delete">x</button>
   </div>
-  <input name="time_scope_id" value="{{tl.time_scope_id}}">
-  <input name="created_at[{{tl.time_scope_id}}]" value="{{tl.created_at}}" readonly="readonly">
-  <input value="{{tl.time_elapsed if tl.time_elapsed}}">
-  <input name="resolution[{{tl.time_scope_id}}]" value="{{tl.resolution if tl.resolution}}">
-  <textarea>{{tl.detailed_resolution}}</textarea>
+  <input name="tl-time_scope_id" value="{{tl.time_scope_id}}">
+  <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at}}" readonly="readonly">
+  <input name="tl-{{tl.time_scope_id}}-time_elapsed" value="{{tl.time_elapsed if tl.time_elapsed}}">
+  <input name="tl-{{tl.time_scope_id}}-resolution" value="{{tl.resolution if tl.resolution}}">
+  <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution">{{tl.detailed_resolution}}</textarea>
 </div>
 {% endmacro %}
 
@@ -238,19 +242,19 @@ function sendData_JSON(e) {
 <div class="task-edit-task-only">
   <div>
     <label>task_id</label>
-    <span>{{t.task_id}}
+    <span>{{t.task_id}}</span>
   </div>
   <div>
     <label>category</label>
-    <input class="category" type="text" value="{{t.category if t.category}}">
+    <input class="category" name="task-category" value="{{t.category if t.category}}">
   </div>
   <div>
     <label>desc</label>
-    <textarea class="desc" name="desc">{{t.desc}}</textarea>
+    <textarea class="desc" name="task-desc">{{t.desc}}</textarea>
   </div>
   <div>
     <label>time_estimate</label>
-    <input class="time_estimate" type="text" value="{{t.time_estimate if t.time_estimate}}">
+    <input class="time_estimate" name="task-time_estimate" value="{{t.time_estimate if t.time_estimate}}">
   </div>
   <div>
     <label></label>
@@ -275,8 +279,7 @@ function sendData_JSON(e) {
 
   <div class="linkage-footer-row">
     <div></div>
-    <button>new</button>
-    <input type="submit">
+    <button class="new">new</button>
   </div>
 </div>
 

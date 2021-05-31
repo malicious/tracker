@@ -17,6 +17,9 @@ class Task(Base):
 
     linkages = relationship('TaskLinkage', backref='Task')
 
+    def __repr__(self):
+        return f"<Task#{self.task_id}>"
+
     def as_json(self, include_linkages: bool = True) -> Dict:
         response_dict = {
             'task_id': self.task_id,
