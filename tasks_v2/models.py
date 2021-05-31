@@ -41,7 +41,7 @@ class TaskLinkage(Base):
     __tablename__ = 'TaskLinkages'
 
     task_id = Column(Integer, ForeignKey("Tasks.task_id"), primary_key=True, nullable=False)
-    time_scope_id = Column(Date, primary_key=True, nullable=False)
+    time_scope_id = Column(Date, primary_key=True, nullable=False) # TODO: make _id a derived property
     created_at = Column(DateTime)
     resolution = Column(String)
     detailed_resolution = Column(String)
@@ -49,6 +49,9 @@ class TaskLinkage(Base):
     __table_args__ = (
         UniqueConstraint('task_id', 'time_scope_id'),
     )
+
+    def __repr__(self):
+        return f"<TaskLinkage-#{self.task_id}-{self.time_scope_id}>"
 
     def as_json(self) -> Dict:
         """
