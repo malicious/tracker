@@ -226,7 +226,7 @@ function sendData_JSON(e) {
     <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
     <button class="delete">x</button>
   </div>
-  <input name="tl-time_scope_id" value="{{tl.time_scope_id}}">
+  <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}">
   <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at}}" readonly="readonly">
   <input name="tl-{{tl.time_scope_id}}-time_elapsed" value="{{tl.time_elapsed if tl.time_elapsed}}">
   <input name="tl-{{tl.time_scope_id}}-resolution" value="{{tl.resolution if tl.resolution}}">
