@@ -13,6 +13,13 @@ serve:
 
 # ---------------------------------------------------------------------
 
+.PHONY: re-import
+re-import: $(activate_script)
+	rm -f instance/tasks-v1.db
+	source $(activate_script) \
+		&& flask tasks_v2-migrate \
+		&& FLASK_APP=$(app) flask run --port 7529
+
 .PHONY: install
 install: $(activate_script)
 	source $(activate_script) \
