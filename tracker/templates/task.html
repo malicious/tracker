@@ -223,7 +223,7 @@ function sendData_JSON(e) {
 {% macro linkage_row(tl) %}
 <div class="linkage-row">
   <div>
-    <button>存</button>
+    <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
     <button class="delete">x</button>
   </div>
   <input name="tl-time_scope_id" value="{{tl.time_scope_id}}">
@@ -273,7 +273,7 @@ function sendData_JSON(e) {
     <div>detailed_resolution</div>
   </div>
 
-{% for tl in t.linkages %}
+{% for tl in t.linkages|reverse %}
   {{ linkage_row(tl) }}
 {% endfor %}
 
