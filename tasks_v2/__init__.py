@@ -84,8 +84,7 @@ def _register_rest_endpoints(app: Flask):
                 "ok": "this was an async request with JS enabled, here's your vaunted output",
             }
 
-        print(request.args)
-        print(request.form)
+        report.update_task(db_session, task_id, request.form)
         return redirect(request.referrer)
 
     @tasks_v2_rest_bp.route("/tasks")
