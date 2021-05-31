@@ -133,7 +133,10 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
 .task-edit input, .task-edit textarea {
   background-color: var(--tab-selected-bg-color);
 }
-.task-edit input:hover, .task-edit textarea:hover {
+.task-edit input:disabled {
+  border: 0;
+}
+.task-edit input:enabled:hover, .task-edit textarea:hover {
   background-color: rgb(255, 255, 255);
   outline: 5px auto -webkit-focus-ring-color;
   outline-offset: -2px;
@@ -161,10 +164,6 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
 .linkage-row, .linkage-header-row, .linkage-footer-row {
   display: contents;
   grid-column: 1 / 5;
-}
-.linkage-row button.delete, .linkage-footer-row button.new {
-  /* leave invisible unless javascript is on */
-  display: none;
 }
 </style>
 
@@ -224,13 +223,17 @@ function sendData_JSON(e) {
 <div class="linkage-row">
   <div>
     <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
-    <button class="delete">x</button>
+    <button class="delete" disabled>x</button>
   </div>
-  <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}">
-  <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at}}" readonly="readonly">
-  <input name="tl-{{tl.time_scope_id}}-time_elapsed" value="{{tl.time_elapsed if tl.time_elapsed}}">
-  <input name="tl-{{tl.time_scope_id}}-resolution" value="{{tl.resolution if tl.resolution}}">
-  <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution">{{tl.detailed_resolution}}</textarea>
+  <div>
+    <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}" disabled>
+  </div>
+  <div>
+    <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}" disabled>
+  </div>
+  <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}">
+  <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution if tl.resolution}}">
+  <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
 </div>
 {% endmacro %}
 
@@ -280,7 +283,7 @@ function sendData_JSON(e) {
 
   <div class="linkage-footer-row">
     <div></div>
-    <button class="new">new</button>
+    <button class="new" disabled>new</button>
   </div>
 </div>
 
