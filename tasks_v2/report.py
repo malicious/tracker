@@ -137,6 +137,7 @@ def update_task(session, task_id, form_data):
     existing_tl = list(task.linkages)
 
     submitted_tl = [parser.parse(key[3:-14]).date() for (key, value) in form_data.items(multi=True) if key[-14:] == "-time_scope_id"]
+    print(f"submitted linkages: {submitted_tl}")
     for tl_ts in submitted_tl:
         # Check if TL even exists
         tl: TaskLinkage = TaskLinkage.query \
@@ -147,6 +148,7 @@ def update_task(session, task_id, form_data):
 
         # Update fields
         for field in ['created_at', 'time_elapsed', 'resolution', 'detailed_resolution']:
+            print(f"DEBUG: Checking {tl}.{field} against {form_data[f'tl-{tl_ts}-{field}']}")
             if f'tl-{tl_ts}-{field}' not in form_data:
                 raise ValueError(f"Couldn't find {tl}.{field} in HTTP form data")
 
