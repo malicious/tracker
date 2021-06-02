@@ -125,7 +125,7 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
 </style>
 
 <script>
-{{ task_macros.task_edit_js }}
+{{ task_macros.task_edit_js|safe }}
 </script>
 {% endblock %}
 
