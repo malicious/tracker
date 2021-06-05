@@ -53,24 +53,6 @@
 
 
 {% set task_edit_js %}
-//document.addEventListener("submit", sendData_JSON);
-
-function sendData(e) {
-  e.preventDefault();
-  f = e.target.closest('form');
-
-  fetch(`/v2/task/${task_id}/edit`, {
-    method: 'post',
-    body: new FormData(f)
-  })
-  .then(res => res.json())
-  .then(data => {
-    f.querySelector("#update-task-result").innerText = JSON.stringify(data);
-  })
-  .catch(err => console.log(err));
-}
-
-
 function addTLRow(e) {
   e.preventDefault();
 
