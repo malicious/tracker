@@ -87,6 +87,21 @@ def _register_rest_endpoints(app: Flask):
         report.update_task(db_session, task_id, request.form)
         return redirect(f"{request.referrer}#{request.form['backlink']}")
 
+    @tasks_v2_rest_bp.route("/task/<int:task_id>/<linkage_scope>/edit", methods=['get', 'post'])
+    def edit_linkage(task_id, linkage_scope):
+        if not request.args and not request.form and not request.json:
+            abort(400)
+
+        if request.json:
+            print(request.json)
+            return {
+                "date": datetime.now(),
+                "ok": f"this was an async request with JS enabled, see {task_id} and {linkage_scope}",
+            }
+
+        report.update_task(db_session, task_id, request.form)
+        return redirect(f"{request.referrer}#{request.form['backlink']}")
+
     @tasks_v2_rest_bp.route("/tasks")
     def get_tasks():
         page_scope = None

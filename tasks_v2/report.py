@@ -101,6 +101,10 @@ def generate_open_tasks():
     return {today.strftime("%G-ww%V.%u"): tasks_query.all()}
 
 
+def _update_linkage(session, task_id, linkage):
+    pass
+
+
 def update_task(session, task_id, form_data):
     print(json.dumps(form_data.to_dict(flat=False), indent=2))
 
