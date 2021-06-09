@@ -124,5 +124,8 @@ def update_task(session, task_id, form_data):
         del tl
 
     print(f"DEBUG: {len(existing_tls)} linkages to be removed, {existing_tls}")
+    for tl in existing_tls:
+        session.delete(tl)
+
     # Done, commit everything
     session.commit()
