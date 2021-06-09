@@ -77,7 +77,7 @@ def create_task(session, form_data):
     session.flush()
 
     update_task(session, task.task_id, form_data)
-    return task.as_json()
+    return task
 
 
 def update_task(session, task_id, form_data):
@@ -100,6 +100,7 @@ def update_task(session, task_id, form_data):
     form_tl_ids = [key[3:-14] for (key, value) in form_data.items(multi=True) if key[-14:] == "-time_scope_id"]
     form_tl_times = set([parser.parse(form_data[f'tl-{form_tl_id}-time_scope_id']) for form_tl_id in form_tl_ids])
     if len(form_tl_ids) != len(form_tl_times):
+        print(f"ERROR: set of form TLs, {form_tl_times}")
         raise ValueError("Found a duplicate form time, erroring")
 
     for form_tl_id in form_tl_ids:
