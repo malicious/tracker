@@ -62,15 +62,15 @@ def _register_endpoints(app: Flask):
 def _register_rest_endpoints(app: Flask):
     tasks_v2_rest_bp = Blueprint('tasks-v2-rest', __name__)
 
-    @tasks_v2_rest_bp.route("/task")
+    @tasks_v2_rest_bp.route("/task", methods=['post'])
     def create_task():
-        pass
+        return update.create_task(db_session, request.form)
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>")
     def get_task(task_id):
         return report.report_one_task(escape(task_id))
 
-    @tasks_v2_rest_bp.route("/task/<int:task_id>/edit", methods=['get', 'post'])
+    @tasks_v2_rest_bp.route("/task/<int:task_id>/edit", methods=['post'])
     def edit_task(task_id):
         if not request.args and not request.form and not request.json:
             # Assume this was a raw/direct browser request
@@ -87,7 +87,7 @@ def _register_rest_endpoints(app: Flask):
         update.update_task(db_session, task_id, request.form)
         return redirect(f"{request.referrer}#{request.form['backlink']}")
 
-    @tasks_v2_rest_bp.route("/task/<int:task_id>/<linkage_scope>/edit", methods=['get', 'post'])
+    @tasks_v2_rest_bp.route("/task/<int:task_id>/<linkage_scope>/edit", methods=['post'])
     def edit_linkage(task_id, linkage_scope):
         if not request.args and not request.form and not request.json:
             abort(400)
