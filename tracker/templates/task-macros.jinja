@@ -55,8 +55,7 @@
 {% set task_edit_js %}
 function addTLRow(e) {
   e.preventDefault();
-
-  console.log(`got button click on button ${e}`);
+  console.log(`addTLRow: got button click on button ${e.target}`);
 
   {# https://stackoverflow.com/a/33146982/2631462 #}
   // generate a "unique" linkage ID based on stringified time
@@ -64,15 +63,12 @@ function addTLRow(e) {
   console.log(`new row ID: ${new_row_id}`);
 
   // add a new "template" row, right above `div.linkage-footer-row`
-  var tl_block = e.target.parentNode.parentNode;
-  var tl_footer_row = e.target.parentNode;
-
   new_row = document.createElement('template');
   new_row.innerHTML = `
 <div class="linkage-row">
   <div>
     <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
-    <button class="delete" onClick="deleteTLRow();" disabled>x</button> {# TODO: re-enable once click is correct #}
+    <button class="delete">x</button>
   </div>
   <div>
     <input name="tl-${new_row_id}-time_scope_id" value="${new_row_id}" disabled>
@@ -83,7 +79,12 @@ function addTLRow(e) {
   <textarea name="tl-${new_row_id}-detailed_resolution" placeholder="None"></textarea>
 </div>
 `;
-  console.log(new_row.content);
+
+  // add delete listener
+  new_row.content.querySelector('button.delete').addEventListener("click", deleteTLRow, false);
+
+  var tl_block = e.target.parentNode.parentNode;
+  var tl_footer_row = e.target.parentNode;
   tl_block.insertBefore(new_row.content, tl_footer_row);
 }
 
@@ -100,8 +101,10 @@ function enableNewTLButtons() {
 
 function deleteTLRow(e) {
   e.preventDefault();
+  console.log(`deleteTLRow: got button click on button ${e.target}`);
 
-  console.log(`TODO: deleteTLRow not implemented`);
+  var tl_row = e.target.parentNode.parentNode;
+  tl_row.remove();
 }
 
 function enableDeleteTLButtons() {
