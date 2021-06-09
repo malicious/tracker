@@ -71,8 +71,9 @@ function addTLRow(e) {
     <button class="delete">x</button>
   </div>
   <div>
-    <input name="tl-${new_row_id}-time_scope_id" value="${new_row_id}" disabled>
-    <input name="tl-${new_row_id}-created_at" value="${+new Date}" disabled>
+    {# TODO: actual formatting #}
+    <input name="tl-${new_row_id}-time_scope_id" value="2021-ww23.2">
+    <input name="tl-${new_row_id}-created_at" value="${+new Date}">
   </div>
   <input name="tl-${new_row_id}-time_elapsed" placeholder="None">
   <input name="tl-${new_row_id}-resolution"   placeholder="None">
@@ -144,8 +145,8 @@ document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
     <button class="delete" disabled>x</button>
   </div>
   <div>
-    <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}" disabled>
-    <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}" disabled>
+    <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}" readonly="readonly">
+    <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}" readonly="readonly">
   </div>
   <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}">
   <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution if tl.resolution}}">
