@@ -9,7 +9,7 @@ from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 # noinspection PyUnresolvedReferences
-from . import models, report
+from . import migrate, models, report, update
 from .models import Base, Task
 from tasks_v1.time_scope import TimeScope
 
@@ -84,7 +84,7 @@ def _register_rest_endpoints(app: Flask):
                 "ok": "this was an async request with JS enabled, here's your vaunted output",
             }
 
-        report.update_task(db_session, task_id, request.form)
+        update.update_task(db_session, task_id, request.form)
         return redirect(f"{request.referrer}#{request.form['backlink']}")
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>/<linkage_scope>/edit", methods=['get', 'post'])
@@ -99,7 +99,7 @@ def _register_rest_endpoints(app: Flask):
                 "ok": f"this was an async request with JS enabled, see {task_id} and {linkage_scope}",
             }
 
-        report.update_task(db_session, task_id, request.form)
+        update.update_task(db_session, task_id, request.form)
         return redirect(f"{request.referrer}#{request.form['backlink']}")
 
     @tasks_v2_rest_bp.route("/tasks")
