@@ -3,7 +3,7 @@ import os
 
 import click
 import sqlalchemy
-from flask import Flask, Blueprint, abort, redirect, request
+from flask import Flask, Blueprint, abort, redirect, request, url_for
 from flask.cli import with_appcontext
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -64,7 +64,8 @@ def _register_rest_endpoints(app: Flask):
 
     @tasks_v2_rest_bp.route("/task", methods=['post'])
     def create_task():
-        return update.create_task(db_session, request.form)
+        task = update.create_task(db_session, request.form)
+        return redirect(url_for(".get_task", task_id=task.task_id))
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>")
     def get_task(task_id):

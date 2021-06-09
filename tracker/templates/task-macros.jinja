@@ -83,7 +83,7 @@ function addTLRow(e) {
   time_scope_str = generation_time.toISOString().split('T')[0]; // TODO: remove this and use the scope id
   created_at_str = generation_time.toISOString().split('T').join(' ').split('Z')[0];
 
-  new_row_id = btoa(generation_time).slice(-10, -2);
+  new_row_id = btoa(+new Date).slice(-10, -2);
   console.log(`new row ID: ${new_row_id}`);
 
   // add a new "template" row, right above `div.linkage-footer-row`
