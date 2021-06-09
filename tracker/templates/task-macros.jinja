@@ -48,6 +48,9 @@
   display: contents;
   grid-column: 1 / 5;
 }
+.linkage-row-not-saved div, .linkage-row-not-saved input, .linkage-row-not-saved textarea {
+  background-color: rgb(250,250,230);
+}
 {% endset %}{# task_edit_css #}
 
 
@@ -86,7 +89,7 @@ function addTLRow(e) {
   // add a new "template" row, right above `div.linkage-footer-row`
   new_row = document.createElement('template');
   new_row.innerHTML = `
-<div class="linkage-row">
+<div class="linkage-row linkage-row-not-saved">
   <div>
     <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
     <button class="delete">x</button>
@@ -203,7 +206,7 @@ document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
 <div class="linkage-block">
   {{ linkage_headers }}
 
-{% for tl in t.linkages|reverse %}
+{% for tl in t.linkages %}
   {{ linkage_row(tl) }}
 {% endfor %}
 
@@ -214,9 +217,6 @@ document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
     <input type="submit">
   </div>
 </div>
-
-<hr />
-<div id="update-task-result">[waiting for form submission]</div>
 
 </form>
 {% endmacro %}
