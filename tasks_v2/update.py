@@ -34,7 +34,7 @@ def _update_task_only(task, form_data):
 def _update_linkage_only(tl, tl_ts, form_data):
     # Update fields
     for field in ['created_at', 'time_elapsed', 'resolution', 'detailed_resolution']:
-        print(f"DEBUG: Checking {tl}.{field} against {form_data[f'tl-{tl_ts}-{field}']}")
+        print(f"DEBUG: Checking {tl}.{field} against \"{form_data[f'tl-{tl_ts}-{field}']}\"")
         if f'tl-{tl_ts}-{field}' not in form_data:
             raise ValueError(f"Couldn't find {tl}.{field} in HTTP form data")
 
@@ -61,7 +61,7 @@ def _update_linkage_only(tl, tl_ts, form_data):
                     setattr(tl, field, new_value)
                 del new_value
             else:
-                print(f"DEBUG: updating {tl}.{field} to {form_data[f'tl-{tl_ts}-{field}']}")
+                print(f"DEBUG: updating {tl}.{field} to \"{form_data[f'tl-{tl_ts}-{field}']}\"")
                 print(f"       was: {getattr(tl, field)}")
                 setattr(tl, field, form_data[f'tl-{tl_ts}-{field}'])
 
@@ -124,7 +124,8 @@ def update_task(session, task_id, form_data):
             print(f"DEBUG: added new tl {tl}")
         del tl
 
-    print(f"DEBUG: {len(existing_tls)} linkages to be removed, {existing_tls}")
+    if existing_tls:
+        print(f"DEBUG: {len(existing_tls)} linkages to be removed, {existing_tls}")
     for tl in existing_tls:
         session.delete(tl)
 
