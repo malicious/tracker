@@ -79,8 +79,7 @@ def update_task(session, task_id, form_data):
     _update_task_only(task, form_data)
 
     session.add(task)
-    # TODO: try adding TaskLinkage with an un-committed Task
-    session.commit()
+    session.flush()
 
 
     # Update the entire set of linkages, and ensure they match the ones stored in Task
@@ -106,7 +105,6 @@ def update_task(session, task_id, form_data):
         _update_linkage_only(tl, form_tl_id, form_data)
 
         session.add(tl)
-        session.commit()
 
         if tl in existing_tls:
             existing_tls.remove(tl)
@@ -115,3 +113,5 @@ def update_task(session, task_id, form_data):
         del tl
 
     print(f"DEBUG: {len(existing_tls)} linkages to be removed, {existing_tls}")
+    # Done, commit everything
+    session.commit()
