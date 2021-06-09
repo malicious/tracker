@@ -69,6 +69,17 @@ def _update_linkage_only(tl, tl_ts, form_data):
         #del form_data[f'tl-{tl_ts}-{field}']
 
 
+def create_task(session, form_data):
+    task = Task()
+    session.add(task)
+
+    _update_task_only(task, form_data)
+    session.flush()
+
+    update_task(session, task.task_id, form_data)
+    return task.as_json()
+
+
 def update_task(session, task_id, form_data):
     #print(json.dumps(form_data.to_dict(flat=False), indent=2))
 
