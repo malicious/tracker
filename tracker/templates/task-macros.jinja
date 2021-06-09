@@ -81,7 +81,9 @@ function addTLRow(e) {
   generation_time = new Date();
   time_scope_str = toTimeScopeId(new Date(generation_time));
   time_scope_str = generation_time.toISOString().split('T')[0]; // TODO: remove this and use the scope id
-  created_at_str = generation_time.toISOString().split('T').join(' ').split('Z')[0];
+  created_at_str = generation_time.toISOString()
+    .split('T').join(' ') // remove the ISO8601 'T'
+    .split('Z')[0]; // and remove anything past the 'Z'
 
   new_row_id = btoa(+new Date).slice(-10, -2);
   console.log(`new row ID: ${new_row_id}`);
