@@ -153,7 +153,7 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
       <pre>{{ to_details_html(t)|safe }}</pre>
     </div>
 
-    {% if t.linkages|length > 1%}
+    {% if t.linkages|length > 1 %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
     {% else %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
