@@ -54,7 +54,10 @@ def _update_linkage_only(tl, tl_ts, form_data):
                 new_value = parser.parse(form_data[f'tl-{tl_ts}-{field}'])
                 if new_value != tl.created_at:
                     print(f"DEBUG: updating {tl}.{field} to {new_value}")
-                    print(f"       was: {getattr(tl, field)} (delta of {new_value - getattr(tl, field)})")
+                    if getattr(tl, field):
+                        print(f"       was: {getattr(tl, field)} (delta of {new_value - getattr(tl, field)})")
+                    else:
+                        print(f"       was: {getattr(tl, field)}")
                     setattr(tl, field, new_value)
                 del new_value
             else:
@@ -76,6 +79,7 @@ def update_task(session, task_id, form_data):
     _update_task_only(task, form_data)
 
     session.add(task)
+    # TODO: try adding TaskLinkage with an un-committed Task
     session.commit()
 
 
@@ -83,10 +87,13 @@ def update_task(session, task_id, form_data):
     existing_tls = list(task.linkages)
 
     # Key on `-time_scope_id` to identify valid linkages
-    form_tls = [key[3:-14] for (key, value) in form_data.items(multi=True) if key[-14:] == "-time_scope_id"]
+    form_tl_ids = [key[3:-14] for (key, value) in form_data.items(multi=True) if key[-14:] == "-time_scope_id"]
+    form_tl_times = set([parser.parse(form_data[f'tl-{form_tl_id}-time_scope_id']) for form_tl_id in form_tl_ids])
+    if len(form_tl_ids) != len(form_tl_times):
+        raise ValueError("Found a duplicate form time, erroring")
 
-    for tl_form_id in form_tls:
-        tl_ts_raw = form_data[f'tl-{tl_form_id}-time_scope_id']
+    for form_tl_id in form_tl_ids:
+        tl_ts_raw = form_data[f'tl-{form_tl_id}-time_scope_id']
         tl_ts = parser.parse(tl_ts_raw).date()
 
         # Check if TL even exists
@@ -96,12 +103,15 @@ def update_task(session, task_id, form_data):
         if not tl:
             tl = TaskLinkage(task_id=task_id, time_scope_id=tl_ts)
 
-        _update_linkage_only(tl, tl_ts, form_data)
+        _update_linkage_only(tl, form_tl_id, form_data)
 
         session.add(tl)
         session.commit()
 
-        existing_tls.remove(tl)
+        if tl in existing_tls:
+            existing_tls.remove(tl)
+        else:
+            print(f"DEBUG: added new tl {tl}")
         del tl
 
     print(f"DEBUG: {len(existing_tls)} linkages to be removed, {existing_tls}")
