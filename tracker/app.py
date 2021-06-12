@@ -1,23 +1,19 @@
 from typing import Dict
 
-from flask import Flask, request
-from markupsafe import escape
+from flask import Flask
 
-import json
 import notes
 import tasks_v1
 import tasks_v2
-from notes.models import Note
-from tasks_v1.time_scope import TimeScope
-from . import cli, db
 
 
 def create_app(settings_overrides: Dict = {}):
     app = Flask(__name__, instance_relative_config=True)
-    db.init_app(app, settings_overrides)
+    app.config.update(settings_overrides)
+
+    notes.init_app(app)
     tasks_v1.init_app(app)
     tasks_v2.init_app(app)
-    cli.init_app(app)
 
     try:
         from flask_debugtoolbar import DebugToolbarExtension
@@ -27,31 +23,5 @@ def create_app(settings_overrides: Dict = {}):
         toolbar = DebugToolbarExtension(app)
     except ImportError:
         pass
-
-    @app.route("/time_scope/<scope_str>")
-    def get_time_scope(scope_str: str):
-        return TimeScope(escape(scope_str)).to_json_dict()
-
-    @app.route("/note/<note_id>")
-    def get_note(note_id):
-        note: Note = Note.query \
-            .filter(Note.note_id == note_id) \
-            .one()
-
-        return note.to_json(include_domains=True)
-
-    @app.route("/report-notes")
-    def report_notes_all():
-        page_scope = None
-        try:
-            parsed_scope = TimeScope(escape(request.args.get('scope')))
-            parsed_scope.get_type()
-            page_scope = parsed_scope
-        except ValueError:
-            pass
-
-        page_domain = request.args.get('domain')
-
-        return notes.report.report_notes(page_scope=page_scope, page_domain=page_domain)
 
     return app
