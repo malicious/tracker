@@ -1,38 +1,39 @@
 from typing import Dict
 
-from sqlalchemy.orm import relationship
+from sqlalchemy import String, Column, Integer, ForeignKey, UniqueConstraint, DateTime, Index, CheckConstraint
+from sqlalchemy.orm import declarative_base, relationship
 
-from tracker.db import content_db as db
+Base = declarative_base()
 
 
-class Note(db.Model):
+class Note(Base):
     __tablename__ = 'Notes'
-    __bind_key__ = 'notes'
-    note_id = db.Column(db.Integer, primary_key=True, nullable=False, unique=True)
-    time_scope_id = db.Column(db.String(20), nullable=False, index=True)
+
+    note_id = Column(Integer, primary_key=True, nullable=False, unique=True)
+    time_scope_id = Column(String(20), nullable=False, index=True)
 
     # source info (mostly URL, sometimes manually labeled)
-    source = db.Column(db.String)
+    source = Column(String)
     # note type, used for last-mile CSS styling
-    type = db.Column(db.String)
+    type = Column(String)
 
     # short description, used for quick scanning (usually manually written)
-    short_desc = db.Column(db.String)
+    short_desc = Column(String)
     # long-form note content
     # summary notes will have _only_ this string
-    desc = db.Column(db.String)
+    desc = Column(String)
 
     # usually machine-generated
-    created_at = db.Column(db.DateTime)
+    created_at = Column(DateTime)
     # usually machine-generated, used for sorting within a TimeScope
     # NB this should really be within the given TimeScope
-    sort_time = db.Column(db.DateTime)
+    sort_time = Column(DateTime)
 
     __table_args__ = (
-        db.UniqueConstraint('source', 'type', 'sort_time', 'time_scope_id', 'short_desc'),
-        db.CheckConstraint('NOT(short_desc IS NULL AND desc IS NULL)'),
-        db.Index("import-notes-index-1", 'time_scope_id', 'short_desc'),
-        db.Index("import-notes-index-2", 'source', 'type', 'sort_time', 'time_scope_id', 'short_desc', 'desc'),
+        UniqueConstraint('source', 'type', 'sort_time', 'time_scope_id', 'short_desc'),
+        CheckConstraint('NOT(short_desc IS NULL AND desc IS NULL)'),
+        Index("import-notes-index-1", 'time_scope_id', 'short_desc'),
+        Index("import-notes-index-2", 'source', 'type', 'sort_time', 'time_scope_id', 'short_desc', 'desc'),
     )
 
     domains = relationship('NoteDomain', backref='Note')
@@ -55,13 +56,13 @@ class Note(db.Model):
         return response_dict
 
 
-class NoteDomain(db.Model):
+class NoteDomain(Base):
     __tablename__ = 'NoteDomains'
     __bind_key__ = 'notes'
-    note_id = db.Column(db.Integer, db.ForeignKey('Notes.note_id'), primary_key=True, nullable=False, index=True)
-    domain_id = db.Column(db.String, primary_key=True, nullable=False, index=True)
+    note_id = Column(Integer, ForeignKey('Notes.note_id'), primary_key=True, nullable=False, index=True)
+    domain_id = Column(String, primary_key=True, nullable=False, index=True)
     __table_args__ = (
-        db.UniqueConstraint('note_id', 'domain_id'),
-        db.Index("note-domain-index", 'note_id', 'domain_id'),
-        db.Index("domain-note-index", 'domain_id', 'note_id'),
+        UniqueConstraint('note_id', 'domain_id'),
+        Index("note-domain-index", 'note_id', 'domain_id'),
+        Index("domain-note-index", 'domain_id', 'note_id'),
     )

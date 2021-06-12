@@ -10,7 +10,6 @@ from flask.cli import with_appcontext
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from tracker.db import content_db
 # noinspection PyUnresolvedReferences
 from . import add, models, report, time_scope
 from .models import Base
@@ -30,6 +29,7 @@ def init_app(app: Flask, legacy_mode=False, readonly_mode=True):
     - read-only allows endpoint access
     - with both set to False, database + v1 schema aren't loaded at all
     """
+
     def _generate_instance_path(name: str) -> str:
         return os.path.abspath(os.path.join(app.instance_path, name))
 
@@ -132,19 +132,19 @@ def _register_cli(app: Flask):
     @click.argument('csv_file', type=click.File('r'))
     @with_appcontext
     def tasks_from_csv(csv_file):
-        add.import_from_csv(csv_file, content_db.session)
+        add.import_from_csv(csv_file, db_session)
 
     @click.command('task-add-one')
     @with_appcontext
     def task_add_one():
-        add.add_from_cli(content_db.session)
+        add.add_from_cli(db_session)
 
     @click.command('task-add-multiple')
     @with_appcontext
     def task_add_multiple():
         try:
             while True:
-                add.add_from_cli(content_db.session)
+                add.add_from_cli(db_session)
                 print()
                 print("=== starting next task ===")
         except KeyboardInterrupt:
@@ -158,7 +158,7 @@ def _register_cli(app: Flask):
     @with_appcontext
     def task_update_batch(scopes, category, resolution, task_ids):
         for task_id in task_ids:
-            add.update(content_db.session, scopes, category, resolution, task_id)
+            add.update(db_session, scopes, category, resolution, task_id)
 
     @click.command('task-update-interactive')
     @click.argument('task_ids', type=click.INT, nargs=-1)
@@ -168,7 +168,7 @@ def _register_cli(app: Flask):
             for task_id in task_ids:
                 print(f"=== task_id: {task_id} ===")
 
-                add.update_from_cli(content_db.session, task_id)
+                add.update_from_cli(db_session, task_id)
                 print()
 
         except KeyboardInterrupt:
