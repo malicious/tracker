@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Dict
 
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint, Date
@@ -38,14 +39,25 @@ class TaskLinkage(Base):
     __tablename__ = 'TaskLinkages'
 
     task_id = Column(Integer, ForeignKey("Tasks.task_id"), primary_key=True, nullable=False)
-    time_scope_id = Column(Date, primary_key=True, nullable=False)
+    time_scope = Column(Date, primary_key=True, nullable=False)
     created_at = Column(DateTime)
     resolution = Column(String)
     detailed_resolution = Column(String)
     time_elapsed = Column(Float)
     __table_args__ = (
-        UniqueConstraint('task_id', 'time_scope_id'),
+        UniqueConstraint('task_id', 'time_scope'),
     )
+
+    @property
+    def time_scope_id(self):
+        if not self.time_scope:
+            return self.time_scope
+
+        return self.time_scope.strftime("%G-ww%V.%u")
+
+    @time_scope_id.setter
+    def time_scope_id(self, value: str):
+        self.time_scope = datetime.strptime(value, '%G-ww%V.%u').date()
 
     def as_json(self) -> Dict:
         """
