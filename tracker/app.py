@@ -1,3 +1,4 @@
+import os
 from typing import Dict
 
 from flask import Flask
@@ -10,6 +11,13 @@ import tasks_v2
 def create_app(settings_overrides: Dict = {}):
     app = Flask(__name__, instance_relative_config=True)
     app.config.update(settings_overrides)
+
+    # Make the parent directory for our SQLite databases
+    if not app.config['TESTING']:
+        try:
+            os.makedirs(app.instance_path)
+        except OSError:
+            pass
 
     notes.init_app(app)
     tasks_v1.init_app(app)

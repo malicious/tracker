@@ -16,7 +16,8 @@ db_session = None
 
 
 def init_app(app: Flask):
-    load_models(os.path.abspath(os.path.join(app.instance_path, 'notes.db')))
+    if not app.config['TESTING']:
+        load_models(os.path.abspath(os.path.join(app.instance_path, 'notes.db')))
     _register_cli(app)
     _register_bp(app)
 

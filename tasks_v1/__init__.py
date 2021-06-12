@@ -34,13 +34,15 @@ def init_app(app: Flask, legacy_mode=False, readonly_mode=True):
         return os.path.abspath(os.path.join(app.instance_path, name))
 
     if legacy_mode:
-        _try_migrate(_generate_instance_path, preserve_target_db=True)
-        load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
+        if not app.config['TESTING']:
+            _try_migrate(_generate_instance_path, preserve_target_db=True)
+            load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
         _register_endpoints(app)
         _register_cli(app)
     elif readonly_mode:
-        _try_migrate(_generate_instance_path, preserve_target_db=True)
-        load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
+        if not app.config['TESTING']:
+            _try_migrate(_generate_instance_path, preserve_target_db=True)
+            load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
         _register_endpoints(app)
     else:
         pass
