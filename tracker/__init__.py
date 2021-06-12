@@ -1,1 +1,1 @@
-from . import app, db
+from . import app
