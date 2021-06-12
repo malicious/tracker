@@ -5,7 +5,7 @@ from flask import Flask
 import notes
 import tasks_v1
 import tasks_v2
-from . import cli, db
+from . import db
 
 
 def create_app(settings_overrides: Dict = {}):
@@ -14,7 +14,6 @@ def create_app(settings_overrides: Dict = {}):
     notes.init_app(app)
     tasks_v1.init_app(app)
     tasks_v2.init_app(app)
-    cli.init_app(app)
 
     try:
         from flask_debugtoolbar import DebugToolbarExtension
