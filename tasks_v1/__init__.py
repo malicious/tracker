@@ -56,11 +56,12 @@ def _try_migrate(generate_path: Callable[[str], str], preserve_target_db: bool):
     A within-database migration might be easier, but there's no use cases at the moment.
     """
     current_db_path = generate_path(CURRENT_DB_NAME)
+    legacy_db_path = generate_path(LEGACY_DB_NAME)
+
     if preserve_target_db and os.path.exists(current_db_path):
-        print(f"WARN: ignoring current database file at {current_db_path}")
+        print(f"WARN: found database file at \"{current_db_path}\", ignoring legacy {LEGACY_DB_NAME}")
         return
 
-    legacy_db_path = generate_path(LEGACY_DB_NAME)
     if not os.path.exists(legacy_db_path):
         print(f"INFO: no legacy database file, can't migrate from {legacy_db_path}")
         return
