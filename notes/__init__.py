@@ -1,13 +1,31 @@
+import click
 from flask import Blueprint, Flask, request
+from flask.cli import with_appcontext
 from markupsafe import escape
 
 from notes.models import Note
 from tasks_v1.time_scope import TimeScope
+from tracker.db import content_db
 # noinspection PyUnresolvedReferences
 from . import add, models, report
 
 
 def init_app(app: Flask):
+    _register_cli(app)
+    _register_bp(app)
+
+
+def _register_cli(app):
+    @click.command('import-notes')
+    @click.argument('csv_file', type=click.File('r'))
+    @with_appcontext
+    def notes_from_csv(csv_file):
+        add.import_from_csv(csv_file, content_db.session)
+
+    app.cli.add_command(notes_from_csv)
+
+
+def _register_bp(app):
     notes_bp = Blueprint('notes', __name__)
 
     @notes_bp.route("/note/<note_id>")
