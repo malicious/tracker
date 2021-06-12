@@ -20,7 +20,7 @@ def create_app(settings_overrides: Dict = {}):
             pass
 
     notes.init_app(app)
-    tasks_v1.init_app(app)
+    tasks_v1.init_app(app, legacy_mode=True)
     tasks_v2.init_app(app)
 
     try:

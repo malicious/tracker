@@ -1,11 +1,13 @@
 import os
 
+import click
 import sqlalchemy
 from flask import Flask, Blueprint
+from flask.cli import with_appcontext
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 # noinspection PyUnresolvedReferences
-from . import models
+from . import migrate, models
 from .models import Base, Task
 
 db_session = None
@@ -16,6 +18,14 @@ def init_app(app: Flask):
         load_v2_models(os.path.abspath(os.path.join(app.instance_path, 'tasks-v2.db')))
     _register_endpoints(app)
     _register_rest_endpoints(app)
+
+    @click.command('t2-migrate')
+    @with_appcontext
+    def tasks_v2_migrate():
+        from tasks_v1 import db_session as tasks_v1_session
+        migrate.migrate_tasks(tasks_v1_session, db_session)
+
+    app.cli.add_command(tasks_v2_migrate)
 
 
 def load_v2_models(current_db_path: str):
