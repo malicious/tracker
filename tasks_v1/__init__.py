@@ -100,6 +100,10 @@ def load_v1_models(current_db_path: str):
 def _register_endpoints(app: Flask):
     tasks_v1_bp = Blueprint('tasks-v1', __name__)
 
+    @tasks_v1_bp.route("/time_scope/<scope_str>")
+    def get_time_scope(scope_str: str):
+        return TimeScope(escape(scope_str)).to_json_dict()
+
     @tasks_v1_bp.route("/task/<task_id>")
     def get_task(task_id):
         return report.report_one_task(escape(task_id))

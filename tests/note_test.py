@@ -83,3 +83,8 @@ def test_blank_domains_reporting(session):
     assert dict
     assert "2020—Q4" in dict
     assert '2020-ww48' in dict["2020—Q4"]["child_scopes"]
+
+
+def test_notes_endpoint(test_client):
+    r = test_client.get('/report-notes')
+    assert r.response
