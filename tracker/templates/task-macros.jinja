@@ -1,35 +1,30 @@
 {% set task_edit_css %}
+{# TODO: ".task-edit" isn't actually defined in this file #}
 .task-edit div {
   padding-top: 0.25em;
   padding-bottom: 0.25em;
   overflow-x: hidden;
 }
-.task-edit label {
+.task-edit-task-only label {
   display: inline-block;
   text-align: right;
-  width: 9em;
+  min-width: 9em;
 }
-.task-edit textarea {
+.task-edit-task-only textarea {
   vertical-align: top;
   line-height: 1.2;
+  min-width: 50%;
+  min-height: 5em;
 }
 .task-edit input, .task-edit textarea {
   background-color: var(--tab-selected-bg-color);
 }
-.task-edit input:disabled {
-  border: 0;
-}
-.task-edit input:enabled:hover, .task-edit textarea:hover {
+.task-edit input:hover, .task-edit textarea:hover {
   background-color: rgb(255, 255, 255);
   outline: 5px auto -webkit-focus-ring-color;
   outline-offset: -2px;
 }
-.task-edit button:hover {
-  text-shadow:
-    0 0  5px rgba(0,0,0,1.0),
-    0 0 12px rgba(0,0,0,0.8),
-    0 0 20px rgba(0,0,0,0.4);
-}
+
 .linkage-block {
   border: 1px solid rgba(29,28,29,.13);
   border-radius: 6px;
@@ -37,16 +32,25 @@
 
   /* TODO: this could be a responsive table, with multi-line rows */
   display: grid;
-  grid-template-columns: min-content repeat(2, 7em) min-content auto;
+  grid-template-columns: min-content 7em min-content auto min-content;
 }
-.linkage-header-row > div, .linkage-footer-row {
-  /* TODO: this has to be a responsive table */
-  disabled-max-height: 4ex;
-  disabled-overflow-y: hidden;
+.linkage-header-row label {
+  font-size: 80%;
+  padding: 0.5em;
 }
 .linkage-row, .linkage-header-row, .linkage-footer-row {
   display: contents;
   grid-column: 1 / 5;
+}
+.linkage-row textarea {
+  width: calc(100% - 0.6em);
+  min-height: 4em;
+  padding: 0.3em;
+  margin: 0;
+  border: 0 solid black;
+}
+.linkage-row button {
+  width: 100%;
 }
 .linkage-row-not-saved div, .linkage-row-not-saved input, .linkage-row-not-saved textarea {
   background-color: rgb(250,250,230);
@@ -93,17 +97,23 @@ function addTLRow(e) {
   new_row.innerHTML = `
 <div class="linkage-row linkage-row-not-saved">
   <div>
-    <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
-    <button class="delete">x</button>
-  </div>
-  <div>
     {# TODO: actual formatting #}
     <input name="tl-${new_row_id}-time_scope_id" value="${time_scope_str}">
     <input name="tl-${new_row_id}-created_at" value="${created_at_str}">
   </div>
-  <input name="tl-${new_row_id}-time_elapsed" placeholder="None">
-  <input name="tl-${new_row_id}-resolution"   placeholder="None">
-  <textarea name="tl-${new_row_id}-detailed_resolution" placeholder="None"></textarea>
+  <div>
+    <input name="tl-${new_row_id}-time_elapsed" placeholder="None">
+  </div>
+  <div>
+    <input name="tl-${new_row_id}-resolution"   placeholder="None">
+  </div>
+  <div>
+    <textarea name="tl-${new_row_id}-detailed_resolution" placeholder="None"></textarea>
+  </div>
+  <div>
+    <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
+    <button class="delete">x</button>
+  </div>
 </div>
 `;
 
@@ -117,7 +127,7 @@ function addTLRow(e) {
 
 function enableNewTLButtons() {
   // with javascript enabled, re-enable all the "new linkage" buttons
-  const new_tl_buttons = document.querySelectorAll(".linkage-footer-row > button.new");
+  const new_tl_buttons = document.querySelectorAll(".linkage-footer-row button.new");
   console.log(`re-enabling ${new_tl_buttons.length} "new linkage" buttons`);
 
   for (var i = 0, len = new_tl_buttons.length; i < len; i++) {
@@ -154,11 +164,11 @@ document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
 
 {% set linkage_headers %}
   <div class="linkage-header-row">
+    <label>time_scope_id / created_at</label>
+    <label>time_elapsed</label>
+    <label>resolution</label>
+    <label>detailed_resolution</label>
     <div></div>
-    <div>time_scope_id / created_at</div>
-    <div>time_elapsed</div>
-    <div>resolution</div>
-    <div>detailed_resolution</div>
   </div>
 {% endset %}
 
@@ -167,16 +177,22 @@ document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
 {% macro linkage_row(tl) %}
 <div class="linkage-row">
   <div>
-    <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
-    <button class="delete" disabled>x</button>
-  </div>
-  <div>
     <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}" readonly="readonly">
     <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}" readonly="readonly">
   </div>
-  <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}">
-  <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution if tl.resolution}}">
-  <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
+  <div>
+    <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}">
+  </div>
+  <div>
+    <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution if tl.resolution}}">
+  </div>
+  <div>
+    <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
+  </div>
+  <div>
+    <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
+    <button class="delete" disabled>x</button>
+  </div>
 </div>
 {% endmacro %}
 
@@ -190,6 +206,7 @@ document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
   <div>
     <label>task_id</label>
     <span>{{t.task_id}}</span>
+    <button class="clone" formaction="{{url_for(".create_task")}}">clone task</button>
   </div>
   <div>
     <label>category</label>
@@ -213,11 +230,14 @@ document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
 {% endfor %}
 
   <div class="linkage-footer-row">
+    <div>
+      <button class="new" disabled>add row</button>
+    </div>
     <div></div>
-    <button class="new" disabled>new</button>
-    <button class="clone" formaction="{{url_for(".create_task")}}">clone</button>
-    {# TODO: Replace this with a <button> #}
-    <input type="submit">
+    <div></div>
+    <div style="text-align: right;">
+      <button>save task</button>
+    </div>
   </div>
 </div>
 
