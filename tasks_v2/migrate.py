@@ -1,4 +1,4 @@
-from tasks_v1.models import Task as Task_v1
+from datetime import datetime
 
 from sqlalchemy.exc import IntegrityError, StatementError
 
@@ -41,8 +41,7 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
     # Add all scopes attached to Task_v1
     t1_scopes = _get_scopes(t1)
     for index, scope in enumerate(t1_scopes):
-        date_scope = datetime.strptime(scope, '%G-ww%V.%u').date()
-        tl = TaskLinkage(task_id=t2.task_id, time_scope_id=date_scope)
+        tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
         tl.created_at = datetime.now()
         draft_linkages[scope] = tl
     del index, scope
@@ -65,8 +64,7 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
         # Create a new linkage for each new child scope
         for index, scope in enumerate(child_task_scopes):
             if not scope in draft_linkages:
-                date_scope = datetime.strptime(scope, '%G-ww%V.%u').date()
-                tl = TaskLinkage(task_id=t2.task_id, time_scope_id=date_scope)
+                tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
                 tl.created_at = datetime.now()
                 draft_linkages[scope] = tl
         del index, scope
