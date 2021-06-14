@@ -1,4 +1,8 @@
 {% set task_edit_css %}
+:root {
+  --not-saved-bg-color: rgb(250, 250, 230);
+}
+
 {# TODO: ".task-edit" isn't actually defined in this file #}
 .task-edit div {
   padding-top: 0.25em;
@@ -37,6 +41,7 @@
 .linkage-header-row label {
   font-size: 80%;
   padding: 0.5em;
+  vertical-align: bottom;
 }
 .linkage-row, .linkage-header-row, .linkage-footer-row {
   display: contents;
@@ -53,7 +58,7 @@
   width: 100%;
 }
 .linkage-row-not-saved div, .linkage-row-not-saved input, .linkage-row-not-saved textarea {
-  background-color: rgb(250,250,230);
+  background-color: var(--not-saved-bg-color);
 }
 {% endset %}{# task_edit_css #}
 
