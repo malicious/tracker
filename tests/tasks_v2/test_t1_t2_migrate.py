@@ -40,5 +40,65 @@ def test_simple_one(task_v1_session, task_v2_session):
     task_v1_session.commit()
 
     _migrate_one(task_v2_session, t1, print)
-    q2 = Task_v2.query.first()
-    assert q2.desc == "here is a very basic task"
+    t2 = Task_v2.query.first()
+    assert t2.desc == "here is a very basic task"
+
+
+def test_hundred_scopes(task_v1_session, task_v2_session):
+    TDESC = "default task description help"
+
+    t1 = Task_v1(desc=TDESC)
+    t1.first_scope = "2011-ww11.1"
+    task_v1_session.add(t1)
+    task_v1_session.flush()
+
+    for n in range(11, 49):
+        new_scope = f"20{n}-ww{n}.1"
+        tts = TaskTimeScope(task_id=t1.task_id, time_scope_id=new_scope)
+        task_v1_session.add(tts)
+
+    task_v1_session.commit()
+
+    _migrate_one(task_v2_session, t1, print)
+    t2 = Task_v2.query.one()
+    assert t2.desc == TDESC
+    assert len(t2.linkages) == 38
+
+
+def test_duplicates_combined(task_v1_session, task_v2_session):
+    TDESC = "twins, separated at birth (but no longer!)"
+
+    # Task 1a - is unique
+    t1a = Task_v1(desc=TDESC)
+    t1a.first_scope = "2021-ww24.1"
+    task_v1_session.add(t1a)
+    task_v1_session.flush()
+
+    tts = TaskTimeScope(task_id=t1a.task_id, time_scope_id=t1a.first_scope)
+    task_v1_session.add(tts)
+    del tts
+
+    # Task 1b - has the same description
+    t1b = Task_v1(desc=TDESC)
+    t1b.first_scope = "2021-ww23.1"
+    task_v1_session.add(t1b)
+    task_v1_session.flush()
+
+    tts = TaskTimeScope(task_id=t1b.task_id, time_scope_id=t1b.first_scope)
+    task_v1_session.add(tts)
+    del tts
+
+    # Assert they're distinct
+    task_v1_session.commit()
+
+    q1 = Task_v1.query
+    assert len(q1.all()) == 2
+
+    # Check that there's only one new task
+    migrate_tasks(task_v1_session, task_v2_session)
+
+    q2 = Task_v2.query
+    assert len(q2.all()) == 1
+    assert q2.one().desc == TDESC
+    assert len(q2.one().linkages) == 2
+
