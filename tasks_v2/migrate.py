@@ -122,7 +122,7 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
         # in the final entry in the set, dump t1's complete JSON
         elif index == len(draft_linkages_sorted) - 1:
             if not tl.detailed_resolution:
-                tl.detailed_resolution = json.dumps(t1.to_json_dict(), indent=4)
+                tl.detailed_resolution = json.dumps(t1.as_json(), indent=4)
 
         # add "migrated from" note, where applicable
         if not tl.detailed_resolution:

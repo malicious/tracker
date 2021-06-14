@@ -50,6 +50,41 @@ class Task(Base):
 
         return response_dict
 
+    def as_json(self,
+                 include_scopes: bool = True,
+                 include_parents: bool = False,
+                 include_children: bool = True) -> Dict:
+        def get_parentiest_task(t: Task) -> Dict:
+            """Look for the highest-level parent"""
+            while t.parent_id:
+                t = t.get_parent()
+            return t
+
+        if include_parents:
+            parentiest_task = get_parentiest_task(self)
+            include_children = True
+            return parentiest_task.as_json(include_scopes, False, True)
+
+        response_dict = self.to_json_dict()
+        if include_children:
+            child_json = [
+                child.as_json(include_scopes, False, True)
+                    for child in self.get_children()
+            ]
+            if child_json:
+                response_dict['children'] = child_json
+
+        if include_scopes:
+            tsses = TaskTimeScope.query \
+                .filter(TaskTimeScope.task_id == self.task_id) \
+                .order_by(TaskTimeScope.time_scope_id) \
+                .all()
+            scopes = [tts.time_scope_id for tts in tsses]
+            if scopes:
+                response_dict['time_scopes'] = scopes
+
+        return response_dict
+
 
 class TaskTimeScope(Base):
     __tablename__ = 'TaskTimeScopes-v1'
