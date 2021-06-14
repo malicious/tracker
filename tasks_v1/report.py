@@ -152,6 +152,15 @@ def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
                '</summary>'
 
 
+# Print a short/human-readable scope string
+def _short_scope(t: Task, ref_scope):
+    short_scope_str = TimeScope(t.first_scope).shorten(ref_scope)
+    if short_scope_str:
+        return short_scope_str
+
+    return None
+
+
 def report_one_task(s):
     t = Task.query \
         .filter(Task.task_id == s) \
@@ -172,6 +181,7 @@ def report_open_tasks(hide_future_tasks: bool):
         query = query.filter(Task.first_scope < ref_scope)
 
     return render_template('task.html',
+                           short_scope=_short_scope,
                            tasks_by_scope={ref_scope: query.all()},
                            to_details_html=to_details_html,
                            to_summary_html=to_summary_html)
@@ -215,5 +225,6 @@ def report_tasks(scope):
                            next_scope=next_scope_html,
                            tasks_by_scope=tasks_by_scope,
                            link_replacer=mdown_desc_cleaner,
+                           short_scope=_short_scope,
                            to_details_html=to_details_html,
                            to_summary_html=to_summary_html)

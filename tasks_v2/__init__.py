@@ -1,14 +1,17 @@
+from datetime import datetime
 import os
 
 import click
 import sqlalchemy
-from flask import Flask, Blueprint
+from flask import Flask, Blueprint, abort, redirect, request, url_for
 from flask.cli import with_appcontext
+from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 # noinspection PyUnresolvedReferences
-from . import migrate, models
+from . import migrate, models, report, update
 from .models import Base, Task
+from tasks_v1.time_scope import TimeScope
 
 db_session = None
 
@@ -59,26 +62,57 @@ def _register_endpoints(app: Flask):
 def _register_rest_endpoints(app: Flask):
     tasks_v2_rest_bp = Blueprint('tasks-v2-rest', __name__)
 
-    @tasks_v2_rest_bp.route("/task")
+    @tasks_v2_rest_bp.route("/task", methods=['post'])
     def create_task():
-        pass
+        task = update.create_task(db_session, request.form)
+        return redirect(url_for(".get_task", task_id=task.task_id))
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>")
     def get_task(task_id):
-        task: Task = Task.query \
-            .filter_by(task_id=task_id) \
-            .one_or_none()
-        if not task:
-            return {"error": f"invalid task_id: {task_id}"}
+        return report.report_one_task(escape(task_id))
 
-        return task.as_json()
-
-    @tasks_v2_rest_bp.route("/task/<int:task_id>/edit", methods=['GET', 'POST'])
+    @tasks_v2_rest_bp.route("/task/<int:task_id>/edit", methods=['post'])
     def edit_task(task_id):
-        pass
+        if not request.args and not request.form and not request.json:
+            # Assume this was a raw/direct browser request
+            # TODO: serve a "single note" template
+            abort(400)
+
+        if request.json:
+            print(request.json) # sometimes request.data, need to check with unicode
+            return {
+                "date": datetime.now(),
+                "ok": "this was an async request with JS enabled, here's your vaunted output",
+            }
+
+        update.update_task(db_session, task_id, request.form)
+        return redirect(f"{request.referrer}#{request.form['backlink']}")
+
+    @tasks_v2_rest_bp.route("/task/<int:task_id>/<linkage_scope>/edit", methods=['post'])
+    def edit_linkage(task_id, linkage_scope):
+        if not request.args and not request.form and not request.json:
+            abort(400)
+
+        if request.json:
+            print(request.json)
+            return {
+                "date": datetime.now(),
+                "ok": f"this was an async request with JS enabled, see {task_id} and {linkage_scope}",
+            }
+
+        update.update_task(db_session, task_id, request.form)
+        return redirect(f"{request.referrer}#{request.form['backlink']}")
 
     @tasks_v2_rest_bp.route("/tasks")
-    def get_all_tasks():
-        pass
+    def get_tasks():
+        page_scope = None
+        try:
+            parsed_scope = TimeScope(escape(request.args.get('scope')))
+            parsed_scope.get_type()
+            page_scope = parsed_scope
+        except ValueError:
+            pass
+
+        return report.report_tasks(page_scope=page_scope)
 
     app.register_blueprint(tasks_v2_rest_bp, url_prefix='/v2')
