@@ -146,7 +146,7 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
 <label for="toggle-edit-{{t.task_id}}-{{scope}}">
   <div class="task-only">
   {% if render_scope %}
-    {{ render_scope(t.linkages[0].time_scope_id, scope) | safe }}
+    {{ render_scope(t.linkages[0].time_scope, scope) | safe }}
   {% elif short_scope(t, scope) %}
     <div class="task-scope">{{ short_scope(t, scope) }}</div>
   {% endif %}

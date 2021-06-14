@@ -69,13 +69,12 @@ class TaskLinkage(Base):
         Skips task_id, cause we assume we're getting called by a Task
         """
         response_dict = {
-            'time_scope_id': self.time_scope_id.strftime("%G-ww%V.%u"),
         }
 
         if self.created_at is not None:
             response_dict['created_at'] = str(self.created_at)
 
-        for field in ['resolution', 'detailed_resolution', 'time_elapsed']:
+        for field in ['time_scope_id', 'resolution', 'detailed_resolution', 'time_elapsed']:
             if getattr(self, field) is not None:
                 response_dict[field] = getattr(self, field)
 
