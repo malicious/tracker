@@ -28,52 +28,9 @@ def latest_scope(task_id, current_scope: TimeScope) -> Optional[TimeScope]:
     return scopes[-1]
 
 
-def _to_json(task: Task,
-             include_scopes: bool,
-             include_children: bool) -> Dict:
-    response_dict = task.to_json_dict()
-
-    if include_children:
-        child_json = [
-            _to_json(child, include_scopes, include_children)
-            for child in task.get_children()
-        ]
-        if child_json:
-            response_dict['children'] = child_json
-
-    if include_scopes:
-        scopes = matching_scopes(task.task_id)
-        if scopes:
-            response_dict['time_scopes'] = scopes
-
-    return response_dict
-
-
-def to_json(task: Task,
-            include_scopes: bool = True,
-            include_parents: bool = True,
-            include_children: bool = False):
-    def get_parentiest_task(task: Task) -> Dict:
-        "Look for the highest-level parent"
-        while task.parent_id:
-            task = task.get_parent()
-        return task
-
-    if include_parents:
-        parentiest_task = get_parentiest_task(task)
-
-        # Override value of include_children, because we have no way of limiting depth
-        include_children = True
-
-    else:
-        parentiest_task = Task.query.filter(Task.task_id == task.task_id).one()
-
-    return _to_json(parentiest_task, include_scopes, include_children)
-
-
 def to_details_html(task: Task):
     # keep parameters to a minimum, to avoid hitting slow DB accesses
-    as_json = to_json(task, False, False, False)
+    as_json = task.as_json(False, False, False)
     if 'time_scopes' in as_json:
         # make linked TimeScopes clickable
         clickable_scopes = []
@@ -166,7 +123,7 @@ def report_one_task(s):
         .filter(Task.task_id == s) \
         .one_or_none()
 
-    return to_json(t)
+    return t.as_json()
 
 
 def report_open_tasks(hide_future_tasks: bool):
