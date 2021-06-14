@@ -1,4 +1,5 @@
 from datetime import datetime
+import json
 
 from sqlalchemy.exc import IntegrityError, StatementError
 
@@ -117,6 +118,11 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
         if index < len(draft_linkages_sorted) - 1:
             if not tl.resolution:
                 tl.resolution = f"roll => {draft_linkages_sorted[index + 1][0]}"
+
+        # in the final entry in the set, dump t1's complete JSON
+        elif index == len(draft_linkages_sorted) - 1:
+            if not tl.detailed_resolution:
+                tl.detailed_resolution = json.dumps(t1.to_json_dict(), indent=4)
 
         # add "migrated from" note, where applicable
         if not tl.detailed_resolution:
