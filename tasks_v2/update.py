@@ -98,21 +98,21 @@ def update_task(session, task_id, form_data):
 
     # Key on `-time_scope_id` to identify valid linkages
     form_tl_ids = [key[3:-14] for (key, value) in form_data.items(multi=True) if key[-14:] == "-time_scope_id"]
-    form_tl_times = set([parser.parse(form_data[f'tl-{form_tl_id}-time_scope_id']) for form_tl_id in form_tl_ids])
+    form_tl_times = set([form_data[f'tl-{form_tl_id}-time_scope_id'] for form_tl_id in form_tl_ids])
     if len(form_tl_ids) != len(form_tl_times):
         print(f"ERROR: set of form TLs, {form_tl_times}")
         raise ValueError("Found a duplicate form time, erroring")
 
     for form_tl_id in form_tl_ids:
         tl_ts_raw = form_data[f'tl-{form_tl_id}-time_scope_id']
-        tl_ts = parser.parse(tl_ts_raw).date()
+        tl_ts = datetime.strptime(tl_ts_raw, '%G-ww%V.%u').date()
 
         # Check if TL even exists
         tl: TaskLinkage = TaskLinkage.query \
-            .filter_by(task_id=task_id, time_scope_id=tl_ts) \
+            .filter_by(task_id=task_id, time_scope=tl_ts) \
             .one_or_none()
         if not tl:
-            tl = TaskLinkage(task_id=task_id, time_scope_id=tl_ts)
+            tl = TaskLinkage(task_id=task_id, time_scope=tl_ts)
 
         _update_linkage_only(tl, form_tl_id, form_data)
 

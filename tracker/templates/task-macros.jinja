@@ -67,7 +67,8 @@
 {% set task_edit_js %}
 // https://stackoverflow.com/a/39502645
 function toTimeScopeId(d) {
-  var dayOfWeek = (d.getDay() + 6) % 7;
+  {# TODO: check that this is correct for Sundays, too #}
+  var dayOfWeek = (d.getDay() + 6) % 7 + 1;
 
   d.setDate(d.getDate() - dayOfWeek + 3);
   var thursdayOfWeek = d.valueOf();
@@ -89,7 +90,6 @@ function addTLRow(e) {
   // generate a "unique" linkage ID based on stringified time
   generation_time = new Date();
   time_scope_str = toTimeScopeId(new Date(generation_time));
-  time_scope_str = generation_time.toISOString().split('T')[0]; // TODO: remove this and use the scope id
   created_at_str = generation_time.toISOString()
     .split('T').join(' ') // remove the ISO8601 'T'
     .split('Z')[0]; // and remove anything past the 'Z'
