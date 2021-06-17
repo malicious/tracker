@@ -26,7 +26,7 @@ def init_app(app: Flask):
     @with_appcontext
     def tasks_v2_migrate():
         from tasks_v1 import db_session as tasks_v1_session
-        migrate.migrate_tasks(tasks_v1_session, db_session)
+        migrate.migrate_tasks(tasks_v1_session, db_session, print_successes=False)
 
     app.cli.add_command(tasks_v2_migrate)
 

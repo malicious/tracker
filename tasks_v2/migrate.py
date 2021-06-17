@@ -1,5 +1,6 @@
 from datetime import datetime
 import json
+from typing import Optional
 
 from sqlalchemy.exc import IntegrityError, StatementError
 
@@ -222,29 +223,130 @@ def _migrate_one(session, t1: Task_v1, print_fn):
     return t2, task_v1_count
 
 
+class MigrationSummaryStatistics:
+    def __init__(self):
+        self.t1_total = 0
+        self.t1_success = 0
+        self.t1_unidentified = 0
+        self.t1_is_orphan = 0
+        self.t1_is_parent = 0
+        self.t1_is_child = 0
+        self.t1_is_mid_level = 0
+
+        self.t2_total = 0
+        self.t2_success = 0
+        self.t2_unidentified = 0
+
+    def print_status(self):
+        print(f"Task_v1 (input) statistics:")
+        print()
+        print(f"t1_total: {self.t1_total}")
+        print()
+        print(f"- t1_success: {self.t1_success}")
+        print(f"- t1_unidentified: {self.t1_unidentified}")
+        print(f"- {self.t1_is_parent} of the parentiest tasks")
+        print(f"- {self.t1_is_mid_level} of the middle manager tasks")
+        print(f"- {self.t1_is_child} of the leafiest tasks")
+        print(f"- {self.t1_is_orphan} isolated, vulnerable tasks")
+        print()
+        print(f"t2_total: {self.t2_total}")
+        print()
+        print(f"- t2_success: {self.t2_success}")
+        print(f"- t2_unidentified: {self.t2_unidentified}")
+        print()
+
+        if self.t1_total == self.t1_success:
+            print("INFO: Successfully migrated all {self.t1_total} tasks")
+            print()
+        else:
+            print(f"FAIL: Only migrated {self.t1_success} of {self.t1_total} tasks")
+            print()
+
+    def review_migration(self, t1: Task_v1, t2: Optional[Task_v2], t1_count_migrated):
+        """
+        Print summary statistics about the migrated tasks
+
+        This logic should be independent of actual migration tasks,
+        where each case should be broken out into its own pytest case.
+        """
+        # For the simplest, clearest tasks:
+        if not t1.parent_id and not t1.get_children():
+            self.t1_total += 1
+            assert t1_count_migrated == 1
+            self.t1_success += t1_count_migrated
+            self.t1_is_orphan += 1
+
+            self.t2_total += 1
+            self.t2_success += 1
+            assert t2
+
+        elif t1.parent_id:
+            self.t1_total += 1
+            assert t1_count_migrated == 0
+            self.t1_success += t1_count_migrated
+            if t1.get_children():
+                self.t1_is_mid_level += 1
+            else:
+                self.t1_is_child += 1
+
+            assert t2 == None
+
+        elif t1.get_children():
+            self.t1_total += 1
+            self.t1_success += t1_count_migrated
+            self.t1_is_parent += 1
+
+            self.t2_total += 1
+            self.t2_success += 1
+
+        # And for every other kind of task
+        else:
+            self.t1_total += 1
+            self.t1_unidentified += t1_count_migrated
+            assert t1_count_migrated >= 1
+
+            self.t2_total += 1
+            self.t2_success += 1
+            assert t2
+
+    def print_batch_start(self, force_print=False):
+        """
+        Prints a header statement for every MIGRATION_BATCH_SIZE tasks
+        """
+        if not force_print:
+            if self.t1_total % MIGRATION_BATCH_SIZE > 0:
+                return
+
+        print("=" * 72)
+        print(f"Migrating up to {MIGRATION_BATCH_SIZE} tasks (reverse order)")
+        print("=" * 72)
+        print()
+
+    def print_batch_end(self, force_print=False):
+        if not force_print:
+            if (self.t1_total + 1) % MIGRATION_BATCH_SIZE > 0:
+                return
+
+        print(f"Migrated {self.t1_total} tasks ({self.t1_success} completed successfully)")
+        if self.t1_success > self.t1_total:
+            print("(Childed tasks are migrated with the parent, so success count may be larger)")
+        print()
+        print()
+
+
 def migrate_tasks(tasks_v1_session,
                   tasks_v2_session,
                   delete_current: bool = True,
                   print_successes: bool = True):
+    print_fn = lambda *args, **kwargs: None
+    if print_successes:
+        print_fn = print
+
     # Clear any Task_v2's from the existing db
     if delete_current:
         tasks_v2_session.query(TaskLinkage).delete()
         tasks_v2_session.query(Task_v2).delete()
         tasks_v2_session.commit()
-
-    # Helper functions for printing output
-    def print_batch_start(next_task_id):
-        print("=" * 72)
-        print(f"Migrating up to {MIGRATION_BATCH_SIZE} tasks (reverse order, starting at #{next_task_id})")
-        print("=" * 72)
-        print()
-
-    def print_batch_end(count_total, count_success):
-        print(f"Migrated {count_total} tasks ({count_success} completed successfully)")
-        if count_success > count_total:
-            print("(Childed tasks are migrated with the parent, so success count may be larger)")
-        print()
-        print()
 
     # For every single task... migrate it
     v1_tasks_query = tasks_v1_session.query(Task_v1)
@@ -252,33 +354,18 @@ def migrate_tasks(tasks_v1_session,
         .order_by(Task_v1.task_id) \
         .all()
 
-    count_total = len(v1_tasks)
-    count_success = 0
-    print(f"DEBUG: Found {count_total} Task_v1 to migrate")
+    mss = MigrationSummaryStatistics()
 
-    print_fn = lambda *args, **kwargs: None
-    if print_successes:
-        print_fn = print
+    for t1 in v1_tasks:
+        mss.print_batch_start()
 
-    for idx, t1 in enumerate(v1_tasks):
-        if idx % MIGRATION_BATCH_SIZE == 0:
-            print_batch_start(t1.task_id)
-
-        # Check for parents and children
         if t1.parent_id:
-            print_fn(f"skipping #{t1.task_id}: will be migrated with parent (#{t1.parent_id})")
+            mss.review_migration(t1, None, 0)
         else:
             t2, count_migrated = _migrate_one(tasks_v2_session, t1, print_fn)
-            count_success += count_migrated
+            mss.review_migration(t1, t2, count_migrated)
+            print_fn()
 
-        print_fn()
-        if (idx + 1) % MIGRATION_BATCH_SIZE == 0:
-            print_batch_end(idx + 1, count_success)
+        mss.print_batch_end()
 
-    # Evaluate success-ness
-    if count_total == count_success:
-        print("Successfully migrated all tasks.")
-        print()
-    else:
-        print(f"FAIL: Only migrated {count_success} of {count_total} tasks")
-        print()
+    mss.print_status()
