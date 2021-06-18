@@ -1,4 +1,4 @@
-from tasks_v1.models import Task
+from tasks_v1.models import Task, TaskTimeScope
 from tasks_v1.time_scope import TimeScope
 
 
@@ -97,3 +97,63 @@ def test_two_generation_properties(task_v1_session):
 
     assert child_task.parent == parent_task
     assert not child_task.children
+
+
+def test_2g_sqlalchemy_relationships(task_v1_session):
+    parent_task = Task(desc="parent",
+                       first_scope="2021-ww24.5")
+    task_v1_session.add(parent_task)
+    task_v1_session.flush()
+
+    child_task = Task(desc="child",
+                      first_scope="2021-ww24.6")
+    child_task.parent_id = parent_task.task_id
+    task_v1_session.add(child_task)
+    task_v1_session.commit()
+
+    bystander = Task(desc="completely unrelated task",
+                     first_scope="2021-ww02.1")
+    task_v1_session.add(bystander)
+
+    bystander2 = Task(desc="totally unrelated task",
+                      first_scope="2021-ww03.1")
+    task_v1_session.add(bystander2)
+    task_v1_session.commit()
+
+    assert not parent_task.parent
+    assert parent_task.children == [child_task]
+
+    assert child_task.parent == parent_task
+    assert not child_task.children
+
+
+def test_one_scope(task_v1_session):
+    t = Task(desc="aoetuhnano",
+             first_scope="2000-ww22.2")
+    task_v1_session.add(t)
+    task_v1_session.flush()
+
+    tts = TaskTimeScope(task_id=t.task_id, time_scope_id=t.first_scope)
+    task_v1_session.add(tts)
+    task_v1_session.commit()
+
+    assert len(t.scopes) == 1
+    assert t.scopes[0] == tts
+    assert tts.task == t
+
+
+def test_multi_scope(task_v1_session):
+    t = Task(desc="hhhhhhhhhh",
+             first_scope="2020-ww20.1")
+    task_v1_session.add(t)
+    task_v1_session.flush()
+
+    task_v1_session.add(TaskTimeScope(task_id=t.task_id, time_scope_id=t.first_scope))
+    task_v1_session.add(TaskTimeScope(task_id=t.task_id, time_scope_id="2020-ww20.2"))
+    task_v1_session.add(TaskTimeScope(task_id=t.task_id, time_scope_id="2020-ww20.3"))
+    task_v1_session.add(TaskTimeScope(task_id=t.task_id, time_scope_id="2020-ww20.4"))
+    task_v1_session.add(TaskTimeScope(task_id=t.task_id, time_scope_id="2020-ww20.5"))
+    task_v1_session.commit()
+
+    assert len(t.scopes) == 5
+    assert t.scopes[0]

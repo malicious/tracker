@@ -105,7 +105,7 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
                 tl_0.time_elapsed = child_task.time_actual
 
     def add_child_tasks(t1: Task_v1):
-        for child in t1.get_children():
+        for child in t1.children:
             # print(f"DEBUG: evaluating child #{child.task_id}")
             parse_child(child)
             add_child_tasks(child)
@@ -157,7 +157,7 @@ def _migrate_one(session, t1: Task_v1, print_fn):
         print_fn("    " * depth + f"  scopes: {_get_scopes(t)}")
         task_count = 1
 
-        for child in t.get_children():
+        for child in t.children:
             task_count += print_task_and_children(depth + 1, child)
 
         return task_count
@@ -270,7 +270,7 @@ class MigrationSummaryStatistics:
         where each case should be broken out into its own pytest case.
         """
         # For the simplest, clearest tasks:
-        if not t1.parent_id and not t1.get_children():
+        if not t1.parent_id and not t1.children:
             self.t1_total += 1
             assert t1_count_migrated == 1
             self.t1_success += t1_count_migrated
@@ -284,14 +284,14 @@ class MigrationSummaryStatistics:
             self.t1_total += 1
             assert t1_count_migrated == 0
             self.t1_success += t1_count_migrated
-            if t1.get_children():
+            if t1.children:
                 self.t1_is_mid_level += 1
             else:
                 self.t1_is_child += 1
 
             assert t2 == None
 
-        elif t1.get_children():
+        elif t1.children:
             self.t1_total += 1
             self.t1_success += t1_count_migrated
             self.t1_is_parent += 1

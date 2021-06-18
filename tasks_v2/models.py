@@ -15,7 +15,7 @@ class Task(Base):
     category = Column(String)
     time_estimate = Column(Float)
 
-    linkages = relationship('TaskLinkage', backref='Task')
+    linkages = relationship('TaskLinkage', backref='task')
 
     def __repr__(self):
         return f"<Task#{self.task_id}>"

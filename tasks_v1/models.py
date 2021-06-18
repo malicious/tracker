@@ -1,7 +1,7 @@
 from typing import Dict
 
 from sqlalchemy import String, Column, Integer, ForeignKey, UniqueConstraint, DateTime, Float
-from sqlalchemy.orm import declarative_base
+from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
 
@@ -22,18 +22,27 @@ class Task(Base):
         UniqueConstraint('desc', 'created_at'),
     )
 
-    def get_children(self):
-        return Task.query \
-            .filter_by(parent_id=self.task_id) \
-            .all()
+    def __repr__(self):
+        return f"<Task_v1 #{self.task_id}: \"{self.desc}\">"
 
     def get_parent(self):
         return Task.query \
             .filter_by(task_id=self.parent_id) \
             .one_or_none()
 
-    children = property(get_children)
+    def get_scope_ids(self, sort=True):
+        tts_query = TaskTimeScope.query \
+            .filter_by(task_id=self.task_id)
+
+        if sort:
+            tts_query = tts_query \
+                .order_by(TaskTimeScope.time_scope_id)
+
+        return [tts.time_scope_id for tts in tts_query.all()]
+
     parent = property(get_parent)
+    children = relationship("Task")
+    scopes = relationship("TaskTimeScope", backref="task")
 
     def to_json_dict(self) -> Dict:
         response_dict = {
@@ -54,37 +63,30 @@ class Task(Base):
         return response_dict
 
     def as_json(self,
-                 include_scopes: bool = True,
-                 include_parents: bool = False,
-                 include_children: bool = True) -> Dict:
-        def get_parentiest_task(t: Task) -> Dict:
-            """Look for the highest-level parent"""
-            while t.parent_id:
-                t = t.get_parent()
+                include_scopes: bool = True,
+                include_parents: bool = False,
+                include_children: bool = True) -> Dict:
+        def get_parentiest_task(t: Task) -> Task:
+            while t.parent:
+                t = t.parent
+
             return t
 
         if include_parents:
             parentiest_task = get_parentiest_task(self)
-            include_children = True
-            return parentiest_task.as_json(include_scopes, False, True)
+            return parentiest_task.as_json(include_scopes=include_scopes, include_parents=False, include_children=True)
 
         response_dict = self.to_json_dict()
         if include_children:
             child_json = [
-                child.as_json(include_scopes, False, True)
-                    for child in self.get_children()
+                child.as_json(include_scopes=include_scopes, include_parents=False, include_children=True)
+                for child in self.children
             ]
             if child_json:
                 response_dict['children'] = child_json
 
         if include_scopes:
-            tsses = TaskTimeScope.query \
-                .filter(TaskTimeScope.task_id == self.task_id) \
-                .order_by(TaskTimeScope.time_scope_id) \
-                .all()
-            scopes = [tts.time_scope_id for tts in tsses]
-            if scopes:
-                response_dict['time_scopes'] = scopes
+            response_dict['time_scopes'] = self.get_scope_ids()
 
         return response_dict
 

@@ -65,7 +65,7 @@ def test_hundred_scopes(task_v1_session, task_v2_session):
     assert len(t2.linkages) == 38
 
 
-def test_duplicates_combined(task_v1_session, task_v2_session):
+def test_duplicates_get_combined(task_v1_session, task_v2_session):
     TDESC = "twins, separated at birth (but no longer!)"
 
     # Task 1a - is unique
@@ -102,3 +102,11 @@ def test_duplicates_combined(task_v1_session, task_v2_session):
     assert q2.one().desc == TDESC
     assert len(q2.one().linkages) == 2
 
+
+def test_orphans(task_v1_session, task_v2_session):
+    t1a = Task_v1(desc="t1a", first_scope="2021-ww24.5")
+    task_v1_session.add(t1a)
+    task_v1_session.flush()
+
+    t2 = None
+    pass
