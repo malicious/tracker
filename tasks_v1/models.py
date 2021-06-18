@@ -24,13 +24,16 @@ class Task(Base):
 
     def get_children(self):
         return Task.query \
-            .filter(Task.parent_id == self.task_id) \
+            .filter_by(parent_id=self.task_id) \
             .all()
 
     def get_parent(self):
         return Task.query \
-            .filter(Task.task_id == self.parent_id) \
+            .filter_by(task_id=self.parent_id) \
             .one_or_none()
+
+    children = property(get_children)
+    parent = property(get_parent)
 
     def to_json_dict(self) -> Dict:
         response_dict = {
