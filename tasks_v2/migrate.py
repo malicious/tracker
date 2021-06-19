@@ -220,9 +220,11 @@ def _migrate_shallow_tree(session, t1: Task_v1) -> Task_v2:
         for child_scope_id in _get_scopes(child_task):
             linkage = TaskLinkage(task_id=t2.task_id, time_scope_id=child_scope_id)
 
+    raise ValueError(f"Failed to migrate {t1}, childed tasks not supported")
+
 
 def _migrate_tree(session, t1: Task_v1) -> Task_v2:
-    return _migrate_shallow_tree(session, t1)
+    raise ValueError(f"Failed to migrate {t1}, childed tasks not supported")
 
 
 def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
@@ -259,7 +261,12 @@ def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:
     if t1.parent:
         return None
 
-    t2 = _do_one(tasks_v2_session, t1)
+    try:
+        t2 = _do_one(tasks_v2_session, t1)
+    except ValueError as e:
+        print(e)
+        pprint(t1.as_json())
+        raise
 
     try:
         tasks_v2_session.commit()
@@ -270,7 +277,7 @@ def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:
         print(e)
         print()
         pprint(t1.as_json())
-        return None
+        raise
     except IntegrityError as e:
         session.rollback()
         print(f"ERROR: Hit exception while parsing {t1}, skipping")
@@ -278,7 +285,7 @@ def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:
         print(e)
         print()
         pprint(t1.as_json())
-        return None
+        raise
 
     return t2
 
