@@ -12,6 +12,20 @@ from tasks_v2.models import Task as Task_v2, TaskLinkage
 MIGRATION_BATCH_SIZE = 50
 
 
+def _task_depth(t: Task_v1) -> int:
+    """
+    Returns number of layers in task tree, where childless node = 0
+
+    - task with children = depth 1
+    - task with children with children = depth 2
+    """
+    t_depth = 0
+    for child in t.children:
+        t_depth = max(t_depth, _task_depth(child) + 1)
+
+    return t_depth
+
+
 def _get_scopes(t: Task_v1):
     def trim_scope(scope_str):
         maybe_scope = TimeScope(scope_str)
@@ -265,7 +279,7 @@ class MigrationSummaryStatistics:
             print(f"FAIL: Only migrated {self.t1_success} of {self.t1_total} tasks")
             print()
 
-    def review_migration(self, t1: Task_v1, t2_list: List[Task_v2]):
+    def review_migration(self, t1: Task_v1, t2: Optional[Task_v2]):
         pass
 
     def review_migration_old(self, t1: Task_v1, t2: Optional[Task_v2], t1_count_migrated):
@@ -340,10 +354,7 @@ class MigrationSummaryStatistics:
         print()
 
 
-def _migrate_simple(session, t1: Task_v1) -> List[Task_v2]:
-    if t1.parent or t1.children:
-        return []
-
+def _migrate_simple(session, t1: Task_v1) -> Optional[Task_v2]:
     t2 = Task_v2.query \
         .filter_by(desc=t1.desc) \
         .one_or_none()
@@ -379,7 +390,7 @@ def _migrate_simple(session, t1: Task_v1) -> List[Task_v2]:
         print(e)
         print()
         pprint(t1.as_json())
-        return []
+        return None
     except IntegrityError as e:
         session.rollback()
         print(f"ERROR: Hit exception while parsing {t1}, skipping")
@@ -387,9 +398,52 @@ def _migrate_simple(session, t1: Task_v1) -> List[Task_v2]:
         print(e)
         print()
         pprint(t1.as_json())
-        return []
+        return None
 
-    return [t2]
+    return t2
+
+
+def _migrate_shallow_tree(session, t1: Task_v1) -> Optional[Task_v2]:
+    t2 = _migrate_simple(session, t1)
+
+    new_linkages = []
+    for scope_id in _get_scopes(t1):
+        linkage = TaskLinkage(task_id=t2.task_id, time_scope_id=scope_id)
+        linkage.created_at = datetime.now()
+
+        # Append "roll => XX.Y" resolution to older linkages
+        if new_linkages:
+            new_linkages[-1].resolution = f"roll => {linkage.time_scope_id}"
+
+        session.add(linkage)
+        new_linkages.append(linkage)
+
+    # For the first linkage, set the entire Task JSON
+    new_linkages[0].detailed_resolution = pformat(t1.as_json())
+    # For the final linkage, inherit any/all Task_v1 fields
+    new_linkages[-1].resolution = t1.resolution
+    new_linkages[-1].time_elapsed = t1.time_actual
+
+    try:
+        session.commit()
+    except StatementError as e:
+        session.rollback()
+        print(f"ERROR: Hit exception while parsing {t1}, skipping")
+        print()
+        print(e)
+        print()
+        pprint(t1.as_json())
+        return None
+    except IntegrityError as e:
+        session.rollback()
+        print(f"ERROR: Hit exception while parsing {t1}, skipping")
+        print()
+        print(e)
+        print()
+        pprint(t1.as_json())
+        return None
+
+    return t2
 
 
 def migrate_tasks(tasks_v1_session,
@@ -417,17 +471,32 @@ def migrate_tasks(tasks_v1_session,
     for t1 in v1_tasks:
         mss.print_batch_start()
 
-        t2_list = _migrate_simple(tasks_v2_session, t1)
-        if t2_list:
-            mss.review_migration(t1, t2_list)
+        if not t1.parent and not t1.children:
+            t2 = _migrate_simple(tasks_v2_session, t1)
+            if t2:
+                mss.review_migration(t1, t2)
+                continue
+
+        if not t1.parent and t1.children:
+            if _task_depth(t1) <= 1:
+                t2 = _migrate_shallow_tree(tasks_v2_session, t1)
+                if t2:
+                    mss.review_migration(t1, t2)
+                    continue
+
+            # if _task_depth(t1) > 1:
+            #     t2 = _migrate_tree(tasks_v2_session, t1)
+            #     if t2:
+            #         mss.review_migration(t1, t2)
+            #         continue
+
+        if t1.parent:
+            mss.review_migration(t1, None)
             continue
 
-        if t1.parent_id:
-            mss.review_migration_old(t1, None, 0)
-        else:
-            t2, count_migrated = _migrate_one(tasks_v2_session, t1, print_fn)
-            mss.review_migration_old(t1, t2, count_migrated)
-            print_fn()
+        t2, count_migrated = _migrate_one(tasks_v2_session, t1, print_fn)
+        mss.review_migration_old(t1, t2, count_migrated)
+        print_fn()
 
         mss.print_batch_end()
 

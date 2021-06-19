@@ -1,9 +1,31 @@
 import io
+import random
+import string
 
 from tasks_v1.add import import_from_csv
 from tasks_v1.models import Task as Task_v1, TaskTimeScope
 from tasks_v2.migrate import _migrate_one, migrate_tasks, _migrate_simple
 from tasks_v2.models import Task as Task_v2
+
+
+def _make_task(task_v1_session, scope_count=1) -> Task_v1:
+    task_desc = ''.join(
+        random.SystemRandom.choice(string.ascii_uppercase) for _ in range(8))
+    task_scope_id = f"{random.randint(1900, 2100)}-ww{random.randint(10, 51)}.{random.randint(1, 8)}"
+    task = Task_v1(desc=task_desc, first_scope=task_scope_id)
+    task_v1_session.add(task)
+    task_v1_session.flush()
+
+    tts1 = TaskTimeScope(task_id=task.task_id, time_scope_id=task.first_scope)
+    task_v1_session.add(tts1)
+
+    for _ in range(scope_count-1):
+        scope_id = f"{2000 + scope_count}-ww44.4"
+        tts = TaskTimeScope(task_id=task.task_id, time_scope_id=scope_id)
+        task_v1_session.add(tts)
+
+    task_v1_session.commit()
+    return task
 
 
 def test_migrate_zero(task_v1_session, task_v2_session):
@@ -104,20 +126,20 @@ def test_duplicates_get_combined(task_v1_session, task_v2_session):
 
 
 def test_orphan(task_v1_session, task_v2_session):
-    t1a = Task_v1(desc="t1a", first_scope="2021-ww24.5")
-    task_v1_session.add(t1a)
-    task_v1_session.flush()
+    t1 = _make_task(task_v1_session)
 
-    tts = TaskTimeScope(task_id=t1a.task_id, time_scope_id=t1a.first_scope)
-    task_v1_session.add(tts)
-    task_v1_session.commit()
-
-    t2_list = _migrate_simple(task_v2_session, t1a)
+    t2_list = _migrate_simple(task_v2_session, t1)
     assert len(t2_list) == 1
     t2 = t2_list[0]
 
-    assert t2.desc == t1a.desc
+    assert t2.desc == t1.desc
 
 
-def test_2g(task_v1_session, task_v2_session):
-    pass
+def test_2g_simple(task_v1_session, task_v2_session):
+    t1 = _make_task(task_v1_session, 15)
+    t2 = _make_task(task_v1_session, 1)
+    t2.parent_id = t1.task_id
+
+    t2_list = _migrate_shallow_tree(task_v2_session, t1)
+    assert len(t2_list) == 1
+    t2 = t2_list[0]
