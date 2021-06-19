@@ -30,13 +30,13 @@ INSERT INTO "Tasks" VALUES(12,'did it super manually: scopes and description, pl
 INSERT INTO "Tasks" VALUES(13,'for `flask add-task`, swap entry order for description/time scope','2020-ww42.3','tasks_v1','2020-10-14 16:21:21','done',NULL,NULL,NULL);
 INSERT INTO "Tasks" VALUES(14,'the `(roll => ww43)` printing works wonky with ww43 => ww43.2, since it''s a weird ordering','2020-ww43.2','tasks_v1','2020-10-20 20:28:47',NULL,NULL,NULL,NULL);
 INSERT INTO "Tasks" VALUES(15,'not to mention `2020—Q4`','2020-ww43.2','tasks_v1','2020-10-20 20:28:47','info',14,NULL,NULL);
-INSERT INTO "Tasks" VALUES(16,'not gonna fix this without rethinking semantic ordering; this works fine for now','2020-ww43.2','tasks_v1','2020-11-04 02:05','info',14,NULL,NULL);
+INSERT INTO "Tasks" VALUES(16,'not gonna fix this without rethinking semantic ordering; this works fine for now','2020-ww43.2','tasks_v1','2020-11-04 02:05:00','info',14,NULL,NULL);
 INSERT INTO "Tasks" VALUES(17,'a time_estimate of `0.0` doesn''t show up','2020-ww43.5','tasks_v1','2020-10-23 15:39:08','done',NULL,NULL,NULL);
 INSERT INTO "Tasks" VALUES(18,'change "roll" status to take precedent over actual statuses','2020-ww43.7','tasks_v1','2020-10-25 18:31:01','done',NULL,NULL,NULL);
 INSERT INTO "Tasks" VALUES(19,'also... add estimates to `flask add-task`, they go a long way towards prioritizing + sorting','2020-ww44.6','tasks_v1','2020-10-31 18:17:46','done',NULL,NULL,NULL);
 INSERT INTO "Tasks" VALUES(20,'make task entry loop, so i don''t have to `flask add-task` all the time','2020-ww44.7','tasks_v1','2020-11-01 21:08:53','dropped',NULL,NULL,NULL);
 INSERT INTO "Tasks" VALUES(21,'time_actual field doesn''t go well; entry gets truncated, and so does reporting','2020-ww46.6','tasks_v1','2020-11-15 00:22:08',NULL,NULL,NULL,NULL);
-INSERT INTO "Tasks" VALUES(22,'maybe it''s time to actually turn it into a fixed-width text field? and just validate that it turns into numbers correctly?','2020-ww46.6','tasks_v1','2020-11-26 01:25','info',21,NULL,NULL);
+INSERT INTO "Tasks" VALUES(22,'maybe it''s time to actually turn it into a fixed-width text field? and just validate that it turns into numbers correctly?','2020-ww46.6','tasks_v1','2020-11-26 01:25:00','info',21,NULL,NULL);
 CREATE TABLE IF NOT EXISTS "TaskTimeScopes" (
 	task_id INTEGER NOT NULL, 
 	time_scope_id VARCHAR NOT NULL, 
