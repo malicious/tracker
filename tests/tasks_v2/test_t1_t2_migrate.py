@@ -5,14 +5,14 @@ import string
 
 from tasks_v1.add import import_from_csv
 from tasks_v1.models import Task as Task_v1, TaskTimeScope
-from tasks_v2.migrate import _migrate_one, migrate_tasks, _migrate_simple
+from tasks_v2.migrate import do_one, do_multiple
 from tasks_v2.models import Task as Task_v2
 
 
 def _make_task(task_v1_session, scope_count=1) -> Task_v1:
     task_desc = ''.join(
         secrets.choice(string.ascii_uppercase) for _ in range(8))
-    task_scope_id = f"{random.randint(1900, 2100)}-ww{random.randint(10, 51)}.{random.randint(1, 8)}"
+    task_scope_id = f"{random.randint(1900, 2100)}-ww{random.randint(10, 50)}.{random.randint(1, 7)}"
     task = Task_v1(desc=task_desc, first_scope=task_scope_id)
     task_v1_session.add(task)
     task_v1_session.flush()
@@ -30,7 +30,7 @@ def _make_task(task_v1_session, scope_count=1) -> Task_v1:
 
 
 def test_migrate_zero(task_v1_session, task_v2_session):
-    migrate_tasks(task_v1_session, task_v2_session)
+    do_multiple(task_v1_session, task_v2_session)
 
 
 def test_migrate_arbitrary(task_v1_session, task_v2_session):
@@ -45,7 +45,7 @@ def test_migrate_arbitrary(task_v1_session, task_v2_session):
     query = Task_v1.query
     assert query.first()
 
-    migrate_tasks(task_v1_session, task_v2_session)
+    do_multiple(task_v1_session, task_v2_session)
 
     q2 = Task_v2.query
     assert q2.first()
@@ -62,7 +62,7 @@ def test_simple_one(task_v1_session, task_v2_session):
     task_v1_session.add(tts)
     task_v1_session.commit()
 
-    _migrate_one(task_v2_session, t1, print)
+    do_one(task_v2_session, t1)
     t2 = Task_v2.query.first()
     assert t2.desc == "here is a very basic task"
 
@@ -82,7 +82,7 @@ def test_hundred_scopes(task_v1_session, task_v2_session):
 
     task_v1_session.commit()
 
-    _migrate_one(task_v2_session, t1, print)
+    do_one(task_v2_session, t1)
     t2 = Task_v2.query.one()
     assert t2.desc == TDESC
     assert len(t2.linkages) == 38
@@ -118,7 +118,7 @@ def test_duplicates_get_combined(task_v1_session, task_v2_session):
     assert len(q1.all()) == 2
 
     # Check that there's only one new task
-    migrate_tasks(task_v1_session, task_v2_session)
+    do_multiple(task_v1_session, task_v2_session)
 
     q2 = Task_v2.query
     assert len(q2.all()) == 1
@@ -128,19 +128,15 @@ def test_duplicates_get_combined(task_v1_session, task_v2_session):
 
 def test_orphan(task_v1_session, task_v2_session):
     t1 = _make_task(task_v1_session)
-
-    t2_list = _migrate_simple(task_v2_session, t1)
-    assert len(t2_list) == 1
-    t2 = t2_list[0]
+    t2 = do_one(task_v2_session, t1)
 
     assert t2.desc == t1.desc
 
 
 def test_2g_simple(task_v1_session, task_v2_session):
-    t1 = _make_task(task_v1_session, 15)
-    t2 = _make_task(task_v1_session, 1)
-    t2.parent_id = t1.task_id
+    t1a = _make_task(task_v1_session, 15)
+    t1b = _make_task(task_v1_session, 1)
+    t1b.parent_id = t1a.task_id
 
-    t2_list = _migrate_shallow_tree(task_v2_session, t1)
-    assert len(t2_list) == 1
-    t2 = t2_list[0]
+    t2 = do_one(task_v2_session, t1a)
+    assert t2.desc == t1a.desc

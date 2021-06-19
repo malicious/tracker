@@ -12,20 +12,6 @@ from tasks_v2.models import Task as Task_v2, TaskLinkage
 MIGRATION_BATCH_SIZE = 50
 
 
-def _task_depth(t: Task_v1) -> int:
-    """
-    Returns number of layers in task tree, where childless node = 0
-
-    - task with children = depth 1
-    - task with children with children = depth 2
-    """
-    t_depth = 0
-    for child in t.children:
-        t_depth = max(t_depth, _task_depth(child) + 1)
-
-    return t_depth
-
-
 def _get_scopes(t: Task_v1):
     def trim_scope(scope_str):
         maybe_scope = TimeScope(scope_str)
@@ -240,128 +226,10 @@ def _migrate_one(session, t1: Task_v1, print_fn):
     return t2, task_v1_count
 
 
-class MigrationSummaryStatistics:
-    def __init__(self):
-        self.t1_total = 0
-        self.t1_success = 0
-        self.t1_unidentified = 0
-        self.t1_is_orphan = 0
-        self.t1_is_parent = 0
-        self.t1_is_child = 0
-        self.t1_is_mid_level = 0
-
-        self.t2_total = 0
-        self.t2_success = 0
-        self.t2_unidentified = 0
-
-    def print_status(self):
-        print(f"Task_v1 (input) statistics:")
-        print()
-        print(f"t1_total: {self.t1_total}")
-        print()
-        print(f"- t1_success: {self.t1_success}")
-        print(f"- t1_unidentified: {self.t1_unidentified}")
-        print(f"- {self.t1_is_parent} of the parentiest tasks")
-        print(f"- {self.t1_is_mid_level} of the middle manager tasks")
-        print(f"- {self.t1_is_child} of the leafiest tasks")
-        print(f"- {self.t1_is_orphan} isolated, vulnerable tasks")
-        print()
-        print(f"t2_total: {self.t2_total}")
-        print()
-        print(f"- t2_success: {self.t2_success}")
-        print(f"- t2_unidentified: {self.t2_unidentified}")
-        print()
-
-        if self.t1_total == self.t1_success:
-            print("INFO: Successfully migrated all {self.t1_total} tasks")
-            print()
-        else:
-            print(f"FAIL: Only migrated {self.t1_success} of {self.t1_total} tasks")
-            print()
-
-    def review_migration(self, t1: Task_v1, t2: Optional[Task_v2]):
-        pass
-
-    def review_migration_old(self, t1: Task_v1, t2: Optional[Task_v2], t1_count_migrated):
-        """
-        Print summary statistics about the migrated tasks
-
-        This logic should be independent of actual migration tasks,
-        where each case should be broken out into its own pytest case.
-        """
-        # For the simplest, clearest tasks:
-        if not t1.parent_id and not t1.children:
-            self.t1_total += 1
-            assert t1_count_migrated == 1
-            self.t1_success += t1_count_migrated
-            self.t1_is_orphan += 1
-
-            self.t2_total += 1
-            self.t2_success += 1
-            assert t2
-
-        elif t1.parent_id:
-            self.t1_total += 1
-            assert t1_count_migrated == 0
-            self.t1_success += t1_count_migrated
-            if t1.children:
-                self.t1_is_mid_level += 1
-            else:
-                self.t1_is_child += 1
-
-            assert t2 == None
-
-        elif t1.children:
-            self.t1_total += 1
-            self.t1_success += t1_count_migrated
-            self.t1_is_parent += 1
-
-            self.t2_total += 1
-            self.t2_success += 1
-
-        # And for every other kind of task
-        else:
-            self.t1_total += 1
-            self.t1_unidentified += t1_count_migrated
-            assert t1_count_migrated >= 1
-
-            self.t2_total += 1
-            self.t2_success += 1
-            assert t2
-
-    def print_batch_start(self, force_print=False):
-        """
-        Prints a header statement for every MIGRATION_BATCH_SIZE tasks
-        """
-        if not force_print:
-            if self.t1_total % MIGRATION_BATCH_SIZE > 0:
-                return
-
-        print("=" * 72)
-        print(f"Migrating up to {MIGRATION_BATCH_SIZE} tasks (reverse order)")
-        print("=" * 72)
-        print()
-
-    def print_batch_end(self, force_print=False):
-        if not force_print:
-            if (self.t1_total + 1) % MIGRATION_BATCH_SIZE > 0:
-                return
-
-        print(f"Migrated {self.t1_total} tasks ({self.t1_success} completed successfully)")
-        if self.t1_success > self.t1_total:
-            print("(Childed tasks are migrated with the parent, so success count may be larger)")
-        print()
-        print()
-
-
-def _migrate_simple(session, t1: Task_v1) -> Optional[Task_v2]:
-    t2 = Task_v2.query \
-        .filter_by(desc=t1.desc) \
-        .one_or_none()
-    if not t2:
-        t2 = Task_v2(desc=t1.desc, category=t1.category, time_estimate=t1.time_estimate)
-        session.add(t2)
-        session.flush()
+def _migrate_simple(session, t1: Task_v1) -> Task_v2:
+    t2 = Task_v2(desc=t1.desc, category=t1.category, time_estimate=t1.time_estimate)
+    session.add(t2)
+    session.flush()
 
     new_linkages = []
     for scope_id in _get_scopes(t1):
@@ -381,29 +249,10 @@ def _migrate_simple(session, t1: Task_v1) -> Optional[Task_v2]:
     new_linkages[-1].resolution = t1.resolution
     new_linkages[-1].time_elapsed = t1.time_actual
 
-    try:
-        session.commit()
-    except StatementError as e:
-        session.rollback()
-        print(f"ERROR: Hit exception while parsing {t1}, skipping")
-        print()
-        print(e)
-        print()
-        pprint(t1.as_json())
-        return None
-    except IntegrityError as e:
-        session.rollback()
-        print(f"ERROR: Hit exception while parsing {t1}, skipping")
-        print()
-        print(e)
-        print()
-        pprint(t1.as_json())
-        return None
-
     return t2
 
 
-def _migrate_shallow_tree(session, t1: Task_v1) -> Optional[Task_v2]:
+def _migrate_shallow_tree(session, t1: Task_v1) -> Task_v2:
     t2 = _migrate_simple(session, t1)
 
     new_linkages = []
@@ -424,10 +273,57 @@ def _migrate_shallow_tree(session, t1: Task_v1) -> Optional[Task_v2]:
     new_linkages[-1].resolution = t1.resolution
     new_linkages[-1].time_elapsed = t1.time_actual
 
+    return t2
+
+
+def _migrate_tree(session, t1: Task_v1) -> Task_v2:
+    return _migrate_shallow_tree(session, t1)
+
+
+def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
+    def _task_depth(t: Task_v1) -> int:
+        """
+        Returns number of layers in task tree, where childless node = 0
+
+        - task with children = depth 1
+        - task with children with children = depth 2
+        """
+        t_depth = 0
+        for child in t.children:
+            t_depth = max(t_depth, _task_depth(child) + 1)
+
+        return t_depth
+
+    baseline_t2 = Task_v2.query \
+        .filter_by(desc=t1.desc) \
+        .one_or_none()
+    if baseline_t2:
+        raise NotImplementedError("Can't handle tasks with duplicate descriptions")
+
+    if not t1.parent and not t1.children:
+        return _migrate_simple(tasks_v2_session, t1)
+
+    if not t1.parent and t1.children:
+        if _task_depth(t1) > 1:
+            return _migrate_tree(tasks_v2_session, t1)
+        else:
+            return _migrate_shallow_tree(tasks_v2_session, t1)
+
+
+def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:
+    if t1.parent:
+        return None
+
+    # DEBUG: this is not implemented well or correctly
+    if t1.children:
+        return None
+
+    t2 = _do_one(tasks_v2_session, t1)
+
     try:
-        session.commit()
+        tasks_v2_session.commit()
     except StatementError as e:
-        session.rollback()
+        tasks_v2_session.rollback()
         print(f"ERROR: Hit exception while parsing {t1}, skipping")
         print()
         print(e)
@@ -446,74 +342,9 @@ def _migrate_shallow_tree(session, t1: Task_v1) -> Optional[Task_v2]:
     return t2
 
 
-def migrate_tasks(tasks_v1_session,
-                  tasks_v2_session,
-                  delete_current: bool = True,
-                  print_successes: bool = True):
-    print_fn = lambda *args, **kwargs: None
-    if print_successes:
-        print_fn = print
-
-    # Clear any Task_v2's from the existing db
-    if delete_current:
-        tasks_v2_session.query(TaskLinkage).delete()
-        tasks_v2_session.query(Task_v2).delete()
-        tasks_v2_session.commit()
-
-    # For every single task... migrate it
-    v1_tasks_query = tasks_v1_session.query(Task_v1)
-    v1_tasks = v1_tasks_query \
-        .order_by(Task_v1.task_id) \
-        .all()
-
-    mss = MigrationSummaryStatistics()
-
-    for t1 in v1_tasks:
-        mss.print_batch_start()
-
-        if not t1.parent and not t1.children:
-            t2 = _migrate_simple(tasks_v2_session, t1)
-            if t2:
-                mss.review_migration(t1, t2)
-                continue
-
-        if not t1.parent and t1.children:
-            if _task_depth(t1) <= 1:
-                t2 = _migrate_shallow_tree(tasks_v2_session, t1)
-                if t2:
-                    mss.review_migration(t1, t2)
-                    continue
-
-            # if _task_depth(t1) > 1:
-            #     t2 = _migrate_tree(tasks_v2_session, t1)
-            #     if t2:
-            #         mss.review_migration(t1, t2)
-            #         continue
-
-        if t1.parent:
-            mss.review_migration(t1, None)
-            continue
-
-        t2, count_migrated = _migrate_one(tasks_v2_session, t1, print_fn)
-        mss.review_migration_old(t1, t2, count_migrated)
-        print_fn()
-
-        mss.print_batch_end()
-
-    mss.print_status()
-
-
-def do_one(tasks_v2_session, t1_task_id):
-    t1 = Task_v1.query \
-        .filter_by(task_id=t1_task_id) \
-        .one()
-
-    pprint(t1.as_json())
-
-
 def do_multiple(tasks_v1_session,
                 tasks_v2_session,
-                force_delete_current: bool):
+                force_delete_current: bool = False):
     if force_delete_current:
         tasks_v2_session.query(TaskLinkage).delete()
         tasks_v2_session.query(Task_v2).delete()
@@ -523,6 +354,6 @@ def do_multiple(tasks_v1_session,
         .order_by(Task_v1.task_id) \
         .all()
     for t1 in v1_tasks:
-        do_one(tasks_v2_session, t1.task_id)
+        do_one(tasks_v2_session, t1)
 
     print("Done migrating tasks")

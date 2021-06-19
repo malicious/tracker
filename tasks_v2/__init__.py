@@ -12,6 +12,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from . import migrate, models, report, update
 from .models import Base, Task
 from tasks_v1 import db_session as tasks_v1_session
+from tasks_v1.models import Task as Task_v1
 from tasks_v1.time_scope import TimeScope
 
 db_session = None
@@ -27,7 +28,11 @@ def init_app(app: Flask):
     @click.argument('task_id', type=click.INT)
     @with_appcontext
     def t2_migrate_one(task_id):
-        migrate.do_one(db_session, task_id)
+        t1 = Task_v1.query \
+            .filter_by(task_id=task_id) \
+            .one()
+
+        migrate.do_one(db_session, t1)
 
     app.cli.add_command(t2_migrate_one)
 
