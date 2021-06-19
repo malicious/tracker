@@ -1,5 +1,6 @@
 import io
 import random
+import secrets
 import string
 
 from tasks_v1.add import import_from_csv
@@ -10,7 +11,7 @@ from tasks_v2.models import Task as Task_v2
 
 def _make_task(task_v1_session, scope_count=1) -> Task_v1:
     task_desc = ''.join(
-        random.SystemRandom.choice(string.ascii_uppercase) for _ in range(8))
+        secrets.choice(string.ascii_uppercase) for _ in range(8))
     task_scope_id = f"{random.randint(1900, 2100)}-ww{random.randint(10, 51)}.{random.randint(1, 8)}"
     task = Task_v1(desc=task_desc, first_scope=task_scope_id)
     task_v1_session.add(task)
@@ -19,8 +20,8 @@ def _make_task(task_v1_session, scope_count=1) -> Task_v1:
     tts1 = TaskTimeScope(task_id=task.task_id, time_scope_id=task.first_scope)
     task_v1_session.add(tts1)
 
-    for _ in range(scope_count-1):
-        scope_id = f"{2000 + scope_count}-ww44.4"
+    for n in range(scope_count-1):
+        scope_id = f"{2000 + n}-ww44.4"
         tts = TaskTimeScope(task_id=task.task_id, time_scope_id=scope_id)
         task_v1_session.add(tts)
 

@@ -23,7 +23,7 @@ def init_app(app: Flask):
 
 
 def _register_cli(app):
-    @click.command('import-notes')
+    @click.command('import-notes', help='Import notes from CSV file')
     @click.argument('csv_file', type=click.File('r'))
     @with_appcontext
     def notes_from_csv(csv_file):

@@ -131,18 +131,18 @@ def _register_endpoints(app: Flask):
 
 
 def _register_cli(app: Flask):
-    @click.command('import-tasks')
+    @click.command('import-tasks', help='[legacy] Import tasks from CSV file')
     @click.argument('csv_file', type=click.File('r'))
     @with_appcontext
     def tasks_from_csv(csv_file):
         add.import_from_csv(csv_file, db_session)
 
-    @click.command('task-add-one')
+    @click.command('task-add-one', help='[legacy] Add one task via interactive CLI')
     @with_appcontext
     def task_add_one():
         add.add_from_cli(db_session)
 
-    @click.command('task-add-multiple')
+    @click.command('task-add-multiple', help='[legacy] Add multiple tasks')
     @with_appcontext
     def task_add_multiple():
         try:
@@ -153,7 +153,7 @@ def _register_cli(app: Flask):
         except KeyboardInterrupt:
             pass
 
-    @click.command('task-update-batch')
+    @click.command('task-update-batch', help='[legacy] Batch update existing tasks')
     @click.option('--add-scope', 'scopes', multiple=True)
     @click.option('--category')
     @click.option('--resolution', 'resolution')
@@ -163,7 +163,7 @@ def _register_cli(app: Flask):
         for task_id in task_ids:
             add.update(db_session, scopes, category, resolution, task_id)
 
-    @click.command('task-update-interactive')
+    @click.command('task-update-interactive', help='[legacy] Update specified tasks via interactive CLI')
     @click.argument('task_ids', type=click.INT, nargs=-1)
     @with_appcontext
     def task_update_interactive(task_ids):

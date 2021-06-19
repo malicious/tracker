@@ -11,6 +11,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 # noinspection PyUnresolvedReferences
 from . import migrate, models, report, update
 from .models import Base, Task
+from tasks_v1 import db_session as tasks_v1_session
 from tasks_v1.time_scope import TimeScope
 
 db_session = None
@@ -22,13 +23,21 @@ def init_app(app: Flask):
     _register_endpoints(app)
     _register_rest_endpoints(app)
 
-    @click.command('t2-migrate')
+    @click.command('t2-migrate-one', help='Migrate one legacy task to new format')
+    @click.argument('task_id', type=click.INT)
     @with_appcontext
-    def tasks_v2_migrate():
-        from tasks_v1 import db_session as tasks_v1_session
-        migrate.migrate_tasks(tasks_v1_session, db_session, print_successes=False)
+    def t2_migrate_one(task_id):
+        migrate.do_one(db_session, task_id)
 
-    app.cli.add_command(tasks_v2_migrate)
+    app.cli.add_command(t2_migrate_one)
+
+    @click.command('t2-migrate-all', help='Migrate all legacy tasks')
+    @click.option('--delete', type=click.BOOL)
+    @with_appcontext
+    def t2_migrate_all(delete):
+        migrate.do_multiple(tasks_v1_session, db_session, delete)
+
+    app.cli.add_command(t2_migrate_all)
 
 
 def load_v2_models(current_db_path: str):

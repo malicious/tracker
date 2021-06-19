@@ -501,3 +501,28 @@ def migrate_tasks(tasks_v1_session,
         mss.print_batch_end()
 
     mss.print_status()
+
+
+def do_one(tasks_v2_session, t1_task_id):
+    t1 = Task_v1.query \
+        .filter_by(task_id=t1_task_id) \
+        .one()
+
+    pprint(t1.as_json())
+
+
+def do_multiple(tasks_v1_session,
+                tasks_v2_session,
+                force_delete_current: bool):
+    if force_delete_current:
+        tasks_v2_session.query(TaskLinkage).delete()
+        tasks_v2_session.query(Task_v2).delete()
+        tasks_v2_session.commit()
+
+    v1_tasks = Task_v1.query \
+        .order_by(Task_v1.task_id) \
+        .all()
+    for t1 in v1_tasks:
+        do_one(tasks_v2_session, t1.task_id)
+
+    print("Done migrating tasks")
