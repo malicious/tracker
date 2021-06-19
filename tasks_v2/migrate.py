@@ -145,87 +145,6 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
     return draft_linkages
 
 
-def _migrate_one(session, t1: Task_v1, print_fn):
-    """
-    Returns new parent task, plus count of total migrated tasks
-
-    Expected to return None on failure, not raise exceptions
-    """
-
-    def print_task_and_children(depth, t: Task_v1):
-        """
-        Recursive print. Also counts the number of prints.
-        """
-        print_fn("    " * depth + f"- #{t.task_id}: ({t.resolution}) {t.desc}")
-        print_fn("    " * depth + f"  scopes: {_get_scopes(t)}")
-        task_count = 1
-
-        for child in t.children:
-            task_count += print_task_and_children(depth + 1, child)
-
-        return task_count
-
-    # Print Task_v1 info
-    print_fn(f"importing #{t1.task_id}, old info:")
-    print_fn("-" * 72)
-    print_fn()
-    task_v1_count = print_task_and_children(0, t1)
-    print_fn()
-    print_fn()
-
-    # Check if Task_v2 already exists
-    existing_t2 = Task_v2.query \
-        .filter(Task_v2.desc == t1.desc) \
-        .one_or_none()
-    if not existing_t2:
-        # Construct Task_v2
-        try:
-            t2 = Task_v2(desc=t1.desc,
-                         category=t1.category,
-                         time_estimate=t1.time_estimate)
-            session.add(t2)
-            session.commit()
-        except StatementError as e:
-            session.rollback()
-            print(f"ERROR: Hit exception when parsing task #{t1.task_id}, skipping")
-            print(t1.to_json_dict())
-            return None, 0
-        except IntegrityError as e:
-            session.rollback()
-            print(e)
-            print(t1.to_json_dict())
-            return None, 0
-
-    print_fn("migrating to Task_v2, new info:")
-    print_fn("-" * 72)
-    print_fn()
-
-    if existing_t2:
-        print(f"WARN: #{t1.task_id} matches existing Task_v2 #{existing_t2.task_id}, reusing")
-        t2 = existing_t2
-
-    # Print Task_v2 info
-    print_fn(f"{t2.desc}")
-    print_fn()
-
-    try:
-        t2_linkages = _construct_linkages(t1, t2)
-    except ValueError as e:
-        print(e)
-        input(f"Import failed for task #{t1.task_id}, press enter to ignore bad import and continue")
-        return None, 0
-
-    for scope, tl in sorted(t2_linkages.items()):
-        print_fn(f"- {tl.time_scope_id}: {tl.resolution} / {tl.detailed_resolution}")
-        session.add(tl)
-
-    print_fn()
-    print_fn()
-
-    session.commit()
-    return t2, task_v1_count
-
-
 def _migrate_simple(session, t1: Task_v1) -> Task_v2:
     t2 = Task_v2(desc=t1.desc, category=t1.category, time_estimate=t1.time_estimate)
     session.add(t2)
@@ -253,27 +172,7 @@ def _migrate_simple(session, t1: Task_v1) -> Task_v2:
 
 
 def _migrate_shallow_tree(session, t1: Task_v1) -> Task_v2:
-    t2 = _migrate_simple(session, t1)
-
-    new_linkages = []
-    for scope_id in _get_scopes(t1):
-        linkage = TaskLinkage(task_id=t2.task_id, time_scope_id=scope_id)
-        linkage.created_at = datetime.now()
-
-        # Append "roll => XX.Y" resolution to older linkages
-        if new_linkages:
-            new_linkages[-1].resolution = f"roll => {linkage.time_scope_id}"
-
-        session.add(linkage)
-        new_linkages.append(linkage)
-
-    # For the first linkage, set the entire Task JSON
-    new_linkages[0].detailed_resolution = pformat(t1.as_json())
-    # For the final linkage, inherit any/all Task_v1 fields
-    new_linkages[-1].resolution = t1.resolution
-    new_linkages[-1].time_elapsed = t1.time_actual
-
-    return t2
+    return _migrate_simple(session, t1)
 
 
 def _migrate_tree(session, t1: Task_v1) -> Task_v2:
@@ -312,10 +211,6 @@ def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
 
 def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:
     if t1.parent:
-        return None
-
-    # DEBUG: this is not implemented well or correctly
-    if t1.children:
         return None
 
     t2 = _do_one(tasks_v2_session, t1)
