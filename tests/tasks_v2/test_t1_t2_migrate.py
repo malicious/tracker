@@ -88,7 +88,7 @@ def test_hundred_scopes(task_v1_session, task_v2_session):
     assert len(t2.linkages) == 38
 
 
-def test_duplicates_get_combined(task_v1_session, task_v2_session):
+def disabled_test_duplicates_get_combined(task_v1_session, task_v2_session):
     TDESC = "twins, separated at birth (but no longer!)"
 
     # Task 1a - is unique
@@ -129,8 +129,50 @@ def test_duplicates_get_combined(task_v1_session, task_v2_session):
 def test_orphan(task_v1_session, task_v2_session):
     t1 = _make_task(task_v1_session)
     t2 = do_one(task_v2_session, t1)
-
     assert t2.desc == t1.desc
+    assert len(t1.scopes) == len(t2.linkages)
+
+
+def test_orphan_where_created_is_middle(task_v1_session, task_v2_session):
+    t1 = Task_v1(desc="first_scope is later than something in the linked TaskTimeScopes")
+    t1.first_scope = "2021-ww20.1"
+    task_v1_session.add(t1)
+    task_v1_session.flush()
+
+    task_v1_session.add(
+        TaskTimeScope(task_id=t1.task_id, time_scope_id=t1.first_scope))
+    task_v1_session.add(
+        TaskTimeScope(task_id=t1.task_id, time_scope_id="2020-ww04.4"))
+    task_v1_session.add(
+        TaskTimeScope(task_id=t1.task_id, time_scope_id="2021-ww20.2"))
+    task_v1_session.commit()
+
+    t2 = do_one(task_v2_session, t1)
+    assert t2.desc == t1.desc
+    assert len(t1.scopes) == len(t2.linkages)
+
+    # TODO: check that "first_scope" linkage is what we expect
+
+
+def test_orphan_where_created_is_last(task_v1_session, task_v2_session):
+    t1 = Task_v1(desc="first_scope is later than something in the linked TaskTimeScopes")
+    t1.first_scope = "2021-ww20.1"
+    task_v1_session.add(t1)
+    task_v1_session.flush()
+
+    task_v1_session.add(
+        TaskTimeScope(task_id=t1.task_id, time_scope_id=t1.first_scope))
+    task_v1_session.add(
+        TaskTimeScope(task_id=t1.task_id, time_scope_id="2020-ww04.4"))
+    task_v1_session.add(
+        TaskTimeScope(task_id=t1.task_id, time_scope_id="2020-ww20.2"))
+    task_v1_session.commit()
+
+    t2 = do_one(task_v2_session, t1)
+    assert t2.desc == t1.desc
+    assert len(t1.scopes) == len(t2.linkages)
+
+    # TODO: check that "first_scope" linkage is what we expect
 
 
 def test_2g_simple(task_v1_session, task_v2_session):
@@ -140,3 +182,8 @@ def test_2g_simple(task_v1_session, task_v2_session):
 
     t2 = do_one(task_v2_session, t1a)
     assert t2.desc == t1a.desc
+
+
+def test_2g_conflict(task_v1_session, task_v2_session):
+    t1a = None
+

@@ -146,6 +146,19 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
 
 
 def _migrate_simple(session, t1: Task_v1) -> Task_v2:
+    """
+    Migrate an orphan task
+
+    Task_v1 only has a few fields that will turn into linkages:
+
+    - for first_scope, we can add the `created_at` field,
+      and possibly an `as_json()` dump
+    - for the last scope, we set `resolution` + `time_elapsed`
+    - every other linkage has no info, a `roll => wwXX.Y` resolution at most
+
+    Note that first_scope isn't guaranteed to be the _earliest_ scope,
+    it's intended to be the one where the task was created.
+    """
     t2 = Task_v2(desc=t1.desc, category=t1.category, time_estimate=t1.time_estimate)
     session.add(t2)
     session.flush()
@@ -153,17 +166,19 @@ def _migrate_simple(session, t1: Task_v1) -> Task_v2:
     new_linkages = []
     for scope_id in _get_scopes(t1):
         linkage = TaskLinkage(task_id=t2.task_id, time_scope_id=scope_id)
-        linkage.created_at = datetime.now()
-
-        # Append "roll => XX.Y" resolution to older linkages
-        if new_linkages:
-            new_linkages[-1].resolution = f"roll => {linkage.time_scope_id}"
-
         session.add(linkage)
         new_linkages.append(linkage)
 
+        linkage.created_at = datetime.now()
+
+        # Append "roll => XX.Y" resolution to other linkages
+        if new_linkages:
+            min_scope_id = TimeScope(t1.first_scope).minimize(scope_id)
+            new_linkages[-1].resolution = f"roll => {min_scope_id}"
+
     # For the first linkage, set the entire Task JSON
     new_linkages[0].detailed_resolution = pformat(t1.as_json())
+
     # For the final linkage, inherit any/all Task_v1 fields
     new_linkages[-1].resolution = t1.resolution
     new_linkages[-1].time_elapsed = t1.time_actual
@@ -172,7 +187,38 @@ def _migrate_simple(session, t1: Task_v1) -> Task_v2:
 
 
 def _migrate_shallow_tree(session, t1: Task_v1) -> Task_v2:
-    return _migrate_simple(session, t1)
+    """
+    Merge a Task, its scopes, and its child Tasks
+
+    Key thing is to treat linkages as the data object, and then dedupe them
+    when it's closer to DB commit time. We're merging them via markdown
+    formatting anyway, it's not like there's a ton of special data.
+
+    A few interacting cases, documented in pytest:
+
+    - parent task can have multiple scopes; this is the same as _migrate_simple
+    - child tasks can have multiple scopes, which can overlap and interleave in time
+      with the parent linkages, and even resolution.
+    """
+    t2 = Task_v2(desc=t1.desc, category=t1.category, time_estimate=t1.time_estimate)
+    session.add(t2)
+    session.flush()
+
+    new_linkages = []
+    for scope_id in _get_scopes(t1):
+        linkage = TaskLinkage(task_id=t2.task_id, time_scope_id=scope_id)
+        session.add(linkage)
+        new_linkages.append(linkage)
+
+        linkage.created_at = datetime.now()
+
+        # Append "roll => XX.Y" resolution to older linkages
+        if new_linkages:
+            new_linkages[-1].resolution = f"roll => {linkage.time_scope_id}"
+
+    for child_task in t1.children:
+        for child_scope_id in _get_scopes(child_task):
+            linkage = TaskLinkage(task_id=t2.task_id, time_scope_id=child_scope_id)
 
 
 def _migrate_tree(session, t1: Task_v1) -> Task_v2:

@@ -80,6 +80,14 @@ def test_shorten_years_close():
     assert s == "2021-ww02.1"
 
 
+def test_minimize():
+    ref = TimeScope("2020-ww48.4")
+
+    assert ref.minimize("2019-ww48.5") == "2019-ww48.5"
+    assert ref.minimize("2020-ww48.5") == "ww48.5"
+    assert ref.minimize("2020-ww50.4") == "ww50.4"
+
+
 def test_enclosing_scopes():
     ref = TimeScope("2023-ww04.3")
     assert TimeScopeUtils.enclosing_scope(ref, recurse=False) == [TimeScope("2023-ww04")]
