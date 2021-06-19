@@ -12,27 +12,26 @@ from tasks_v2.models import Task as Task_v2, TaskLinkage
 MIGRATION_BATCH_SIZE = 50
 
 
+def _force_day_scope(scope_str):
+    maybe_scope = TimeScope(scope_str)
+    if maybe_scope.type == TimeScope.Type.quarter:
+        # Convert "quarter" scopes into their first day
+        scope = maybe_scope.start.strftime("%G-ww%V.%u")
+        return scope
+    elif maybe_scope.type == TimeScope.Type.week:
+        # Convert "week" scopes into their first day
+        scope = maybe_scope.start.strftime("%G-ww%V.%u")
+        return scope
+
+    return scope_str
+
+
 def _get_scopes(t: Task_v1):
-    def trim_scope(scope_str):
-        maybe_scope = TimeScope(scope_str)
-        if maybe_scope.type == TimeScope.Type.quarter:
-            # Convert "quarter" scopes into their first day
-            scope = maybe_scope.start.strftime("%G-ww%V.%u")
-            print(f"INFO: task #{t.task_id} has quarter scope {scope_str}, downsizing to {scope}")
-            return scope
-        elif maybe_scope.type == TimeScope.Type.week:
-            # Convert "week" scopes into their first day
-            scope = maybe_scope.start.strftime("%G-ww%V.%u")
-            print(f"INFO: task #{t.task_id} has week scope {scope_str}, downsizing to {scope}")
-            return scope
-
-        return scope_str
-
     tts_query = TaskTimeScope.query \
         .filter_by(task_id=t.task_id) \
         .order_by(TaskTimeScope.time_scope_id)
 
-    return [trim_scope(tts.time_scope_id) for tts in tts_query.all()]
+    return [_force_day_scope(tts.time_scope_id) for tts in tts_query.all()]
 
 
 def _construct_linkages(t1: Task_v1, t2: Task_v2):
@@ -163,25 +162,29 @@ def _migrate_simple(session, t1: Task_v1) -> Task_v2:
     session.add(t2)
     session.flush()
 
-    new_linkages = []
+    created_at_linkage = None
+    prior_linkage = None
     for scope_id in _get_scopes(t1):
         linkage = TaskLinkage(task_id=t2.task_id, time_scope_id=scope_id)
-        session.add(linkage)
-        new_linkages.append(linkage)
-
         linkage.created_at = datetime.now()
+        session.add(linkage)
 
-        # Append "roll => XX.Y" resolution to other linkages
-        if new_linkages:
+        if scope_id == _force_day_scope(t1.first_scope):
+            created_at_linkage = linkage
+            created_at_linkage.created_at = t1.created_at
+            created_at_linkage.detailed_resolution = pformat(t1.as_json())
+
+        # Append "roll => wwXX.Y" resolution to prior linkage
+        if prior_linkage:
             min_scope_id = TimeScope(t1.first_scope).minimize(scope_id)
-            new_linkages[-1].resolution = f"roll => {min_scope_id}"
+            prior_linkage.resolution = f"roll => {min_scope_id}"
 
-    # For the first linkage, set the entire Task JSON
-    new_linkages[0].detailed_resolution = pformat(t1.as_json())
+        prior_linkage = linkage
 
     # For the final linkage, inherit any/all Task_v1 fields
-    new_linkages[-1].resolution = t1.resolution
-    new_linkages[-1].time_elapsed = t1.time_actual
+    final_linkage = prior_linkage if prior_linkage else created_at_linkage
+    final_linkage.resolution = t1.resolution
+    final_linkage.time_elapsed = t1.time_actual
 
     return t2
 

@@ -133,46 +133,34 @@ def test_orphan(task_v1_session, task_v2_session):
     assert len(t1.scopes) == len(t2.linkages)
 
 
-def test_orphan_where_created_is_middle(task_v1_session, task_v2_session):
-    t1 = Task_v1(desc="first_scope is later than something in the linked TaskTimeScopes")
-    t1.first_scope = "2021-ww20.1"
-    task_v1_session.add(t1)
-    task_v1_session.flush()
-
-    task_v1_session.add(
-        TaskTimeScope(task_id=t1.task_id, time_scope_id=t1.first_scope))
-    task_v1_session.add(
-        TaskTimeScope(task_id=t1.task_id, time_scope_id="2020-ww04.4"))
-    task_v1_session.add(
-        TaskTimeScope(task_id=t1.task_id, time_scope_id="2021-ww20.2"))
+def _test_orphan(task_v1_session, task_v2_session, scope_count, first_scope_index):
+    t1 = _make_task(task_v1_session, scope_count=scope_count)
+    t1.first_scope = t1.scopes[first_scope_index].time_scope_id
+    t1.resolution = "super unique resolution"
+    t1.time_actual = 420
     task_v1_session.commit()
 
     t2 = do_one(task_v2_session, t1)
     assert t2.desc == t1.desc
     assert len(t1.scopes) == len(t2.linkages)
 
-    # TODO: check that "first_scope" linkage is what we expect
+    # TODO: should really check scope migration, since we _force_day_scope()
+    assert t1.first_scope == t2.linkages[first_scope_index].time_scope_id
+    assert t2.linkages[first_scope_index].detailed_resolution
+    assert t2.linkages[-1].resolution == t1.resolution
+    assert t2.linkages[-1].time_elapsed == t1.time_actual
+
+
+def test_orphan_where_created_is_first(task_v1_session, task_v2_session):
+    _test_orphan(task_v1_session, task_v2_session, 7, 0)
+
+
+def test_orphan_where_created_is_middle(task_v1_session, task_v2_session):
+    _test_orphan(task_v1_session, task_v2_session, 7, 3)
 
 
 def test_orphan_where_created_is_last(task_v1_session, task_v2_session):
-    t1 = Task_v1(desc="first_scope is later than something in the linked TaskTimeScopes")
-    t1.first_scope = "2021-ww20.1"
-    task_v1_session.add(t1)
-    task_v1_session.flush()
-
-    task_v1_session.add(
-        TaskTimeScope(task_id=t1.task_id, time_scope_id=t1.first_scope))
-    task_v1_session.add(
-        TaskTimeScope(task_id=t1.task_id, time_scope_id="2020-ww04.4"))
-    task_v1_session.add(
-        TaskTimeScope(task_id=t1.task_id, time_scope_id="2020-ww20.2"))
-    task_v1_session.commit()
-
-    t2 = do_one(task_v2_session, t1)
-    assert t2.desc == t1.desc
-    assert len(t1.scopes) == len(t2.linkages)
-
-    # TODO: check that "first_scope" linkage is what we expect
+    _test_orphan(task_v1_session, task_v2_session, 7, 6)
 
 
 def test_2g_simple(task_v1_session, task_v2_session):
