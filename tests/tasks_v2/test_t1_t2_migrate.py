@@ -2,7 +2,7 @@ import io
 
 from tasks_v1.add import import_from_csv
 from tasks_v1.models import Task as Task_v1, TaskTimeScope
-from tasks_v2.migrate import _migrate_one, migrate_tasks
+from tasks_v2.migrate import _migrate_one, migrate_tasks, _migrate_simple
 from tasks_v2.models import Task as Task_v2
 
 
@@ -103,10 +103,21 @@ def test_duplicates_get_combined(task_v1_session, task_v2_session):
     assert len(q2.one().linkages) == 2
 
 
-def test_orphans(task_v1_session, task_v2_session):
+def test_orphan(task_v1_session, task_v2_session):
     t1a = Task_v1(desc="t1a", first_scope="2021-ww24.5")
     task_v1_session.add(t1a)
     task_v1_session.flush()
 
-    t2 = None
+    tts = TaskTimeScope(task_id=t1a.task_id, time_scope_id=t1a.first_scope)
+    task_v1_session.add(tts)
+    task_v1_session.commit()
+
+    t2_list = _migrate_simple(task_v2_session, t1a)
+    assert len(t2_list) == 1
+    t2 = t2_list[0]
+
+    assert t2.desc == t1a.desc
+
+
+def test_2g(task_v1_session, task_v2_session):
     pass

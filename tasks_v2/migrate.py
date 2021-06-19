@@ -1,11 +1,12 @@
-from datetime import datetime
 import json
-from typing import Optional
+from datetime import datetime
+from pprint import pprint, pformat
+from typing import Optional, List
 
 from sqlalchemy.exc import IntegrityError, StatementError
 
 from tasks_v1.models import Task as Task_v1, TaskTimeScope
-from tasks_v1.time_scope import TimeScope, TimeScopeUtils
+from tasks_v1.time_scope import TimeScope
 from tasks_v2.models import Task as Task_v2, TaskLinkage
 
 MIGRATION_BATCH_SIZE = 50
@@ -80,7 +81,8 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
 
         if not child_task.resolution:
             # TODO: We might be able to just leave this open
-            raise ValueError(f"ERROR: Task #{t1.task_id} has child #{child_task.task_id} still open, must be resolved manually")
+            raise ValueError(
+                f"ERROR: Task #{t1.task_id} has child #{child_task.task_id} still open, must be resolved manually")
 
         # Set or append the info string
         tl_0 = draft_linkages[child_task_scopes[0]]
@@ -136,7 +138,8 @@ def _construct_linkages(t1: Task_v1, t2: Task_v2):
     # Sometimes child tasks have scopes that extend out past the parent
     final_linkage = draft_linkages_sorted[-1][1]
     if t1.resolution and not final_linkage.resolution:
-            print(f"WARN: task #{t1.task_id} imported, but final child scope {final_linkage.time_scope_id} is later than final parent scope {t1.first_scope}")
+        print(
+            f"WARN: task #{t1.task_id} imported, but final child scope {final_linkage.time_scope_id} is later than final parent scope {t1.first_scope}")
     del final_linkage
 
     return draft_linkages
@@ -262,7 +265,10 @@ class MigrationSummaryStatistics:
             print(f"FAIL: Only migrated {self.t1_success} of {self.t1_total} tasks")
             print()
 
-    def review_migration(self, t1: Task_v1, t2: Optional[Task_v2], t1_count_migrated):
+    def review_migration(self, t1: Task_v1, t2_list: List[Task_v2]):
+        pass
+
+    def review_migration_old(self, t1: Task_v1, t2: Optional[Task_v2], t1_count_migrated):
         """
         Print summary statistics about the migrated tasks
 
@@ -334,6 +340,58 @@ class MigrationSummaryStatistics:
         print()
 
 
+def _migrate_simple(session, t1: Task_v1) -> List[Task_v2]:
+    if t1.parent or t1.children:
+        return []
+
+    t2 = Task_v2.query \
+        .filter_by(desc=t1.desc) \
+        .one_or_none()
+    if not t2:
+        t2 = Task_v2(desc=t1.desc, category=t1.category, time_estimate=t1.time_estimate)
+        session.add(t2)
+        session.flush()
+
+    new_linkages = []
+    for scope_id in _get_scopes(t1):
+        linkage = TaskLinkage(task_id=t2.task_id, time_scope_id=scope_id)
+        linkage.created_at = datetime.now()
+
+        # Append "roll => XX.Y" resolution to older linkages
+        if new_linkages:
+            new_linkages[-1].resolution = f"roll => {linkage.time_scope_id}"
+
+        session.add(linkage)
+        new_linkages.append(linkage)
+
+    # For the first linkage, set the entire Task JSON
+    new_linkages[0].detailed_resolution = pformat(t1.as_json())
+    # For the final linkage, inherit any/all Task_v1 fields
+    new_linkages[-1].resolution = t1.resolution
+    new_linkages[-1].time_elapsed = t1.time_actual
+
+    try:
+        session.commit()
+    except StatementError as e:
+        session.rollback()
+        print(f"ERROR: Hit exception while parsing {t1}, skipping")
+        print()
+        print(e)
+        print()
+        pprint(t1.as_json())
+        return []
+    except IntegrityError as e:
+        session.rollback()
+        print(f"ERROR: Hit exception while parsing {t1}, skipping")
+        print()
+        print(e)
+        print()
+        pprint(t1.as_json())
+        return []
+
+    return [t2]
+
+
 def migrate_tasks(tasks_v1_session,
                   tasks_v2_session,
                   delete_current: bool = True,
@@ -359,11 +417,16 @@ def migrate_tasks(tasks_v1_session,
     for t1 in v1_tasks:
         mss.print_batch_start()
 
+        t2_list = _migrate_simple(tasks_v2_session, t1)
+        if t2_list:
+            mss.review_migration(t1, t2_list)
+            continue
+
         if t1.parent_id:
-            mss.review_migration(t1, None, 0)
+            mss.review_migration_old(t1, None, 0)
         else:
             t2, count_migrated = _migrate_one(tasks_v2_session, t1, print_fn)
-            mss.review_migration(t1, t2, count_migrated)
+            mss.review_migration_old(t1, t2, count_migrated)
             print_fn()
 
         mss.print_batch_end()

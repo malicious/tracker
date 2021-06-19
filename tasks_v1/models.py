@@ -1,9 +1,19 @@
-from typing import Dict
+from typing import Dict, List, Iterable
 
 from sqlalchemy import String, Column, Integer, ForeignKey, UniqueConstraint, DateTime, Float
 from sqlalchemy.orm import declarative_base, relationship
 
 Base = declarative_base()
+
+
+class TaskTimeScope(Base):
+    __tablename__ = 'TaskTimeScopes-v1'
+
+    task_id = Column(Integer, ForeignKey("Tasks-v1.task_id"), primary_key=True, nullable=False)
+    time_scope_id = Column(String, primary_key=True, nullable=False)
+    __table_args__ = (
+        UniqueConstraint('task_id', 'time_scope_id'),
+    )
 
 
 class Task(Base):
@@ -30,7 +40,7 @@ class Task(Base):
             .filter_by(task_id=self.parent_id) \
             .one_or_none()
 
-    def get_scope_ids(self, sort=True):
+    def get_scope_ids(self, sort=True) -> List[str]:
         tts_query = TaskTimeScope.query \
             .filter_by(task_id=self.task_id)
 
@@ -42,7 +52,7 @@ class Task(Base):
 
     parent = property(get_parent)
     children = relationship("Task")
-    scopes = relationship("TaskTimeScope", backref="task")
+    scopes: Iterable[TaskTimeScope] = relationship("TaskTimeScope", backref="task")
 
     def to_json_dict(self) -> Dict:
         response_dict = {
@@ -89,13 +99,3 @@ class Task(Base):
             response_dict['time_scopes'] = self.get_scope_ids()
 
         return response_dict
-
-
-class TaskTimeScope(Base):
-    __tablename__ = 'TaskTimeScopes-v1'
-
-    task_id = Column(Integer, ForeignKey("Tasks-v1.task_id"), primary_key=True, nullable=False)
-    time_scope_id = Column(String, primary_key=True, nullable=False)
-    __table_args__ = (
-        UniqueConstraint('task_id', 'time_scope_id'),
-    )
