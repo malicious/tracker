@@ -6,7 +6,7 @@ import string
 from tasks_v1.add import import_from_csv
 from tasks_v1.models import Task as Task_v1, TaskTimeScope
 from tasks_v2.migrate import do_one, do_multiple
-from tasks_v2.models import Task as Task_v2
+from tasks_v2.models import Task as Task_v2, TaskLinkage
 
 
 def _make_task(task_v1_session, scope_count=1) -> Task_v1:
@@ -37,6 +37,7 @@ def test_migrate_arbitrary(task_v1_session, task_v2_session):
     csv_test_file = """desc,scopes
 "csv test file desc",2020-ww12.1 2019-ww14.5
 "another one",2020-ww34
+"quarterly one",2021—Q4 2020-ww34 2022-ww44.4
 "another one",2020-ww52.4"""
 
     test_csv = io.StringIO(csv_test_file)
@@ -144,11 +145,12 @@ def _test_orphan(task_v1_session, task_v2_session, scope_count, first_scope_inde
     assert t2.desc == t1.desc
     assert len(t1.scopes) == len(t2.linkages)
 
-    # TODO: should really check scope migration, since we _force_day_scope()
     assert t1.first_scope == t2.linkages[first_scope_index].time_scope_id
     assert t2.linkages[first_scope_index].detailed_resolution
     assert t2.linkages[-1].resolution == t1.resolution
     assert t2.linkages[-1].time_elapsed == t1.time_actual
+
+    return t1
 
 
 def test_orphan_where_created_is_first(task_v1_session, task_v2_session):
@@ -163,6 +165,25 @@ def test_orphan_where_created_is_last(task_v1_session, task_v2_session):
     _test_orphan(task_v1_session, task_v2_session, 7, 6)
 
 
+def test_orphan_where_created_is_middle_manual(task_v1_session, task_v2_session):
+    t1 = Task_v1(desc="first_scope is later than something in the linked TaskTimeScopes")
+    t1.first_scope = "2021-ww20.1"
+    task_v1_session.add(t1)
+    task_v1_session.flush()
+
+    task_v1_session.add(
+        TaskTimeScope(task_id=t1.task_id, time_scope_id=t1.first_scope))
+    task_v1_session.add(
+        TaskTimeScope(task_id=t1.task_id, time_scope_id="2020-ww04"))
+    task_v1_session.add(
+        TaskTimeScope(task_id=t1.task_id, time_scope_id="2021-ww20.2"))
+    task_v1_session.commit()
+
+    t2 = do_one(task_v2_session, t1)
+    assert t2.desc == t1.desc
+    assert len(t1.scopes) == len(t2.linkages)
+
+
 def test_2g_simple(task_v1_session, task_v2_session):
     t1a = _make_task(task_v1_session, 15)
     t1b = _make_task(task_v1_session, 1)
@@ -170,6 +191,26 @@ def test_2g_simple(task_v1_session, task_v2_session):
 
     t2 = do_one(task_v2_session, t1a)
     assert t2.desc == t1a.desc
+
+
+def test_2g_total_overlap(task_v1_session, task_v2_session):
+    t1_0 = _test_orphan(task_v1_session, task_v2_session, 5, 0)
+    t1_3 = _test_orphan(task_v1_session, task_v2_session, 7, 3)
+    t1_6 = _test_orphan(task_v1_session, task_v2_session, 9, 8)
+
+    # Make the middle task the "parent", for lots of dramatic conflict
+    t1_0.parent_id = t1_3.task_id
+    t1_6.parent_id = t1_3.task_id
+    task_v1_session.commit()
+
+    # Clear Task_v2 entries, because _test_orphan() creates those also
+    task_v2_session.query(TaskLinkage).delete()
+    task_v2_session.query(Task_v2).delete()
+    task_v2_session.commit()
+
+    t2 = do_one(task_v2_session, t1_3)
+    assert t2.desc == t1_3.desc
+    # TODO: Check lots of other fields
 
 
 def test_2g_conflict(task_v1_session, task_v2_session):

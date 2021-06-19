@@ -203,31 +203,11 @@ def _migrate_shallow_tree(session, t1: Task_v1) -> Task_v2:
     - child tasks can have multiple scopes, which can overlap and interleave in time
       with the parent linkages, and even resolution.
     """
-    t2 = Task_v2(desc=t1.desc, category=t1.category, time_estimate=t1.time_estimate)
-    session.add(t2)
-    session.flush()
-
-    new_linkages = []
-    for scope_id in _get_scopes(t1):
-        linkage = TaskLinkage(task_id=t2.task_id, time_scope_id=scope_id)
-        session.add(linkage)
-        new_linkages.append(linkage)
-
-        linkage.created_at = datetime.now()
-
-        # Append "roll => XX.Y" resolution to older linkages
-        if new_linkages:
-            new_linkages[-1].resolution = f"roll => {linkage.time_scope_id}"
-
-    for child_task in t1.children:
-        for child_scope_id in _get_scopes(child_task):
-            linkage = TaskLinkage(task_id=t2.task_id, time_scope_id=child_scope_id)
-
     raise ValueError(f"Failed to migrate {t1}, childed tasks not supported")
 
 
 def _migrate_tree(session, t1: Task_v1) -> Task_v2:
-    raise ValueError(f"Failed to migrate {t1}, childed tasks not supported")
+    raise ValueError(f"Failed to migrate {t1}, super-childed tasks not supported")
 
 
 def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
