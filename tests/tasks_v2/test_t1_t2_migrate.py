@@ -210,6 +210,10 @@ def test_2g_total_overlap(task_v1_session, task_v2_session):
 
     t2 = do_one(task_v2_session, t1_3)
     assert t2.desc == t1_3.desc
+    # Due to how _test_orphan() generates linkages, the first N should be identical
+    # However, the first 3 are random (so this number could actually vary, though
+    # it's expected to be 11).
+    assert 8 <= len(t2.linkages) <= 8 + 3
     # TODO: Check lots of other fields
 
 

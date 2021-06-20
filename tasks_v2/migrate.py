@@ -161,6 +161,7 @@ def _migrate_simple(session, t1: Task_v1) -> Task_v2:
     t2 = Task_v2(desc=t1.desc, category=t1.category, time_estimate=t1.time_estimate)
     session.add(t2)
     session.flush()
+    print(f"DEBUG: {t2} <= _migrate_simple({t1})")
 
     created_at_linkage = None
     prior_linkage = None
@@ -169,12 +170,13 @@ def _migrate_simple(session, t1: Task_v1) -> Task_v2:
         linkage.created_at = datetime.now()
         session.add(linkage)
 
+        # Touch up created_at_linkage
         if scope_id == _force_day_scope(t1.first_scope):
             created_at_linkage = linkage
-            created_at_linkage.created_at = t1.created_at
+            created_at_linkage.created_at = t1.created_at if t1.created_at else datetime.now()
             created_at_linkage.detailed_resolution = pformat(t1.as_json())
 
-        # Append "roll => wwXX.Y" resolution to prior linkage
+        # For "ordinary" linkages, append `roll => wwXX.Y` resolution
         if prior_linkage:
             min_scope_id = TimeScope(t1.first_scope).minimize(scope_id)
             prior_linkage.resolution = f"roll => {min_scope_id}"
@@ -189,7 +191,16 @@ def _migrate_simple(session, t1: Task_v1) -> Task_v2:
     return t2
 
 
-def _migrate_shallow_tree(session, t1: Task_v1) -> Task_v2:
+def _tack_on_peer(session, baseline_t2: Task_v2, t1: Task_v1):
+    """
+    Tacks on the info from the new peer Task_v1 (identical description).
+
+    Mini version of how to handle child Task_v1's.
+    """
+    raise NotImplementedError("Can't handle tasks with duplicate descriptions")
+
+
+def _tack_on_child(session, parent_t2: Task_v2, child_t1: Task_v1):
     """
     Merge a Task, its scopes, and its child Tasks
 
@@ -202,15 +213,83 @@ def _migrate_shallow_tree(session, t1: Task_v1) -> Task_v2:
     - parent task can have multiple scopes; this is the same as _migrate_simple
     - child tasks can have multiple scopes, which can overlap and interleave in time
       with the parent linkages, and even resolution.
+
+    Thinking backwards, from what could go into a TaskLinkage:
+
+    - set of TaskTimeScopes, potentially several
+    - each of Task/Scope linkages, though:
+        - Task_v1.first_scope, which means JSON data and created_at field
+        - Task_v1's final "resolution" scope
+        - other, arbitrary Task_v1 scopes
+
+    This gets complicated if you merge together several of these from (sub-) tasks.
+    Three-by-three means 9 cases, and potentially more if you think of the general case?
+    (Probably not though. Maybe. I think it's just 6x6, where each of the three "new"
+    cases have to do with repeating X potentially infinite times. Er. That's wrong.)
+
+    Hopefully this is just... a way to stack new Task_v1 info onto an existing Task_v2.
+    This would make it easy to support way more arbitrary stacks...
+
+    Things that need to be migrated:
+
+    | source field        | cadence | new purpose |
+    | ---                 | ---     | ---
+    | Task_v1.desc        | once    | top-level Task_v2
+    | Task_v1.first_scope | once    |
+    | Task_v1.category    | once    |
+    | Task_v1.created_at
+    | Task_v1.resolution
+    | Task_v1.time_estimate
+    | TaskTimeScope.time_scope_id
     """
-    raise ValueError(f"Failed to migrate {t1}, childed tasks not supported")
+    print(f"DEBUG: {parent_t2} <= _tack_on_child({child_t1})")
+    if child_t1.category != parent_t2.category:
+        print(f"WARN: categories don't match (parent {parent_t2} is \"{parent_t2.category}\", child {child_t1} is \"{child_t1.category}\")")
+
+    created_at_linkage = None
+    prior_linkage = None
+    for scope_id in _get_scopes(child_t1):
+        linkage = parent_t2.linkage_at(scope_id)
+        session.add(linkage)
+        print(f"DEBUG: Adding {linkage}")
+
+        # Touch up created_at_linkage
+        if scope_id == _force_day_scope(child_t1.first_scope):
+            created_at_linkage = linkage
+
+        # For "ordinary" linkages, append `roll => wwXX.Y (for child Task#ZZZ)`
+        if prior_linkage and not prior_linkage.resolution:
+            prior_linkage.resolution = f"roll => {scope_id} (for child {child_t1})"
+
+        prior_linkage = linkage
+
+    # Touch up created_at_linkage
+    if child_t1.created_at:
+        created_at_linkage.created_at = min(created_at_linkage.created_at, child_t1.created_at)
+    if created_at_linkage.detailed_resolution:
+        print(f"WARN: Can't copy desc from legacy {child_t1}/{created_at_linkage.time_scope_id}, please manually check {created_at_linkage}.detailed_resolution")
+    else:
+        created_at_linkage.detailed_resolution = child_t1.desc
+
+    # Touch up final linkage
+    final_linkage = prior_linkage if prior_linkage else created_at_linkage
+    if final_linkage.resolution and final_linkage.resolution != child_t1.resolution:
+        print(f"WARN: Can't copy resolution from legacy {child_t1}/{created_at_linkage.time_scope_id}, please manually check {created_at_linkage}.detailed_resolution")
+    else:
+        final_linkage.resolution = f"{child_t1.resolution} (for child {child_t1})"
 
 
 def _migrate_tree(session, t1: Task_v1) -> Task_v2:
-    raise ValueError(f"Failed to migrate {t1}, super-childed tasks not supported")
+    """
+    Migrate the fully general case of N depth Task trees
+    """
+    raise NotImplementedError(f"Failed to migrate {t1}, super-childed tasks not supported")
 
 
 def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
+    """
+    Merge a Task, its scopes, and its child Tasks
+    """
     def _task_depth(t: Task_v1) -> int:
         """
         Returns number of layers in task tree, where childless node = 0
@@ -228,7 +307,8 @@ def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
         .filter_by(desc=t1.desc) \
         .one_or_none()
     if baseline_t2:
-        raise NotImplementedError("Can't handle tasks with duplicate descriptions")
+        _tack_on_peer(tasks_v2_session, baseline_t2, t1)
+        return baseline_t2
 
     if not t1.parent and not t1.children:
         return _migrate_simple(tasks_v2_session, t1)
@@ -237,7 +317,13 @@ def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
         if _task_depth(t1) > 1:
             return _migrate_tree(tasks_v2_session, t1)
         else:
-            return _migrate_shallow_tree(tasks_v2_session, t1)
+            parent_t2 = _migrate_simple(tasks_v2_session, t1)
+            tasks_v2_session.flush()
+
+            for child in t1.children:
+                _tack_on_child(tasks_v2_session, parent_t2, child)
+
+            return parent_t2
 
 
 def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:

@@ -39,6 +39,7 @@ class Task(Base):
 
     def linkage_at(self, requested_scope_id: str, create_if_none: bool = True):
         requested_scope = datetime.strptime(requested_scope_id, '%G-ww%V.%u').date()
+
         linkage = TaskLinkage.query \
             .filter_by(task_id=self.task_id, time_scope=requested_scope) \
             .one_or_none()
@@ -50,7 +51,7 @@ class Task(Base):
             linkage.created_at = datetime.now()
             return linkage
 
-        raise ValueError(f"Couldn't find TaskLinkage for #{self.task_id}/{requested_scope}")
+        return None
 
 
 class TaskLinkage(Base):
@@ -58,7 +59,7 @@ class TaskLinkage(Base):
 
     task_id = Column(Integer, ForeignKey("Tasks.task_id"), primary_key=True, nullable=False)
     time_scope = Column(Date, primary_key=True, nullable=False)
-    created_at = Column(DateTime)
+    created_at = Column(DateTime, nullable=False)
     resolution = Column(String)
     detailed_resolution = Column(String)
     time_elapsed = Column(Float)
@@ -76,6 +77,9 @@ class TaskLinkage(Base):
     @time_scope_id.setter
     def time_scope_id(self, value: str):
         self.time_scope = datetime.strptime(value, '%G-ww%V.%u').date()
+
+    def __repr__(self):
+        return f"<TaskLinkage#{self.task_id}/{self.time_scope_id}>"
 
     def as_json(self) -> Dict:
         """

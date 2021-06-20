@@ -1,4 +1,4 @@
-from datetime import date
+from datetime import date, datetime
 
 import pytest
 
@@ -47,6 +47,7 @@ def test_create_basic(task_v2_session):
     task_v2_session.flush()
 
     tl = TaskLinkage(task_id=t.task_id, time_scope=date(2021, 5, 23))
+    tl.created_at = datetime.now()
     task_v2_session.add(tl)
     task_v2_session.commit()
 
