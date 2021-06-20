@@ -203,11 +203,11 @@ def _migrate_shallow_tree(session, t1: Task_v1) -> Task_v2:
     - child tasks can have multiple scopes, which can overlap and interleave in time
       with the parent linkages, and even resolution.
     """
-    raise ValueError(f"Failed to migrate {t1}, childed tasks not supported")
+    raise NotImplementedError(f"Failed to migrate {t1}, childed tasks not supported")
 
 
 def _migrate_tree(session, t1: Task_v1) -> Task_v2:
-    raise ValueError(f"Failed to migrate {t1}, super-childed tasks not supported")
+    raise NotImplementedError(f"Failed to migrate {t1}, super-childed tasks not supported")
 
 
 def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
@@ -246,6 +246,7 @@ def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:
 
     try:
         t2 = _do_one(tasks_v2_session, t1)
+        return t2
     except ValueError as e:
         print(e)
         pprint(t1.as_json())
@@ -270,7 +271,7 @@ def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:
         pprint(t1.as_json())
         raise
 
-    return t2
+    return None
 
 
 def do_multiple(tasks_v1_session,
