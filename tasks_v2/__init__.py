@@ -66,9 +66,26 @@ def load_v2_models(current_db_path: str):
 def _register_endpoints(app: Flask):
     tasks_v2_bp = Blueprint('tasks-v2', __name__)
 
-    @tasks_v2_bp.route("/browse")
+    @tasks_v2_bp.route("/tasks")
     def report_tasks():
-        pass
+        show_resolved = request.args.get('show_resolved')
+        return report.report_tasks(show_resolved=show_resolved)
+
+    @tasks_v2_bp.route("/tasks/<scope_id>")
+    def report_tasks_in_scope():
+        parsed_scope = None
+        try:
+            parsed_scope = TimeScope(escape(request.args.get('scope')))
+            parsed_scope.get_type()
+            page_scope = parsed_scope
+        except ValueError:
+            pass
+
+        return report.report_tasks(page_scope=page_scope)
+
+    @tasks_v2_bp.route("/task/<int:task_id>")
+    def report_one_task(task_id):
+        return report.report_one_task(escape(task_id))
 
     app.register_blueprint(tasks_v2_bp)
 
@@ -117,16 +134,11 @@ def _register_rest_endpoints(app: Flask):
         update.update_task(db_session, task_id, request.form)
         return redirect(f"{request.referrer}#{request.form['backlink']}")
 
-    @tasks_v2_rest_bp.route("/tasks")
+    @tasks_v2_rest_bp.route("/tasks", methods=['get'])
     def get_tasks():
-        page_scope = None
-        try:
-            parsed_scope = TimeScope(escape(request.args.get('scope')))
-            parsed_scope.get_type()
-            page_scope = parsed_scope
-        except ValueError:
-            pass
-
-        return report.report_tasks(page_scope=page_scope)
+        return {
+            "date": datetime.now(),
+            "ok": "not implemented",
+        }
 
     app.register_blueprint(tasks_v2_rest_bp, url_prefix='/v2')

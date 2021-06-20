@@ -91,16 +91,6 @@ def generate_tasks_by_scope(page_scope: str):
     return tasks_by_scope
 
 
-def generate_open_tasks():
-    tasks_query = Task.query \
-        .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
-        .filter(TaskLinkage.resolution == None) \
-        .order_by(Task.category)
-
-    today = datetime.now().date()
-    return {today.strftime("%G-ww%V.%u"): tasks_query.all()}
-
-
 def render_scope(task_date, section_date_str: str):
     section_date = datetime.strptime(section_date_str, "%G-ww%V.%u").date()
 
@@ -135,7 +125,8 @@ def render_scope(task_date, section_date_str: str):
 </div>'''
 
 
-def report_tasks(page_scope: Optional[TimeScope]):
+def report_tasks(page_scope: Optional[TimeScope] = None,
+                 show_resolved: bool = False):
     render_kwargs = {}
 
     # If there are previous/next links, add them
@@ -148,8 +139,23 @@ def report_tasks(page_scope: Optional[TimeScope]):
     # Identify all tasks within those scopes
     if page_scope:
         render_kwargs['tasks_by_scope'] = generate_tasks_by_scope(page_scope)
+    elif show_resolved:
+        today_scope_id = datetime.now().strftime("%G-ww%V.%u")
+        render_kwargs['tasks_by_scope'] = {
+            today_scope_id: Task.query \
+                .order_by(Task.category) \
+                .all(),
+        }
     else:
-        render_kwargs['tasks_by_scope'] = generate_open_tasks()
+        today_scope_id = datetime.now().strftime("%G-ww%V.%u")
+        tasks_query = Task.query \
+            .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+            .filter(TaskLinkage.resolution == None) \
+            .order_by(Task.category)
+
+        render_kwargs['tasks_by_scope'] = {
+            today_scope_id: tasks_query.all(),
+        }
 
     # Print a short/human-readable scope string
     def short_scope(t: Task, ref_scope):

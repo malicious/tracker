@@ -211,7 +211,7 @@ document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
   <div>
     <label>task_id</label>
     <span>{{t.task_id}}</span>
-    <button class="clone" formaction="{{url_for(".create_task")}}">clone task</button>
+    <button class="clone" formaction="{{url_for("tasks-v2-rest.create_task")}}">clone task</button>
   </div>
   <div>
     <label>category</label>
