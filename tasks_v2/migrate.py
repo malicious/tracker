@@ -1,6 +1,5 @@
 import json
 from datetime import datetime
-from pprint import pprint, pformat
 from typing import Optional, List
 
 from sqlalchemy.exc import IntegrityError, StatementError
@@ -34,116 +33,6 @@ def _get_scopes(t: Task_v1):
     return [_force_day_scope(tts.time_scope_id) for tts in tts_query.all()]
 
 
-def _construct_linkages(t1: Task_v1, t2: Task_v2):
-    """
-    Turn TaskTimeScopes and child tasks into TaskLinkages
-    """
-    draft_linkages = {}
-
-    # Add all scopes attached to Task_v1
-    t1_scopes = _get_scopes(t1)
-    for index, scope in enumerate(t1_scopes):
-        tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
-        tl.created_at = datetime.now()
-        draft_linkages[scope] = tl
-    del index, scope
-
-    # Put resolution info into final scope
-    tl_final = draft_linkages[t1_scopes[-1]]
-    tl_final.resolution = t1.resolution
-    tl_final.time_elapsed = t1.time_actual
-    del tl_final
-    del t1_scopes
-
-    # Case: unclear, gonna do our best
-    def parse_child(child_task: Task_v1):
-        child_task_scopes = _get_scopes(child_task)
-        if len(child_task_scopes) < 1:
-            raise ValueError(f"ERROR: Task #{child_task.task_id} has no associated scopes")
-
-        should_populate_first_scope = child_task_scopes[0] not in draft_linkages
-
-        # Create a new linkage for each new child scope
-        for index, scope in enumerate(child_task_scopes):
-            if not scope in draft_linkages:
-                tl = TaskLinkage(task_id=t2.task_id, time_scope_id=scope)
-                tl.created_at = datetime.now()
-                draft_linkages[scope] = tl
-        del index, scope
-
-        # Then, dump all the child task info into the first associated scope
-        info_string = child_task.desc
-
-        if child_task.resolution != "info":
-            # Meld the resolution + desc into the TaskLinkage's resolution info
-            info_string = f"({child_task.resolution}) {child_task.desc}"
-
-        if not child_task.resolution:
-            # TODO: We might be able to just leave this open
-            raise ValueError(
-                f"ERROR: Task #{t1.task_id} has child #{child_task.task_id} still open, must be resolved manually")
-
-        # Set or append the info string
-        tl_0 = draft_linkages[child_task_scopes[0]]
-        if not tl_0.detailed_resolution:
-            tl_0.detailed_resolution = info_string
-        else:
-            # If multiple child tasks existed, append info
-            if tl_0.detailed_resolution[0:2] != "- ":
-                tl_0.detailed_resolution = f"- {tl_0.detailed_resolution}"
-            tl_0.detailed_resolution = f"{tl_0.detailed_resolution}\n- {info_string}"
-
-        del info_string
-
-        # Update accessory fields, if we can
-        if should_populate_first_scope:
-            tl_0.created_at = child_task.created_at
-
-        if child_task.time_actual:
-            if tl_0.time_elapsed:
-                tl_0.time_elapsed += child_task.time_actual
-            else:
-                tl_0.time_elapsed = child_task.time_actual
-
-    def add_child_tasks(t1: Task_v1):
-        for child in t1.children:
-            # print(f"DEBUG: evaluating child #{child.task_id}")
-            parse_child(child)
-            add_child_tasks(child)
-
-    add_child_tasks(t1)
-
-    # Done with initial import pass, add additional info
-    draft_linkages_sorted = sorted(draft_linkages.items())
-    for index, (scope, tl) in enumerate(draft_linkages_sorted):
-        # attempt to fill in "roll =>" entries (skip the last entry in the set, though)
-        if index < len(draft_linkages_sorted) - 1:
-            if not tl.resolution:
-                tl.resolution = f"roll => {draft_linkages_sorted[index + 1][0]}"
-
-        # in the final entry in the set, dump t1's complete JSON
-        elif index == len(draft_linkages_sorted) - 1:
-            if tl.detailed_resolution:
-                # NB This happens for 129 of 800 tasks in sample data, don't throw
-                print(f"WARN: Task {t1.task_id} already has a detailed_resolution, skipping JSON dump")
-            else:
-                tl.detailed_resolution = json.dumps(t1.as_json(), indent=4)
-
-        # add "migrated from" note, where applicable
-        if not tl.detailed_resolution:
-            tl.detailed_resolution = f"migrated from Task_v1 #{t1.task_id}"
-    del index, scope, tl
-
-    # Sometimes child tasks have scopes that extend out past the parent
-    final_linkage = draft_linkages_sorted[-1][1]
-    if t1.resolution and not final_linkage.resolution:
-        print(
-            f"WARN: task #{t1.task_id} imported, but final child scope {final_linkage.time_scope_id} is later than final parent scope {t1.first_scope}")
-    del final_linkage
-
-    return draft_linkages
-
-
 def _migrate_simple(session, t1: Task_v1) -> Task_v2:
     """
     Migrate an orphan task
@@ -174,7 +63,7 @@ def _migrate_simple(session, t1: Task_v1) -> Task_v2:
         if scope_id == _force_day_scope(t1.first_scope):
             created_at_linkage = linkage
             created_at_linkage.created_at = t1.created_at if t1.created_at else datetime.now()
-            created_at_linkage.detailed_resolution = pformat(t1.as_json())
+            created_at_linkage.detailed_resolution = json.dumps(t1.as_json(), indent=4)
 
         # For "ordinary" linkages, append `roll => wwXX.Y` resolution
         if prior_linkage:
@@ -196,12 +85,44 @@ def _tack_on_peer(session, baseline_t2: Task_v2, t1: Task_v1):
     Tacks on the info from the new peer Task_v1 (identical description).
 
     Mini version of how to handle child Task_v1's.
+    See _tack_on_child() for the reference implementation.
     """
     print(f"DEBUG: {baseline_t2} <= _tack_on_peer({t1})")
-    print(f"ERROR: Can't handle tasks with duplicate descriptions")
-    return
+    if t1.category and t1.category != baseline_t2.category:
+        print(f"WARN: new category will be lost: \"{t1.category}\"")
+        print(f"      baseline category is     : \"{baseline_t2.category}\"")
 
-    raise NotImplementedError("Can't handle tasks with duplicate descriptions")
+    created_at_linkage = None
+    prior_linkage = None
+    for scope_id in _get_scopes(t1):
+        linkage = TaskLinkage(task_id=baseline_t2.task_id, time_scope_id=scope_id)
+        linkage.created_at = datetime.now()
+        session.add(linkage)
+
+        if scope_id == _force_day_scope(t1.first_scope):
+            created_at_linkage = linkage
+
+        if prior_linkage:
+            prior_linkage.resolution = f"roll => {scope_id} (for peer {t1})"
+
+        prior_linkage = linkage
+
+    if t1.created_at:
+        created_at_linkage.created_at = min(created_at_linkage.created_at, t1.created_at)
+
+    final_linkage = prior_linkage if prior_linkage else created_at_linkage
+    if final_linkage.resolution and final_linkage.resolution != t1.resolution:
+        print(f"WARN: peer resolution will be lost: \"{t1.resolution[:40]}\"")
+        print(f"      existing resolution is      : \"{final_linkage.resolution[:40]}\"" )
+        print(f"      copied from legacy {t1}/{created_at_linkage.time_scope_id}")
+    else:
+        final_linkage.resolution = t1.resolution
+    if final_linkage.time_elapsed is not None and t1.time_actual:
+        final_linkage.time_elapsed += t1.time_actual
+    else:
+        final_linkage.time_elapsed = t1.time_actual
+
+    return baseline_t2
 
 
 def _tack_on_child(session, parent_t2: Task_v2, child_t1: Task_v1):
@@ -246,7 +167,7 @@ def _tack_on_child(session, parent_t2: Task_v2, child_t1: Task_v1):
     | Task_v1.time_estimate
     | TaskTimeScope.time_scope_id
     """
-    print(f"DEBUG: {parent_t2} <= _tack_on_child({child_t1})")
+    print(f"DEBUG: {parent_t2} <=  _tack_on_child({child_t1})")
     if child_t1.category != parent_t2.category:
         print(f"WARN: categories don't match (parent {parent_t2} is \"{parent_t2.category}\", child {child_t1} is \"{child_t1.category}\")")
 
@@ -255,7 +176,6 @@ def _tack_on_child(session, parent_t2: Task_v2, child_t1: Task_v1):
     for scope_id in _get_scopes(child_t1):
         linkage = parent_t2.linkage_at(scope_id)
         session.add(linkage)
-        print(f"DEBUG: Adding {linkage}")
 
         # Touch up created_at_linkage
         if scope_id == _force_day_scope(child_t1.first_scope):
@@ -271,16 +191,23 @@ def _tack_on_child(session, parent_t2: Task_v2, child_t1: Task_v1):
     if child_t1.created_at:
         created_at_linkage.created_at = min(created_at_linkage.created_at, child_t1.created_at)
     if created_at_linkage.detailed_resolution:
-        print(f"WARN: Can't copy desc from legacy {child_t1}/{created_at_linkage.time_scope_id}, please manually check {created_at_linkage}.detailed_resolution")
+        print(f"WARN: child desc will be lost : {repr(child_t1.desc[:40])}")
+        print(f"      existing desc/resolution: {repr(created_at_linkage.detailed_resolution[:40])}" )
+        print(f"      copied from legacy {child_t1}/{created_at_linkage.time_scope_id}")
     else:
         created_at_linkage.detailed_resolution = child_t1.desc
 
     # Touch up final linkage
     final_linkage = prior_linkage if prior_linkage else created_at_linkage
     if final_linkage.resolution and final_linkage.resolution != child_t1.resolution:
-        print(f"WARN: Can't copy resolution from legacy {child_t1}/{created_at_linkage.time_scope_id}, please manually check {created_at_linkage}.detailed_resolution")
+        print(f"WARN: child resolution will be lost: \"{child_t1.resolution[:40]}\"")
+        print(f"      existing resolution is       : \"{final_linkage.resolution[:40]}\"" )
     else:
         final_linkage.resolution = f"{child_t1.resolution} (for child {child_t1})"
+    if final_linkage.time_elapsed is not None and child_t1.time_actual:
+        final_linkage.time_elapsed += child_t1.time_actual
+    else:
+        final_linkage.time_elapsed = child_t1.time_actual
 
 
 def _migrate_tree(session, t1: Task_v1) -> Task_v2:
@@ -294,6 +221,7 @@ def _migrate_tree(session, t1: Task_v1) -> Task_v2:
     while children_to_tack_on:
         current_child: Task_v1 = children_to_tack_on.pop()
         children_to_tack_on.extend(current_child.children)
+
         _tack_on_child(session, parent_t2, current_child)
         session.flush()
 
@@ -349,7 +277,7 @@ def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:
         t2 = _do_one(tasks_v2_session, t1)
     except ValueError as e:
         print(e)
-        pprint(t1.as_json())
+        print(json.dumps(t1.as_json(), indent=2))
         raise
 
     try:
@@ -360,7 +288,7 @@ def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:
         print()
         print(e)
         print()
-        pprint(t1.as_json())
+        print(json.dumps(t1.as_json(), indent=2))
         raise
     except IntegrityError as e:
         session.rollback()
@@ -368,7 +296,7 @@ def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:
         print()
         print(e)
         print()
-        pprint(t1.as_json())
+        print(json.dumps(t1.as_json(), indent=2))
         raise
 
     return t2

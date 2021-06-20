@@ -162,7 +162,7 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
     </div>
 
     {# TODO: what number should this be? by date? #}
-    {% if false and t.linkages|length > 1 %}
+    {% if t.linkages|length > 1 %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
     {% else %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">

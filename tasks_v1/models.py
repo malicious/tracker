@@ -33,7 +33,11 @@ class Task(Base):
     )
 
     def __repr__(self):
-        return f"<Task_v1 #{self.task_id}: \"{self.desc}\">"
+        desc = self.desc
+        if len(desc) > 50:
+            desc = self.desc[:40] + "…"
+
+        return f"<Task_v1#{self.task_id}: \"{desc}\">"
 
     def get_parent(self):
         return Task.query \

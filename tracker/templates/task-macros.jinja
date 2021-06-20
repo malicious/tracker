@@ -189,7 +189,7 @@ document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
     <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}">
   </div>
   <div>
-    <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution if tl.resolution}}">
+    <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution | escape if tl.resolution}}">
   </div>
   <div>
     <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
