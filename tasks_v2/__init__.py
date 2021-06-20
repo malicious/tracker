@@ -72,10 +72,10 @@ def _register_endpoints(app: Flask):
         return report.report_tasks(show_resolved=show_resolved)
 
     @tasks_v2_bp.route("/tasks/<scope_id>")
-    def report_tasks_in_scope():
-        parsed_scope = None
+    def report_tasks_in_scope(scope_id):
+        page_scope = None
         try:
-            parsed_scope = TimeScope(escape(request.args.get('scope')))
+            parsed_scope = TimeScope(scope_id)
             parsed_scope.get_type()
             page_scope = parsed_scope
         except ValueError:

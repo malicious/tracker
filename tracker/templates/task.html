@@ -68,6 +68,14 @@ body {
 .task-scope {
   color: #bbb;
 }
+
+.resolved {
+  color: var(--disabled-fg-color);
+}
+.resolved .task-scope {
+  color: var(--disabled-fg-color);
+}
+
 .bonus-options {
   width: 100%;
   position: relative;
@@ -142,13 +150,22 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
 {% macro render_task(t, scope) %}
 <div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
 <label for="toggle-edit-{{t.task_id}}-{{scope}}">
+{% if get_resolution(t) %}
+  <div class="task-only resolved">
+{% else %}
   <div class="task-only">
-  {% if render_scope %}
+{% endif %}
+  {% if render_scope and not get_resolution(t) %}
     {{ render_scope(t.linkages[0].time_scope, scope) | safe }}
   {% elif short_scope(t, scope) %}
     <div class="task-scope">{{ short_scope(t, scope) }}</div>
   {% endif %}
-    <div class="task-desc">{{ t.desc }}</div>
+    <div class="task-desc">
+    {% if get_resolution(t) %}
+      <span class="task-resolution">({{ get_resolution(t) }}) </span>
+    {% endif %}
+      {{ t.desc }}
+    </div>
   </div>
 </label>
 
@@ -162,7 +179,7 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
     </div>
 
     {# TODO: what number should this be? by date? #}
-    {% if t.linkages|length > 1 %}
+    {% if t.linkages|length > 1 and not get_resolution(t) %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
     {% else %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">

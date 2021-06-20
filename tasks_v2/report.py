@@ -62,19 +62,19 @@ def generate_tasks_by_scope(page_scope: str):
 
         m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d).(\d)", scope)
         if m:
-            start = datetime.strptime(scope, "%G-ww%V.%u")
+            start = datetime.strptime(scope, "%G-ww%V.%u").date()
             return TaskLinkage.query \
-                .filter_by(time_scope_id=start)
+                .filter_by(time_scope=start)
 
         raise ValueError(f"TODO: no idea how to handle {scope}")
 
     linkages_query = generate_tl_query(page_scope) \
-        .order_by(TaskLinkage.time_scope_id)
+        .order_by(TaskLinkage.time_scope)
 
     page_scopes_all = [
         *TimeScopeUtils.enclosing_scope(page_scope, recurse=True),
         page_scope,
-        *[tl.time_scope_id for tl in linkages_query.all()],
+        *[tl.time_scope for tl in linkages_query.all()],
     ]
 
     # Identify all tasks within those scopes
@@ -83,8 +83,8 @@ def generate_tasks_by_scope(page_scope: str):
     for scope in page_scopes_all:
         tasks_in_scope_query = Task.query \
             .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
-            .filter(TaskLinkage.time_scope_id == scope) \
-            .order_by(TaskLinkage.time_scope_id, Task.category)
+            .filter(TaskLinkage.time_scope == scope) \
+            .order_by(TaskLinkage.time_scope, Task.category)
 
         tasks_by_scope[scope] = tasks_in_scope_query.all()
 
@@ -125,6 +125,22 @@ def render_scope(task_date, section_date_str: str):
 </div>'''
 
 
+def get_resolution(t: Task):
+    # If there's any open linkages, return unresolved
+    # TODO: import the db session and use exists()/scalar()
+    open_linkages_exist = TaskLinkage.query \
+        .filter_by(task_id=t.task_id, resolution=None) \
+        .all()
+    if open_linkages_exist:
+        return None
+
+    final_linkage = TaskLinkage.query \
+        .filter_by(task_id=t.task_id) \
+        .order_by(TaskLinkage.time_scope) \
+        .all()[-1]
+    return final_linkage.resolution
+
+
 def report_tasks(page_scope: Optional[TimeScope] = None,
                  show_resolved: bool = False):
     render_kwargs = {}
@@ -132,9 +148,9 @@ def report_tasks(page_scope: Optional[TimeScope] = None,
     # If there are previous/next links, add them
     if page_scope:
         prev_scope = TimeScopeUtils.prev_scope(page_scope)
-        render_kwargs['prev_scope'] = f'<a href="{url_for(".get_tasks", scope=prev_scope)}">{prev_scope}</a>'
+        render_kwargs['prev_scope'] = f'<a href="{url_for(".report_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
         next_scope = TimeScopeUtils.next_scope(page_scope)
-        render_kwargs['next_scope'] = f'<a href="{url_for(".get_tasks", scope=next_scope)}">{next_scope}</a>'
+        render_kwargs['next_scope'] = f'<a href="{url_for(".report_tasks_in_scope", scope_id=next_scope)}">{next_scope}</a>'
 
     # Identify all tasks within those scopes
     if page_scope:
@@ -159,13 +175,15 @@ def report_tasks(page_scope: Optional[TimeScope] = None,
 
     # Print a short/human-readable scope string
     def short_scope(t: Task, ref_scope):
-        short_scope_str = t.linkages[0].time_scope_id.strftime("%G-ww%V.%u")
+        short_scope_str = t.linkages[0].time_scope_id
         if short_scope_str[0:5] == ref_scope[0:5]:
             short_scope_str = short_scope_str[5:]
 
         return short_scope_str
 
     render_kwargs['short_scope'] = short_scope
+
+    render_kwargs['get_resolution'] = get_resolution
 
     render_kwargs['render_scope'] = render_scope
 
