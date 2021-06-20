@@ -50,7 +50,7 @@ def _migrate_simple(session, t1: Task_v1) -> Task_v2:
     t2 = Task_v2(desc=t1.desc, category=t1.category, time_estimate=t1.time_estimate)
     session.add(t2)
     session.flush()
-    print(f"DEBUG: {t2} <= _migrate_simple({t1})")
+    #print(f"DEBUG: {t2} <= _migrate_simple({t1})")
 
     created_at_linkage = None
     prior_linkage = None
@@ -168,8 +168,9 @@ def _tack_on_child(session, parent_t2: Task_v2, child_t1: Task_v1):
     | TaskTimeScope.time_scope_id
     """
     print(f"DEBUG: {parent_t2} <=  _tack_on_child({child_t1})")
-    if child_t1.category != parent_t2.category:
-        print(f"WARN: categories don't match (parent {parent_t2} is \"{parent_t2.category}\", child {child_t1} is \"{child_t1.category}\")")
+    if child_t1.category and child_t1.category != parent_t2.category:
+        print(f"WARN: new category will be lost: \"{child_t1.category}\"")
+        print(f"      parent category is       : \"{parent_t2.category}\"")
 
     created_at_linkage = None
     prior_linkage = None
@@ -232,19 +233,6 @@ def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
     """
     Merge a Task, its scopes, and its child Tasks
     """
-    def _task_depth(t: Task_v1) -> int:
-        """
-        Returns number of layers in task tree, where childless node = 0
-
-        - task with children = depth 1
-        - task with children with children = depth 2
-        """
-        t_depth = 0
-        for child in t.children:
-            t_depth = max(t_depth, _task_depth(child) + 1)
-
-        return t_depth
-
     baseline_t2 = Task_v2.query \
         .filter_by(desc=t1.desc) \
         .one_or_none()
@@ -256,25 +244,16 @@ def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
         return _migrate_simple(tasks_v2_session, t1)
 
     if not t1.parent and t1.children:
-        if _task_depth(t1) > 1:
-            return _migrate_tree(tasks_v2_session, t1)
-        else:
-            parent_t2 = _migrate_simple(tasks_v2_session, t1)
-            tasks_v2_session.flush()
-
-            for child in t1.children:
-                _tack_on_child(tasks_v2_session, parent_t2, child)
-                tasks_v2_session.flush()
-
-            return parent_t2
+        return _migrate_tree(tasks_v2_session, t1)
 
 
 def do_one(tasks_v2_session, t1: Task_v1) -> Optional[Task_v2]:
-    if t1.parent:
-        return None
-
     try:
+        if t1.parent:
+            return None
+
         t2 = _do_one(tasks_v2_session, t1)
+
     except ValueError as e:
         print(e)
         print(json.dumps(t1.as_json(), indent=2))
