@@ -37,6 +37,21 @@ class Task(Base):
 
         return response_dict
 
+    def linkage_at(self, requested_scope_id: str, create_if_none: bool = True):
+        requested_scope = datetime.strptime(requested_scope_id, '%G-ww%V.%u').date()
+        linkage = TaskLinkage.query \
+            .filter_by(task_id=self.task_id, time_scope=requested_scope) \
+            .one_or_none()
+        if linkage:
+            return linkage
+
+        if create_if_none:
+            linkage = TaskLinkage(task_id=self.task_id, time_scope=requested_scope)
+            linkage.created_at = datetime.now()
+            return linkage
+
+        raise ValueError(f"Couldn't find TaskLinkage for #{self.task_id}/{requested_scope}")
+
 
 class TaskLinkage(Base):
     __tablename__ = 'TaskLinkages'

@@ -44,7 +44,7 @@ def test_create_and_retrieve(task_v2_session):
 def test_create_basic(task_v2_session):
     t = Task(desc="basic task")
     task_v2_session.add(t)
-    task_v2_session.commit()
+    task_v2_session.flush()
 
     tl = TaskLinkage(task_id=t.task_id, time_scope=date(2021, 5, 23))
     task_v2_session.add(tl)
@@ -69,3 +69,24 @@ def test_tl_ts_set_invalid():
     tl = TaskLinkage()
     with pytest.raises(ValueError):
         tl.time_scope_id = "garbage"
+
+
+def test_linkage_at(task_v2_session):
+    t = Task(desc="g2ruI9wLN1A3cCJ6vLHI63gN")
+    task_v2_session.add(t)
+    task_v2_session.flush()
+
+    tl_2 = t.linkage_at("2021-ww34.2")
+    tl_2.resolution = "done, but check me for duplicates"
+    task_v2_session.add(tl_2)
+    task_v2_session.commit()
+
+    tl_2b = t.linkage_at("2021-ww34.2")
+    # TODO: Implement proper '==' on TaskLinkage
+    assert tl_2b
+    assert tl_2.task_id == tl_2b.task_id
+    assert tl_2.time_scope == tl_2b.time_scope
+    assert tl_2.resolution == tl_2b.resolution
+
+    tl_3 = t.linkage_at("2021-ww34.3")
+    assert tl_3
