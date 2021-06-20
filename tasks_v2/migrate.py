@@ -197,6 +197,10 @@ def _tack_on_peer(session, baseline_t2: Task_v2, t1: Task_v1):
 
     Mini version of how to handle child Task_v1's.
     """
+    print(f"DEBUG: {baseline_t2} <= _tack_on_peer({t1})")
+    print(f"ERROR: Can't handle tasks with duplicate descriptions")
+    return
+
     raise NotImplementedError("Can't handle tasks with duplicate descriptions")
 
 
@@ -283,7 +287,17 @@ def _migrate_tree(session, t1: Task_v1) -> Task_v2:
     """
     Migrate the fully general case of N depth Task trees
     """
-    raise NotImplementedError(f"Failed to migrate {t1}, super-childed tasks not supported")
+    parent_t2 = _migrate_simple(session, t1)
+    session.flush()
+
+    children_to_tack_on: List[Task_v1] = t1.children
+    while children_to_tack_on:
+        current_child: Task_v1 = children_to_tack_on.pop()
+        children_to_tack_on.extend(current_child.children)
+        _tack_on_child(session, parent_t2, current_child)
+        session.flush()
+
+    return parent_t2
 
 
 def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
@@ -322,6 +336,7 @@ def _do_one(tasks_v2_session, t1: Task_v1) -> Task_v2:
 
             for child in t1.children:
                 _tack_on_child(tasks_v2_session, parent_t2, child)
+                tasks_v2_session.flush()
 
             return parent_t2
 
