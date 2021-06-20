@@ -178,8 +178,7 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
       <pre>{{ to_details_html(t)|safe }}</pre>
     </div>
 
-    {# TODO: what number should this be? by date? #}
-    {% if t.linkages|length > 1 and not get_resolution(t) %}
+    {% if false and t.linkages|length > 1 and not get_resolution(t) %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
     {% else %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
