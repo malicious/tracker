@@ -2,7 +2,7 @@ import os
 
 import click
 import sqlalchemy
-from flask import Blueprint, Flask, request
+from flask import Blueprint, Flask, redirect, request
 from flask.cli import with_appcontext
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -56,6 +56,22 @@ def _register_bp(app):
         page_domain = request.args.get('domain')
 
         return report.report_notes(page_scope=page_scope, page_domain=page_domain)
+
+    @notes_bp.route("/refresh-notes")
+    def refresh_notes():
+        filename = None
+        try:
+            filename = escape(request.args.get("filename"))
+        except ValueError:
+            return {"error": "invalid filename"}
+
+        with open(filename, 'r') as csv_file:
+            add.import_from_csv(csv_file, db_session)
+
+        # silently redirect back to current page that user clicked on
+        # - ideally, client has JavaScript that doesn't actually move the browser
+        # - double-ideally, client updates in a way that doesn't force page refresh
+        return redirect(request.referrer or url_for('.report_notes_all'))
 
     app.register_blueprint(notes_bp, url_prefix='/')
 
