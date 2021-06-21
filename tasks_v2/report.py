@@ -54,41 +54,41 @@ def report_one_task(task_id, return_bare_dict=False):
     return f'<html><body><pre>{as_text}</pre></body></html>'
 
 
-def generate_tasks_by_scope(page_scope: str):
-    def generate_tl_query(scope: str):
-        m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d)", scope)
-        if m:
-            raise ValueError("TODO: week queries not supported")
-
-        m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d).(\d)", scope)
-        if m:
-            start = datetime.strptime(scope, "%G-ww%V.%u").date()
-            return TaskLinkage.query \
-                .filter_by(time_scope=start)
-
-        raise ValueError(f"TODO: no idea how to handle {scope}")
-
-    linkages_query = generate_tl_query(page_scope) \
-        .order_by(TaskLinkage.time_scope)
-
-    page_scopes_all = [
-        *TimeScopeUtils.enclosing_scope(page_scope, recurse=True),
-        page_scope,
-        *[tl.time_scope for tl in linkages_query.all()],
-    ]
-
-    # Identify all tasks within those scopes
-    tasks_by_scope = {}
-
-    for scope in page_scopes_all:
-        tasks_in_scope_query = Task.query \
+def generate_tasks_by_scope(scope_id: str):
+    # day-like scope (`%G-ww%V.%u`)
+    m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d).(\d)", scope_id)
+    if m:
+        scope = datetime.strptime(scope_id, "%G-ww%V.%u").date()
+        tasks = Task.query \
             .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
             .filter(TaskLinkage.time_scope == scope) \
-            .order_by(TaskLinkage.time_scope, Task.category)
+            .order_by(TaskLinkage.time_scope, Task.category) \
+            .all()
 
-        tasks_by_scope[scope] = tasks_in_scope_query.all()
+        return {
+            scope_id: tasks,
+        }
 
-    return tasks_by_scope
+    # week-like scope (`%G-ww%V`)
+    m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d)", scope_id)
+    if m:
+        tasks_by_scope = {}
+
+        for day in range(1, 8):
+            day_scope_id = f"{scope_id}.{day}"
+            day_scope = datetime.strptime(day_scope_id, "%G-ww%V.%u").date()
+            tasks = Task.query \
+                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .filter(TaskLinkage.time_scope == day_scope) \
+                .order_by(TaskLinkage.time_scope, Task.category) \
+                .all()
+
+            tasks_by_scope[day_scope_id] = tasks
+
+        return tasks_by_scope
+
+    # otherwise, no idea
+    raise ValueError(f"No idea how to handle {repr(scope_id)}")
 
 
 def render_scope(task_date, section_date_str: str):
