@@ -1,82 +1,84 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    {% block head %}
-    <meta charset="UTF-8">
-    <style type="text/css">
-        :root {
-            --default-bg-color: #eee;
-            --default-fg-color: dimgray;
-            --disabled-fg-color: #aaa;
-            --default-hover-color: #ddd;
-        }
-        body {
-            font-family: 'Source Code Pro', monospace;
-            line-height: 1.55;
-            overflow-wrap: break-word;
-            color: var(--default-fg-color);
-            background-color: var(--default-bg-color);
-            margin: 0;
-        }
-        a {
-            color: blue;
-            text-decoration: none;
-        }
-        a:visited {
-            color: blue;
-        }
 
-        .scope-nav {
-            /* general display stuff */
-            font-size: 24px;
-            display: table;
-            /* actual width/appearance-related */
-            padding: 12pt 0 8pt 0;
-            margin: 0 80pt 0 80pt;
-            width: calc(100% - 160pt);
-        }
-        .scope-nav .left {
-            display: table-cell;
-            padding-left: 0.8em;
-        }
-        .scope-nav .right {
-            display: table-cell;
-            text-align: right;
-            padding-right: 0.8em;
-        }
+{% block head %}
+<meta charset="UTF-8">
+<style type="text/css">
+:root {
+  --default-bg-color: #eee;
+  --default-fg-color: dimgray;
+  --disabled-fg-color: #aaa;
+  --default-hover-color: #ddd;
+}
+body {
+  font-family: 'Source Code Pro', monospace;
+  line-height: 1.55;
+  overflow-wrap: break-word;
+  color: var(--default-fg-color);
+  background-color: var(--default-bg-color);
+  margin: 0;
+}
+a {
+  color: blue;
+  text-decoration: none;
+}
+a:visited {
+  color: blue;
+}
 
-        /* sticky header */
-        .scope-nav {
-            position: sticky;
-            top: 0px;
-            z-index: 1;
-            background-color: var(--default-bg-color);
-        }
-        .scope-spacer {
-            height: 12pt;
-        }
-    </style>
-    {% endblock %}
+.scope-nav {
+  /* general display stuff */
+  font-size: 24px;
+  display: table;
+  /* actual width/appearance-related */
+  padding: 12pt 0 8pt 0;
+  margin: 0 80pt 0 80pt;
+  width: calc(100% - 160pt);
+}
+.scope-nav .left {
+  display: table-cell;
+  padding-left: 0.8em;
+}
+.scope-nav .right {
+  display: table-cell;
+  text-align: right;
+  padding-right: 0.8em;
+}
+
+/* sticky header */
+.scope-nav {
+  position: sticky;
+  top: 0px;
+  z-index: 1;
+  background-color: var(--default-bg-color);
+}
+.scope-spacer-上, .scope-spacer-下 {
+  height: 12pt;
+}
+</style>
+{% endblock %}
+
 </head>
 
 
 
 <body>
-<div class="scope-spacer"></div>
+
+<div class="scope-spacer-上"></div>
 <div class="scope-nav">
-    {% if prev_scope %}
-        <div class="left">{{ prev_scope|safe }}</div>
-    {% endif %}
-    {% if next_scope %}
-        <div class="right">{{ next_scope|safe }}</div>
-    {% endif %}
+{% if prev_scope %}
+  <div class="left">{{ prev_scope|safe }}</div>
+{% endif %}
+{% if next_scope %}
+  <div class="right">{{ next_scope|safe }}</div>
+{% endif %}
 </div>
-<div class="scope-spacer"></div>
-
-
+<div class="scope-spacer-下"></div>
 
 {% block content %}
 {% endblock %}
+
 </body>
 </html>
 
