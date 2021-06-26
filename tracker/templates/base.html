@@ -11,6 +11,11 @@
   --disabled-fg-color: #aaa;
   --default-hover-color: #ddd;
   --default-left-right-margin: 8.0%;
+{% if prev_scope or next_scope %}
+  --scope-nav-height: calc(24px + 24px);
+{% else %}
+  --scope-nav-height: 0px;
+{% endif %}
 }
 body {
   font-family: 'Source Code Pro', monospace;
@@ -18,6 +23,7 @@ body {
   color: var(--default-fg-color);
   background-color: var(--default-bg-color);
   margin: 0;
+  position: fixed; /* Safari and elastic scrolling */
 }
 a {
   color: blue;
@@ -34,7 +40,6 @@ a:visited {
   height: 24px;
   display: table;
   padding-top: 24px;
-  padding-bottom: 16px;
 
   /* sample (reference) width calculations */
   padding-left: var(--default-left-right-margin);
@@ -70,16 +75,18 @@ a:visited {
 
 <body>
 
+{% if prev_scope or next_scope %}
 <div class="scope-spacer-上"></div>
 <div class="scope-nav">
-{% if prev_scope %}
-  <div class="left">{{ prev_scope|safe }}</div>
-{% endif %}
-{% if next_scope %}
-  <div class="right">{{ next_scope|safe }}</div>
-{% endif %}
+  {% if prev_scope %}
+    <div class="left">{{ prev_scope|safe }}</div>
+  {% endif %}
+  {% if next_scope %}
+    <div class="right">{{ next_scope|safe }}</div>
+  {% endif %}
 </div>
 <div class="scope-spacer-下"></div>
+{% endif %}
 
 {% block content %}
 {% endblock %}

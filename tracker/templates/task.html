@@ -26,12 +26,14 @@ body > .spacer-下 {
 }
 .scope-header-container {
   position: sticky;
-  top: calc(24px + 24px + 16px);
+  top: calc(var(--scope-nav-height));
+  height: 33px; /* includes 1px border */
   z-index: 2;
   background-color: var(--default-bg-color);
 
   padding-left: var(--default-left-right-margin);
   padding-right: var(--default-left-right-margin);
+  padding-top: 16px;
   padding-bottom: 12px;
   margin-bottom: calc(32px - 8px - 12px);
 }
@@ -48,16 +50,17 @@ body > .spacer-下 {
 }
 .category-header {
   position: sticky;
-  top: calc(24px + 24px + 16px /* .scope-nav */
-    + 33px + 12px /* .scope-header and its -container */);
+  top: calc(var(--scope-nav-height)
+    + 16px + 33px + 12px /* .scope-header and its -container */);
   z-index: 1;
   background-color: var(--default-bg-color);
   font-weight: 600;
 
-  margin-left: var(--default-left-right-margin);
-  margin-right: var(--default-left-right-margin);
-  margin-top: 32px;
-  margin-bottom: 12px;
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
+  margin-top: calc(32px - 12px);
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
 
 .task-and-details {
@@ -71,6 +74,7 @@ body > .spacer-下 {
 }
 
 .task-only {
+  line-height: 1.55;
   padding: 0.5em;
   display: flex;
 }
