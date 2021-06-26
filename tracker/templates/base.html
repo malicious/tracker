@@ -26,20 +26,34 @@
             color: blue;
         }
 
-        .time_scope_nav {
-            font-size: 125%;
-            padding: 0.3em 0 0.3em 0;
+        .scope-nav {
+            /* general display stuff */
+            font-size: 24px;
             display: table;
-            width: 100%;
+            /* actual width/appearance-related */
+            padding: 12pt 0 8pt 0;
+            margin: 0 80pt 0 80pt;
+            width: calc(100% - 160pt);
         }
-        .time_scope_nav .left {
+        .scope-nav .left {
             display: table-cell;
             padding-left: 0.8em;
         }
-        .time_scope_nav .right {
+        .scope-nav .right {
             display: table-cell;
             text-align: right;
             padding-right: 0.8em;
+        }
+
+        /* sticky header */
+        .scope-nav {
+            position: sticky;
+            top: 0px;
+            z-index: 1;
+            background-color: var(--default-bg-color);
+        }
+        .scope-spacer {
+            height: 12pt;
         }
     </style>
     {% endblock %}
@@ -48,7 +62,8 @@
 
 
 <body>
-<div class="time_scope_nav">
+<div class="scope-spacer"></div>
+<div class="scope-nav">
     {% if prev_scope %}
         <div class="left">{{ prev_scope|safe }}</div>
     {% endif %}
@@ -56,6 +71,7 @@
         <div class="right">{{ next_scope|safe }}</div>
     {% endif %}
 </div>
+<div class="scope-spacer"></div>
 
 
 
