@@ -190,7 +190,7 @@ def edit_tasks(page_scope: Optional[TimeScope] = None,
 
     render_kwargs['to_summary_html'] = to_summary_html
 
-    return render_template('task.html', **render_kwargs)
+    return render_template('tasks.html', **render_kwargs)
 
 
 def edit_tasks_simple(*args):

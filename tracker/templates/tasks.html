@@ -74,8 +74,10 @@ body > .spacer-下 {
 }
 
 .task-only {
-  line-height: 1.55;
-  padding: 0.5em;
+  font-size: 16px;
+  line-height: 24px;
+  padding-top: 8px;
+  padding-bottom: 8px;
   display: flex;
 }
 .task-only > .task-scope {
@@ -102,42 +104,54 @@ body > .spacer-下 {
   width: 100%;
   position: relative;
 }
-.bonus-options > label {
-  position: absolute;
-  font-size: var(--tab-label-font-size);
-  top: calc(-2.3 * var(--tab-label-font-size));
+.task-json > div {
+  white-space: pre-wrap;
+  margin: 12px;
+  padding: 12px;
+  border: 1px solid rgba(29,28,29,.13);
+  border-radius: 6px;
+  background: var(--default-bg-color);
+}
 
+.bonus-options > label {
+  height: 24px;
+  line-height: 24px;
+  font-size: var(--tab-label-font-size);
+
+  position: absolute;
+  top: -24px;
   color: var(--tab-label-fg-color);
-  padding: 0.5em 0.5em 0 0.5em;
   text-align: center;
 }
 .bonus-options > label.show-edit {
-  width: 3em;
+  width: 48px;
   right: 0;
 }
 .bonus-options > label.show-json {
-  right: 4em;
+  width: 48px;
+  right: 48px;
 }
-
 .bonus-options > input {
   display: none;
 }
+
 .task-json, .task-edit {
   background-color: var(--tab-selected-bg-color);
   padding: 0.5em;
   font-size: 80%;
-  margin-bottom: 0.5em; /* TODO: this is wrong, makes highlighting weird */
-
-  display: none;
 }
-.task-json > pre {
-  margin: 0; /* Safari? */
-}
-input.show-json:checked ~ label.show-json, input.show-edit:checked ~ label.show-edit {
+input.show-json:checked ~ label.show-json,
+input.show-edit:checked ~ label.show-edit {
   background-color: var(--tab-selected-bg-color);
   border-bottom: 2px solid var(--tab-label-fg-color);
 }
-input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
+
+.task-json,
+.task-edit {
+  display: none;
+}
+input.show-json:checked ~ .task-json,
+input.show-edit:checked ~ .task-edit {
   display: inherit;
   x-border-top: 2px solid hsl(212, 12%, 72%);
   x-border-bottom: 2px solid hsl(212, 12%, 72%);
@@ -195,7 +209,7 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
       <span>json</span>
     </label>
     <div class="task-json">
-      <pre>{{ t.as_json() }}</pre>
+      <div>{{ t.as_json() }}</div>
     </div>
 
     {% if false and t.linkages|length > 1 and not get_resolution(t) %}
