@@ -123,28 +123,41 @@ def render_scope(task_date, section_date_str: str):
 </span>'''
 
 
-def get_resolution(t: Task):
-    # If there's any open linkages, return unresolved
+def get_resolution(t: Task, ref_scope):
+    """
+    At this point, we've already passed through `has_resolution()`
+    """
+    ref_linkage = t.linkage_at(ref_scope, create_if_none=False)
+    if ref_linkage:
+        return ref_linkage.resolution
+
+    final_linkage = TaskLinkage.query \
+        .filter_by(task_id=t.task_id) \
+        .order_by(TaskLinkage.time_scope.desc()) \
+        .limit(1) \
+        .one()
+    return final_linkage.resolution
+
+
+def has_resolution(t: Task, ref_scope):
+    # If we have an _exact_ match for this scope, return its resolution
+    ref_linkage = t.linkage_at(ref_scope, create_if_none=False)
+    if ref_linkage and ref_linkage.resolution:
+        return True
+
+    # Otherwise, ignore whatever `ref_scope` says:
+    #
+    # - if there's any future "TODO", then they're unresolved
+    # - if they're all closed though, print the final resolution
+    #
     # TODO: import the db session and use exists()/scalar()
     open_linkages_exist = TaskLinkage.query \
         .filter_by(task_id=t.task_id, resolution=None) \
         .all()
     if open_linkages_exist:
-        return None
+        return False
 
-    final_linkage = TaskLinkage.query \
-        .filter_by(task_id=t.task_id) \
-        .order_by(TaskLinkage.time_scope) \
-        .all()[-1]
-    return final_linkage.resolution
-
-
-def has_resolution(t: Task, ref_scope):
-    ref_linkage = t.linkage_at(ref_scope, create_if_none=False)
-    if ref_linkage and ref_linkage.resolution:
-        return ref_linkage
-
-    return get_resolution(t)
+    return True
 
 
 def edit_tasks(page_scope: Optional[TimeScope] = None,

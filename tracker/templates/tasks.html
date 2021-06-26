@@ -191,9 +191,9 @@ input.show-edit:checked ~ .task-edit {
   ">
     <div class="task-desc">
     {% if has_resolution(t, scope) %}
-      <span class="task-resolution">({{ get_resolution(t) }}) </span>
+      <span class="task-resolution">({{ get_resolution(t, scope) }}) </span>
     {% endif %}
-  {% if render_scope and not get_resolution(t) %}
+  {% if render_scope and not has_resolution(t, scope) %}
     {{ render_scope(t.linkages[0].time_scope, scope) | safe }}
   {% elif short_scope(t, scope) %}
     <span class="task-scope">{{ short_scope(t, scope) }}</span>
@@ -212,7 +212,7 @@ input.show-edit:checked ~ .task-edit {
       <div>{{ t.as_json() }}</div>
     </div>
 
-    {% if false and t.linkages|length > 1 and not get_resolution(t) %}
+    {% if false and t.linkages|length > 1 and not has_resolution(t, scope) %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
     {% else %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
