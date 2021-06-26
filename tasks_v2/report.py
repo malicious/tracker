@@ -120,9 +120,9 @@ def render_scope(task_date, section_date_str: str):
                  200 - 100 * color_intensity,
                  200 - 100 * color_intensity)
     return f'''
-<div class="task-scope" style="color: rgb({color_rgb[0]}, {color_rgb[1]}, {color_rgb[2]})">
+<span class="task-scope" style="color: rgb({color_rgb[0]}, {color_rgb[1]}, {color_rgb[2]})">
   {short_date_str}
-</div>'''
+</span>'''
 
 
 def get_resolution(t: Task):
@@ -139,6 +139,10 @@ def get_resolution(t: Task):
         .order_by(TaskLinkage.time_scope) \
         .all()[-1]
     return final_linkage.resolution
+
+
+def has_resolution(t: Task, ref_scope):
+    return get_resolution(t)
 
 
 def report_tasks(page_scope: Optional[TimeScope] = None,
@@ -182,9 +186,8 @@ def report_tasks(page_scope: Optional[TimeScope] = None,
         return short_scope_str
 
     render_kwargs['short_scope'] = short_scope
-
+    render_kwargs['has_resolution'] = has_resolution
     render_kwargs['get_resolution'] = get_resolution
-
     render_kwargs['render_scope'] = render_scope
 
     # Tell template about how to format Tasks

@@ -11,35 +11,53 @@
   --tab-label-fg-color: hsl(212, 32%, 60%);
   --tab-selected-bg-color: hsl(210, 0%, 96%);
   --tab-label-font-size: 12px;
-  --default-left-right-margin: 8.0%;
 }
 
 body {
   overflow-wrap: anywhere;
   word-break: break-word; /* Safari */
-
-  margin-bottom: 50em;
+}
+body > .spacer-下 {
+  height: 640px;
 }
 
-.scope-header {
-  font-size: 200%;
-  margin-bottom: 0.8em;
-  border-bottom: 1pt solid dimgrey;
-  margin-left: var(--default-left-right-margin);
-  margin-right: var(--default-left-right-margin);
-  top: 0;
-  height: 1.6em;
-  color: black;
+.scope-container > .spacer-上 {
+  height: 12px;
+}
+.scope-header-container {
+  position: sticky;
+  top: calc(24px + 24px + 16px);
+  z-index: 2;
   background-color: var(--default-bg-color);
+
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
+  padding-bottom: 12px;
+  margin-bottom: calc(32px - 8px - 12px);
+}
+.scope-container > .spacer-下 {
+  height: 64px;
+}
+.scope-header {
+  font-size: 24px;
+  line-height: 24px;
+  height: 24px;
+  color: black;
+  border-bottom: 1px solid dimgrey;
+  padding-bottom: 8px;
 }
 .category-header {
-  font-size: 150%;
-  margin-top: 0.8em;
-  margin-bottom: 0.8em;
+  position: sticky;
+  top: calc(24px + 24px + 16px /* .scope-nav */
+    + 33px + 12px /* .scope-header and its -container */);
+  z-index: 1;
+  background-color: var(--default-bg-color);
+  font-weight: 600;
+
   margin-left: var(--default-left-right-margin);
   margin-right: var(--default-left-right-margin);
-  top: 2.5em;
-  background-color: var(--default-bg-color);
+  margin-top: 32px;
+  margin-bottom: 12px;
 }
 
 .task-and-details {
@@ -150,18 +168,16 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
 {% macro render_task(t, scope) %}
 <div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
 <label for="toggle-edit-{{t.task_id}}-{{scope}}">
-{% if get_resolution(t) %}
-  <div class="task-only resolved">
-{% else %}
-  <div class="task-only">
-{% endif %}
+  <div class="task-only
+    {% if has_resolution(t, scope) %} resolved {% endif %}
+  ">
+    <div class="task-desc">
   {% if render_scope and not get_resolution(t) %}
     {{ render_scope(t.linkages[0].time_scope, scope) | safe }}
   {% elif short_scope(t, scope) %}
-    <div class="task-scope">{{ short_scope(t, scope) }}</div>
+    <span class="task-scope">{{ short_scope(t, scope) }}</span>
   {% endif %}
-    <div class="task-desc">
-    {% if get_resolution(t) %}
+    {% if has_resolution(t, scope) %}
       <span class="task-resolution">({{ get_resolution(t) }}) </span>
     {% endif %}
       {{ t.desc }}
@@ -200,7 +216,11 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
 {% set ns = namespace() %}
 {% for scope, scope_tasks in tasks_by_scope.items() if scope_tasks %}
 <div class="scope-container">
-  <div class="scope-header">## {{ scope }}</div>
+  <div class="spacer-上"></div>
+  <div class="scope-header-container">
+    <div class="scope-header">## {{ scope }}</div>
+  </div>
+
   <div class="category-container">
   {% set ns.prev_task = None %}
   {% for task in scope_tasks %}
@@ -219,7 +239,10 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
     {% set ns.prev_task = task %}
   {% endfor %}
   </div>{# category-container #}
+
+  <div class="spacer-下"></div>
 </div>{# scope-container #}
 {% endfor %}
 
+<div class="spacer-下"></div>
 {% endblock %}

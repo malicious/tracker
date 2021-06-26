@@ -10,10 +10,10 @@
   --default-fg-color: dimgray;
   --disabled-fg-color: #aaa;
   --default-hover-color: #ddd;
+  --default-left-right-margin: 8.0%;
 }
 body {
   font-family: 'Source Code Pro', monospace;
-  line-height: 1.55;
   overflow-wrap: break-word;
   color: var(--default-fg-color);
   background-color: var(--default-bg-color);
@@ -30,11 +30,16 @@ a:visited {
 .scope-nav {
   /* general display stuff */
   font-size: 24px;
+  line-height: 24px;
+  height: 24px;
   display: table;
-  /* actual width/appearance-related */
-  padding: 12pt 0 8pt 0;
-  margin: 0 80pt 0 80pt;
-  width: calc(100% - 160pt);
+  padding-top: 24px;
+  padding-bottom: 16px;
+
+  /* sample (reference) width calculations */
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
+  width: calc(100% - 2 * var(--default-left-right-margin));
 }
 .scope-nav .left {
   display: table-cell;
@@ -50,11 +55,11 @@ a:visited {
 .scope-nav {
   position: sticky;
   top: 0px;
-  z-index: 1;
+  z-index: 100;
   background-color: var(--default-bg-color);
 }
 .scope-spacer-上, .scope-spacer-下 {
-  height: 12pt;
+  height: 12px;
 }
 </style>
 {% endblock %}
