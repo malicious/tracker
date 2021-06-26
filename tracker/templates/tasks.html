@@ -190,14 +190,14 @@ input.show-edit:checked ~ .task-edit {
     {% if has_resolution(t, scope) %} resolved {% endif %}
   ">
     <div class="task-desc">
+    {% if has_resolution(t, scope) %}
+      <span class="task-resolution">({{ get_resolution(t) }}) </span>
+    {% endif %}
   {% if render_scope and not get_resolution(t) %}
     {{ render_scope(t.linkages[0].time_scope, scope) | safe }}
   {% elif short_scope(t, scope) %}
     <span class="task-scope">{{ short_scope(t, scope) }}</span>
   {% endif %}
-    {% if has_resolution(t, scope) %}
-      <span class="task-resolution">({{ get_resolution(t) }}) </span>
-    {% endif %}
       {{ t.desc }}
     </div>
   </div>

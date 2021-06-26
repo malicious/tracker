@@ -140,6 +140,10 @@ def get_resolution(t: Task):
 
 
 def has_resolution(t: Task, ref_scope):
+    ref_linkage = t.linkage_at(ref_scope, create_if_none=False)
+    if ref_linkage and ref_linkage.resolution:
+        return ref_linkage
+
     return get_resolution(t)
 
 

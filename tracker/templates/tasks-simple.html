@@ -109,7 +109,7 @@ input.show-edit:checked ~ .task-edit {
 
   <div class="bonus-options">
     <input type="checkbox" id="toggle-json-{{t.task_id}}-{{instance_id}}" class="show-json"
-    {% if instance_id == 2 %}
+    {% if instance_id == 1 %}
       checked
     {% endif %}
     >
@@ -118,10 +118,12 @@ input.show-edit:checked ~ .task-edit {
     </label>
     <div class="task-json">
       <div>{{ t.as_json() }}</div>
+      {# TODO: this avoids the newlines and other encoding that happen above. why? #}
+      {# <pre>{{ t.as_json_dict()['linkages'][0]['detailed_resolution'] }}</pre> #}
     </div>
 
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{instance_id}}" class="show-edit"
-    {% if instance_id == 1 %}
+    {% if instance_id == 2 %}
       checked
     {% endif %}
     >
