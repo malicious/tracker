@@ -1,3 +1,4 @@
+import json
 from datetime import datetime
 from typing import Dict
 
@@ -20,7 +21,7 @@ class Task(Base):
     def __repr__(self):
         return f"<Task#{self.task_id}>"
 
-    def as_json(self, include_linkages: bool = True) -> Dict:
+    def as_json_dict(self, include_linkages: bool = True) -> Dict:
         response_dict = {
             'task_id': self.task_id,
             'desc': self.desc,
@@ -31,11 +32,14 @@ class Task(Base):
                 response_dict[field] = getattr(self, field)
 
         if include_linkages:
-            linkages_for_dict = [linkage.as_json() for linkage in self.linkages]
+            linkages_for_dict = [linkage.as_json_dict() for linkage in self.linkages]
             if linkages_for_dict:
                 response_dict['linkages'] = linkages_for_dict
 
         return response_dict
+
+    def as_json(self) -> str:
+        return json.dumps(self.as_json_dict(), indent=2, ensure_ascii=False)
 
     def linkage_at(self, requested_scope_id: str, create_if_none: bool = True):
         requested_scope = datetime.strptime(requested_scope_id, '%G-ww%V.%u').date()
@@ -81,7 +85,7 @@ class TaskLinkage(Base):
     def __repr__(self):
         return f"<TaskLinkage#{self.task_id}/{self.time_scope_id}>"
 
-    def as_json(self) -> Dict:
+    def as_json_dict(self) -> Dict:
         """
         Turn into a dict object, for easy JSON printing
 

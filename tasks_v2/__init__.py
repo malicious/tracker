@@ -67,12 +67,12 @@ def _register_endpoints(app: Flask):
     tasks_v2_bp = Blueprint('tasks-v2', __name__)
 
     @tasks_v2_bp.route("/tasks")
-    def report_tasks():
+    def edit_tasks():
         show_resolved = request.args.get('show_resolved')
-        return report.report_tasks(show_resolved=show_resolved)
+        return report.edit_tasks(show_resolved=show_resolved)
 
     @tasks_v2_bp.route("/tasks/<scope_id>")
-    def report_tasks_in_scope(scope_id):
+    def edit_tasks_in_scope(scope_id):
         page_scope = None
         try:
             parsed_scope = TimeScope(scope_id)
@@ -81,11 +81,18 @@ def _register_endpoints(app: Flask):
         except ValueError:
             pass
 
-        return report.report_tasks(page_scope=page_scope)
+        return report.edit_tasks(page_scope=page_scope)
 
     @tasks_v2_bp.route("/task/<int:task_id>")
-    def report_one_task(task_id):
-        return report.report_one_task(escape(task_id))
+    def edit_one_task(task_id):
+        task: Task = Task.query \
+            .filter(Task.task_id == task_id) \
+            .one_or_none()
+        if not task:
+            return {"error": f"invalid task_id: {task_id}"}
+
+        # DEBUG: pass in two tasks, so we can pretend we're a list
+        return report.edit_tasks_simple(task, task, task)
 
     app.register_blueprint(tasks_v2_bp)
 

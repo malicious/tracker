@@ -195,7 +195,7 @@ input.show-json:checked ~ .task-json, input.show-edit:checked ~ .task-edit {
       <span>json</span>
     </label>
     <div class="task-json">
-      <pre>{{ to_details_html(t)|safe }}</pre>
+      <pre>{{ t.as_json() }}</pre>
     </div>
 
     {% if false and t.linkages|length > 1 and not get_resolution(t) %}

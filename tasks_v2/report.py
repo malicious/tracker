@@ -1,4 +1,3 @@
-import json
 import re
 from datetime import datetime, timedelta
 from dateutil import parser
@@ -48,10 +47,9 @@ def report_one_task(task_id, return_bare_dict=False):
         return {"error": f"invalid task_id: {task_id}"}
 
     if return_bare_dict:
-        return task.as_json()
+        return task.as_json_dict()
 
-    as_text = json.dumps(task.as_json(), indent=4, ensure_ascii=False)
-    return f'<html><body><pre>{as_text}</pre></body></html>'
+    return f'<html><body><pre>{task.as_json()}</pre></body></html>'
 
 
 def generate_tasks_by_scope(scope_id: str):
@@ -145,16 +143,16 @@ def has_resolution(t: Task, ref_scope):
     return get_resolution(t)
 
 
-def report_tasks(page_scope: Optional[TimeScope] = None,
-                 show_resolved: bool = False):
+def edit_tasks(page_scope: Optional[TimeScope] = None,
+               show_resolved: bool = False):
     render_kwargs = {}
 
     # If there are previous/next links, add them
     if page_scope:
         prev_scope = TimeScopeUtils.prev_scope(page_scope)
-        render_kwargs['prev_scope'] = f'<a href="{url_for(".report_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
+        render_kwargs['prev_scope'] = f'<a href="{url_for(".edit_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
         next_scope = TimeScopeUtils.next_scope(page_scope)
-        render_kwargs['next_scope'] = f'<a href="{url_for(".report_tasks_in_scope", scope_id=next_scope)}">{next_scope}</a>'
+        render_kwargs['next_scope'] = f'<a href="{url_for(".edit_tasks_in_scope", scope_id=next_scope)}">{next_scope}</a>'
 
     # Identify all tasks within those scopes
     if page_scope:
@@ -190,13 +188,10 @@ def report_tasks(page_scope: Optional[TimeScope] = None,
     render_kwargs['get_resolution'] = get_resolution
     render_kwargs['render_scope'] = render_scope
 
-    # Tell template about how to format Tasks
-    def to_details_html(t: Task):
-        as_text = json.dumps(t.as_json(), indent=4, ensure_ascii=False)
-        return as_text
-
-    render_kwargs['to_details_html'] = to_details_html
-
     render_kwargs['to_summary_html'] = to_summary_html
 
     return render_template('task.html', **render_kwargs)
+
+
+def edit_tasks_simple(*args):
+    return render_template('tasks-simple.html', tasks_list=args)
