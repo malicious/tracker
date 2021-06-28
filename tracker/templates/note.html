@@ -7,40 +7,77 @@
 <title>{{ doc_title }}</title>
 
 <style type="text/css">
-body {
-  font-size: 100%;
-  margin-left:  80pt;
-  margin-right: 80pt;
-  margin-bottom: 20em;
-}
-.scope {
-  margin-bottom: 3.0em;
+:root {
+{% if prev_scope or next_scope %}
+  --scope-nav-height: calc(24px + 24px);
+{% else %}
+  --scope-nav-height: 0px;
+{% endif %}
 }
 
-/* quarter scope */
-body > .scope > .scope-id {
-  font-size: 200%;
-  margin-bottom: 0.8em;
-  border-bottom: 1pt solid dimgrey;
-  position: sticky;
-  top: 0px;
-  height: 1.6em;
-  background-color: #eee;
-  z-index: 2000;
+.top-toolbar {
+  text-align: center;
+  font-size: 12px;
+  line-height: 24px;
+  height: 24px;
 }
-body > .scope > .scope-id::before {
+body > .spacer-下 {
+  height: 640px;
+}
+
+/* quarter scopes */
+body > .scope {
+  /* TODO: this is temporary, should be applied to each element individually */
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
+}
+body > .scope > .spacer-上 {
+  height: 12px;
+}
+body > .scope > .scope-header-container {
+  position: sticky;
+  top: calc(var(--scope-nav-height));
+  height: 37px;
+  z-index: 3;
+  background-color: var(--default-bg-color);
+
+  padding-top: 16px;
+  padding-bottom: 12px;
+  margin-bottom: calc(36px - 8px - 12px); /* TODO: what is this */
+}
+body > .scope > .scope-header-container > .scope-header {
+  font-size: 36px;
+  line-height: 36px;
+  height: 37px;
+  x-disabled-border-bottom: 1pt solid dimgrey;
+  padding-bottom: 8px;
+}
+body > .scope > .scope-header-container > .scope-header::before {
   content: "# ";
 }
 
 /* week scope */
-body > .scope > .scope > .scope-id {
-  font-size: 150%;
+body > .scope > .scope > .scope-header-container {
   position: sticky;
-  top: 2.2em;
-  background-color: #eee;
-  z-index: 1900;
+  top: calc(var(--scope-nav-height)
+    + 16px + 37px + 12px /* quarter scope */);
+  height: 33px;
+  z-index: 2;
+  background-color: var(--default-bg-color);
+
+  padding-top: 16px;
+  padding-bottom: 12px;
+  margin-bottom: calc(32px - 8px - 12px); /* TODO: what is this */
 }
-body > .scope > .scope > .scope-id::before {
+body > .scope > .scope > .scope-header-container > .scope-header {
+  font-size: 24px;
+  line-height: 24px;
+  height: 25px;
+  color: black;
+  border-bottom: 1px solid dimgrey;
+  padding-bottom: 8px;
+}
+body > .scope > .scope > .scope-header-container > .scope-header::before {
   content: "## ";
 }
 
@@ -49,22 +86,24 @@ body > .scope > .scope > .scope {
   /* draw a nice box around the entire thing */
   padding-top: 0.5em;
   padding-left: 0.8em;
-  border: 1px solid #ddd;
+  x-disabled-border: 1px solid #ddd;
   margin-bottom: 0.5em;
   padding-bottom: 1.0em;
 }
-body > .scope > .scope > .scope > .scope-id {
-  /* keep this sticky */
+body > .scope > .scope > .scope > .scope-header-container {
   position: sticky;
-  top: 5.5em;
-  background-color: #eee;
-  z-index: 1800;
+  top: calc(var(--scope-nav-height)
+    + 16px + 37px + 12px /* quarter scope */
+    + 16px + 33px + 12px /* week scope */);
+  z-index: 1;
+  background-color: var(--default-bg-color);
+  font-weight: 600;
 
-  /* make this more visually distinctive */
-  color: black;
-  padding-bottom: 0.5em;
+  margin-top: calc(32px - 12px);
+  padding-top: 12px;
+  padding-bottom: 12px;
 }
-body > .scope > .scope > .scope > .scope-id::before {
+body > .scope > .scope > .scope > .scope-header-container > .scope-header::before {
   content: "### ";
 }
 
@@ -130,7 +169,6 @@ body > .scope > .scope > .scope > .scope-id::before {
 /* event block styling */
 .events {
   overflow: auto;
-  max-height: 300px;
   background-color: lemonchiffon;
 }
 
@@ -147,10 +185,13 @@ details > .desc {
 
 
 
-{% macro scope(scope_id, dict) -%}
+{% macro render_notes_in_scope(scope_id, dict) -%}
 {% set ns = namespace() %}
 <div class="scope">
-  <div class="scope-id">{{ week_lengthener(scope_id) }}</div>
+  <div class="spacer-上"></div>
+  <div class="scope-header-container">
+    <div class="scope-header">{{ week_lengthener(scope_id) }}</div>
+  </div>
 
   {# print summary notes #}
   {% if dict['summaries'] %}
@@ -245,7 +286,7 @@ details > .desc {
   {# print child scopes #}
   {% if dict['child_scopes'] %}
   {% for child_scope, child_dict in dict['child_scopes'].items()|sort(reverse=true, attribute="0") %}
-    {{ scope(child_scope, child_dict) }}
+    {{ render_notes_in_scope(child_scope, child_dict) }}
   {% endfor %}
   {% endif %}
 
@@ -255,10 +296,9 @@ details > .desc {
 
 
 {% block content %}
-
-{% set ns = namespace() %}
 {% for quarter, quarter_dict in response_by_quarter.items()|sort(reverse=true, attribute='0') %}
-{{ scope(quarter, quarter_dict) }}
-
+{{ render_notes_in_scope(quarter, quarter_dict) }}
 {% endfor %}
+
+<div class="spacer-下"></div>
 {% endblock %}
