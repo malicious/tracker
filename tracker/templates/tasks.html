@@ -37,7 +37,7 @@ body > .spacer-下 {
   padding-bottom: 12px;
   margin-bottom: calc(32px - 8px - 12px);
 }
-.scope-container > .spacer-下 {
+.scope-container-post-spacer {
   height: 64px;
 }
 .scope-header {
@@ -258,8 +258,9 @@ input.show-edit:checked ~ .task-edit {
   {% endfor %}
   </div>{# category-container #}
 
-  <div class="spacer-下"></div>
 </div>{# scope-container #}
+<!-- this is _outside_ `.scope-container` because the sticky header shouldn't be on top of it -->
+<div class="scope-container-post-spacer"></div>
 {% endfor %}
 
 <div class="spacer-下"></div>
