@@ -57,7 +57,8 @@
 .linkage-row button {
   width: 100%;
 }
-.linkage-row-not-saved div, .linkage-row-not-saved input, .linkage-row-not-saved textarea {
+input.not-saved,
+.not-saved div, .not-saved input, .not-saved textarea {
   background-color: var(--not-saved-bg-color);
 }
 {% endset %}{# task_edit_css #}
@@ -100,7 +101,7 @@ function addTLRow(e) {
   // add a new "template" row, right above `div.linkage-footer-row`
   new_row = document.createElement('template');
   new_row.innerHTML = `
-<div class="linkage-row linkage-row-not-saved">
+<div class="linkage-row not-saved">
   <div>
     {# TODO: actual formatting #}
     <input name="tl-${new_row_id}-time_scope_id" value="${time_scope_str}">
@@ -130,8 +131,10 @@ function addTLRow(e) {
 
   var tl_preceding = tl_footer_row.previousElementSibling;
   var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]')
-  if (!resolution_preceding.value)
+  if (!resolution_preceding.value) {
     resolution_preceding.value = `roll => ${time_scope_str}`;
+    resolution_preceding.classList.add("not-saved");
+  }
 
   var tl_block = tl_footer_row.parentNode;
   tl_block.insertBefore(new_row.content, tl_footer_row);
