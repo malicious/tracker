@@ -125,8 +125,15 @@ function addTLRow(e) {
   // add delete listener
   new_row.content.querySelector('button.delete').addEventListener("click", deleteTLRow, false);
 
-  var tl_block = e.target.parentNode.parentNode;
-  var tl_footer_row = e.target.parentNode;
+  // mark "roll" resolution in previous row, if it's empty
+  var tl_footer_row = e.target.parentNode.parentNode;
+
+  var tl_preceding = tl_footer_row.previousElementSibling;
+  var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]')
+  if (!resolution_preceding.value)
+    resolution_preceding.value = `roll => ${time_scope_str}`;
+
+  var tl_block = tl_footer_row.parentNode;
   tl_block.insertBefore(new_row.content, tl_footer_row);
 }
 
