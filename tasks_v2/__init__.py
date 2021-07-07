@@ -103,7 +103,8 @@ def _register_rest_endpoints(app: Flask):
     @tasks_v2_rest_bp.route("/task", methods=['post'])
     def create_task():
         task = update.create_task(db_session, request.form)
-        return redirect(url_for(".get_task", task_id=task.task_id))
+        # TODO: do something more creative than redirect back to referrer
+        return redirect(f"{request.referrer}#{request.form['backlink']}")
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>")
     def get_task(task_id):
