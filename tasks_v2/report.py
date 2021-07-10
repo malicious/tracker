@@ -89,8 +89,8 @@ def generate_tasks_by_scope(scope_id: str):
     raise ValueError(f"No idea how to handle {repr(scope_id)}")
 
 
-def render_scope(task_date, section_date_str: str):
-    section_date = datetime.strptime(section_date_str, "%G-ww%V.%u").date()
+def render_scope(task_date, section_date):
+    section_date_str = section_date.strftime("%G-ww%V.%u")
 
     days_old = (section_date - task_date).days
     color_intensity = 1 / 100.0 * min(100, max(days_old, 0))
@@ -123,41 +123,65 @@ def render_scope(task_date, section_date_str: str):
 </span>'''
 
 
-def get_resolution(t: Task, ref_scope):
+def compute_render_info_for(page_scope: Optional[TimeScope]):
     """
-    At this point, we've already passed through `has_resolution()`
+    Provides enough info for Jinja template to render the task
+
+    Task "status" is complicated, in this case in UI terms.
+    To represent it cleanly, we perform an "expensive" calculation,
+    and expect the caller to cache these results.
+
+    Inputs:
+
+    - whether there is a reference scope (sometimes we just want to list every task)
+    - whether there's a TaskLinkage attached to that reference scope
+    - whether there's more than one TaskLinkage
+    - whether there's more than one _open_ TaskLinkage
+    - whether the TaskLinkages are in the future
+
+    - if there's only one linkage, and it's open, show nothing
+    - if there's only one linkage and it's resolved, indicate it's resolved
+    - for multiple linkages:
+      - if only one is open...
+
+    Returns a function that returns a tuple of (scope to print, resolution to print)
     """
-    ref_linkage = t.linkage_at(ref_scope, create_if_none=False)
-    if ref_linkage:
-        return ref_linkage.resolution
+    def compute_with_scope(t, ref_scope_id: TimeScope):
+        # If we have an _exact_ match for this scope, return its resolution
+        ref_linkage = t.linkage_at(ref_scope_id, create_if_none=False)
+        if ref_linkage:
+            return '', ref_linkage.resolution
 
-    final_linkage = TaskLinkage.query \
-        .filter_by(task_id=t.task_id) \
-        .order_by(TaskLinkage.time_scope.desc()) \
-        .limit(1) \
-        .one()
-    return final_linkage.resolution
+        # Otherwise, why is this Task showing up for this scope?
+        raise ValueError(f"Error computing render info, {t} doesn't have anything for {ref_scope_id}")
 
+    def compute_ignoring_scope(t, _: TimeScope):
+        # TODO: import the db session and use exists()/scalar()
+        open_linkages_exist = TaskLinkage.query \
+            .filter_by(task_id=t.task_id, resolution=None) \
+            .all()
+        # If every linkage is closed, just return the "last" resolution
+        if not open_linkages_exist:
+            return '', t.linkages[-1].resolution
 
-def has_resolution(t: Task, ref_scope):
-    # If we have an _exact_ match for this scope, return its resolution
-    ref_linkage = t.linkage_at(ref_scope, create_if_none=False)
-    if ref_linkage and ref_linkage.resolution:
-        return True
+        # If exactly one open linkage remains, use its source scope
+        todays_date = datetime.now().date()
+        if len(t.linkages) == 1:
+            rendered_scope = render_scope(t.linkages[0].time_scope, todays_date)
+            return rendered_scope, t.linkages[-1].resolution
 
-    # Otherwise, ignore whatever `ref_scope` says:
-    #
-    # - if there's any future "TODO", then they're unresolved
-    # - if they're all closed though, print the final resolution
-    #
-    # TODO: import the db session and use exists()/scalar()
-    open_linkages_exist = TaskLinkage.query \
-        .filter_by(task_id=t.task_id, resolution=None) \
-        .all()
-    if open_linkages_exist:
-        return False
+        # By this point multiple linkages exist, but at least one is open
+        latest_open = [tl for tl in t.linkages if not tl.resolution][-1]
+        if latest_open.time_scope > todays_date:
+            return latest_open.time_scope_id, "FUTURE"
+        else:
+            rendered_scope = render_scope(latest_open.time_scope, todays_date)
+            return rendered_scope, t.linkages[-1].resolution
 
-    return True
+    if page_scope:
+        return compute_with_scope
+    else:
+        return compute_ignoring_scope
 
 
 def edit_tasks(page_scope: Optional[TimeScope] = None,
@@ -192,18 +216,7 @@ def edit_tasks(page_scope: Optional[TimeScope] = None,
             today_scope_id: tasks_query.all(),
         }
 
-    # Print a short/human-readable scope string
-    def short_scope(t: Task, ref_scope):
-        short_scope_str = t.linkages[0].time_scope_id
-        if short_scope_str[0:5] == ref_scope[0:5]:
-            short_scope_str = short_scope_str[5:]
-
-        return short_scope_str
-
-    render_kwargs['short_scope'] = short_scope
-    render_kwargs['has_resolution'] = has_resolution
-    render_kwargs['get_resolution'] = get_resolution
-    render_kwargs['render_scope'] = render_scope
+    render_kwargs['compute_render_info_for'] = compute_render_info_for(page_scope)
 
     render_kwargs['to_summary_html'] = to_summary_html
 

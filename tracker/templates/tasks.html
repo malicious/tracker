@@ -199,20 +199,18 @@ input.show-edit:checked ~ .task-edit {
 
 
 {% macro render_task(t, scope) %}
+{% set scope_to_print, resolution_to_print = compute_render_info_for(t, scope) %}
+
 <div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
 <label for="toggle-edit-{{t.task_id}}-{{scope}}">
   <div class="task-only
-    {% if has_resolution(t, scope) %} resolved {% endif %}
+    {% if resolution_to_print %} resolved {% endif %}
   ">
     <div class="task-desc">
-    {% if has_resolution(t, scope) %}
-      <span class="task-resolution">({{ get_resolution(t, scope) }}) </span>
+    {% if resolution_to_print %}
+      <span class="task-resolution">({{ resolution_to_print }}) </span>
     {% endif %}
-  {% if render_scope and not has_resolution(t, scope) %}
-    {{ render_scope(t.linkages[0].time_scope, scope) | safe }}
-  {% elif short_scope(t, scope) %}
-    <span class="task-scope">{{ short_scope(t, scope) }}</span>
-  {% endif %}
+      {{ scope_to_print | safe }}
       {{ t.desc }}
     </div>
   </div>
@@ -227,7 +225,7 @@ input.show-edit:checked ~ .task-edit {
       <div>{{ t.as_json() }}</div>
     </div>
 
-    {% if false and t.linkages|length > 1 and not has_resolution(t, scope) %}
+    {% if false and t.linkages|length > 1 and not resolution_to_print %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
     {% else %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
