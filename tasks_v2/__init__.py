@@ -69,7 +69,7 @@ def _register_endpoints(app: Flask):
     @tasks_v2_bp.route("/tasks")
     def edit_tasks():
         show_resolved = request.args.get('show_resolved')
-        return report.edit_tasks(show_resolved=show_resolved)
+        return report.edit_tasks_all(show_resolved=show_resolved)
 
     @tasks_v2_bp.route("/tasks/<scope_id>")
     def edit_tasks_in_scope(scope_id):
@@ -81,7 +81,7 @@ def _register_endpoints(app: Flask):
         except ValueError:
             pass
 
-        return report.edit_tasks(page_scope=page_scope)
+        return report.edit_tasks_in_scope(page_scope=page_scope)
 
     @tasks_v2_bp.route("/task/<int:task_id>")
     def edit_one_task(task_id):

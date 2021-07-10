@@ -43,7 +43,7 @@ body > .spacer-下 {
 .scope-header {
   font-size: 24px;
   line-height: 24px;
-  height: 24px;
+  height: 25px; /* line height + 1px border */
   color: black;
   border-bottom: 1px solid dimgrey;
   padding-bottom: 8px;
@@ -199,7 +199,7 @@ input.show-edit:checked ~ .task-edit {
 
 
 {% macro render_task(t, scope) %}
-{% set scope_to_print, resolution_to_print = compute_render_info_for(t, scope) %}
+{% set resolution_to_print = t.linkage_at(scope, create_if_none=False).resolution %}
 
 <div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
 <label for="toggle-edit-{{t.task_id}}-{{scope}}">
@@ -210,7 +210,6 @@ input.show-edit:checked ~ .task-edit {
     {% if resolution_to_print %}
       <span class="task-resolution">({{ resolution_to_print }}) </span>
     {% endif %}
-      {{ scope_to_print | safe }}
       {{ t.desc }}
     </div>
   </div>
@@ -225,11 +224,7 @@ input.show-edit:checked ~ .task-edit {
       <div>{{ t.as_json() }}</div>
     </div>
 
-    {% if false and t.linkages|length > 1 and not resolution_to_print %}
-    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
-    {% else %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
-    {% endif %}
     <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
       <span>edit</span>
     </label>

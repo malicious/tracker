@@ -123,7 +123,7 @@ def render_scope(task_date, section_date):
 </span>'''
 
 
-def compute_render_info_for(page_scope: Optional[TimeScope]):
+def compute_ignoring_scope(todays_date):
     """
     Provides enough info for Jinja template to render the task
 
@@ -144,61 +144,41 @@ def compute_render_info_for(page_scope: Optional[TimeScope]):
     - for multiple linkages:
       - if only one is open...
 
-    Returns a function that returns a tuple of (scope to print, resolution to print)
+    Returns a function that returns a tuple of (scope to print, resolution to print, is future task)
     """
-    def compute_with_scope(t, ref_scope_id: TimeScope):
-        # If we have an _exact_ match for this scope, return its resolution
-        ref_linkage = t.linkage_at(ref_scope_id, create_if_none=False)
-        if ref_linkage:
-            return '', ref_linkage.resolution
-
-        # Otherwise, why is this Task showing up for this scope?
-        raise ValueError(f"Error computing render info, {t} doesn't have anything for {ref_scope_id}")
-
-    def compute_ignoring_scope(t, _: TimeScope):
+    def _compute(t):
         # TODO: import the db session and use exists()/scalar()
         open_linkages_exist = TaskLinkage.query \
             .filter_by(task_id=t.task_id, resolution=None) \
             .all()
         # If every linkage is closed, just return the "last" resolution
         if not open_linkages_exist:
-            return '', t.linkages[-1].resolution
+            return '', t.linkages[-1].resolution, False
 
         # If exactly one open linkage remains, use its source scope
-        todays_date = datetime.now().date()
         if len(t.linkages) == 1:
             rendered_scope = render_scope(t.linkages[0].time_scope, todays_date)
-            return rendered_scope, t.linkages[-1].resolution
+            return rendered_scope, t.linkages[-1].resolution, False
 
         # By this point multiple linkages exist, but at least one is open
         latest_open = [tl for tl in t.linkages if not tl.resolution][-1]
-        if latest_open.time_scope > todays_date:
-            return latest_open.time_scope_id, "FUTURE"
+        if latest_open.time_scope - todays_date > timedelta(days=3):
+            # Far-future tasks get special styling
+            return latest_open.time_scope_id, None, True
+        elif latest_open.time_scope > todays_date:
+            # Near-future tasks are just... normal?
+            return latest_open.time_scope_id, None, False
         else:
             rendered_scope = render_scope(latest_open.time_scope, todays_date)
-            return rendered_scope, t.linkages[-1].resolution
+            return rendered_scope, t.linkages[-1].resolution, False
 
-    if page_scope:
-        return compute_with_scope
-    else:
-        return compute_ignoring_scope
+    return _compute
 
 
-def edit_tasks(page_scope: Optional[TimeScope] = None,
-               show_resolved: bool = False):
+def edit_tasks_all(show_resolved: bool):
     render_kwargs = {}
 
-    # If there are previous/next links, add them
-    if page_scope:
-        prev_scope = TimeScopeUtils.prev_scope(page_scope)
-        render_kwargs['prev_scope'] = f'<a href="{url_for(".edit_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
-        next_scope = TimeScopeUtils.next_scope(page_scope)
-        render_kwargs['next_scope'] = f'<a href="{url_for(".edit_tasks_in_scope", scope_id=next_scope)}">{next_scope}</a>'
-
-    # Identify all tasks within those scopes
-    if page_scope:
-        render_kwargs['tasks_by_scope'] = generate_tasks_by_scope(page_scope)
-    elif show_resolved:
+    if show_resolved:
         today_scope_id = datetime.now().strftime("%G-ww%V.%u")
         render_kwargs['tasks_by_scope'] = {
             today_scope_id: Task.query \
@@ -216,11 +196,28 @@ def edit_tasks(page_scope: Optional[TimeScope] = None,
             today_scope_id: tasks_query.all(),
         }
 
-    render_kwargs['compute_render_info_for'] = compute_render_info_for(page_scope)
+    todays_date = datetime.now().date()
+    render_kwargs['compute_render_info_for'] = compute_ignoring_scope(todays_date)
 
     render_kwargs['to_summary_html'] = to_summary_html
 
-    return render_template('tasks.html', **render_kwargs)
+    return render_template('tasks-all.html', **render_kwargs)
+
+
+def edit_tasks_in_scope(page_scope: TimeScope):
+    render_kwargs = {}
+
+    render_kwargs['tasks_by_scope'] = generate_tasks_by_scope(page_scope)
+
+    render_kwargs['to_summary_html'] = to_summary_html
+
+    prev_scope = TimeScopeUtils.prev_scope(page_scope)
+    render_kwargs['prev_scope'] = f'<a href="{url_for(".edit_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
+
+    next_scope = TimeScopeUtils.next_scope(page_scope)
+    render_kwargs['next_scope'] = f'<a href="{url_for(".edit_tasks_in_scope", scope_id=next_scope)}">{next_scope}</a>'
+
+    return render_template('tasks-in-scope.html', **render_kwargs)
 
 
 def edit_tasks_simple(*args):
