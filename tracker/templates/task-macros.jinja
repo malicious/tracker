@@ -131,7 +131,7 @@ function addTLRow(e) {
 
   var tl_preceding = tl_footer_row.previousElementSibling;
   var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]')
-  if (!resolution_preceding.value) {
+  if (resolution_preceding != null && !resolution_preceding.value) {
     resolution_preceding.value = `roll => ${time_scope_str}`;
     resolution_preceding.classList.add("not-saved");
   }
