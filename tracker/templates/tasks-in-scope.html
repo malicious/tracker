@@ -92,13 +92,14 @@ body > .spacer-下 {
 .task-scope {
   color: #bbb;
 }
+.task-time {
+  color: brown;
+}
 
-.resolved {
+.resolved, .resolved .task-scope, .resolved .task-time {
   color: var(--disabled-fg-color);
 }
-.resolved .task-scope {
-  color: var(--disabled-fg-color);
-}
+
 
 .bonus-options {
   width: 100%;
@@ -177,17 +178,6 @@ input.show-edit:checked ~ .task-edit {
   display: inherit;
 }
 
-.task-time {
-  color: brown;
-}
-.task-resolved, .task-resolved .task-time, .task-resolved .time-scope {
-  color: rgb(200, 200, 200);
-}
-.task-details .created_at {
-  color: forestgreen;
-  margin-top: 1em;
-}
-
 {{ task_macros.task_edit_css }}
 </style>
 
@@ -211,6 +201,9 @@ input.show-edit:checked ~ .task-edit {
       <span class="task-resolution">({{ resolution_to_print }}) </span>
     {% endif %}
       {{ t.desc }}
+    {% if t.time_estimate %}
+      <span class="task-time">{{ "`{0}h`".format(t.time_estimate) }}</span>
+    {% endif %}
     </div>
   </div>
 </label>

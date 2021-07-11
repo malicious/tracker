@@ -11,6 +11,7 @@
   --tab-label-fg-color: hsl(212, 32%, 60%);
   --tab-selected-bg-color: hsl(210, 0%, 96%);
   --tab-label-font-size: 12px;
+  --tasks-future-fg-color: hsl(214, 40%, 65%);
 }
 
 body {
@@ -92,12 +93,15 @@ body > .spacer-下 {
 .task-scope {
   color: #bbb;
 }
+.task-time {
+  color: brown;
+}
 
-.resolved, .resolved .task-scope {
+.resolved, .resolved .task-scope, .resolved .task-time {
   color: var(--disabled-fg-color);
 }
-.future, .future .task-scope {
-  color: lightblue;
+.future, .future .task-scope, .future .task-time {
+  color: var(--tasks-future-fg-color);
 }
 
 .bonus-options {
@@ -177,17 +181,6 @@ input.show-edit:checked ~ .task-edit {
   display: inherit;
 }
 
-.task-time {
-  color: brown;
-}
-.task-resolved, .task-resolved .task-time, .task-resolved .time-scope {
-  color: rgb(200, 200, 200);
-}
-.task-details .created_at {
-  color: forestgreen;
-  margin-top: 1em;
-}
-
 {{ task_macros.task_edit_css }}
 </style>
 
@@ -213,6 +206,13 @@ input.show-edit:checked ~ .task-edit {
     {% endif %}
       {{ scope_to_print | safe }}
       {{ t.desc }}
+    {% if t.time_estimate and t.get_time_elapsed() %}
+      <span class="task-time">{{ "`{0:.1f} => {1:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</span>
+    {% elif t.time_estimate %}
+      <span class="task-time">{{ "`{0}h`".format(t.time_estimate) }}</span>
+    {% elif t.get_time_elapsed() %}
+      <span class="task-time">{{ "`=> {1:.3f}h`".format(t.get_time_elapsed()) }}</span>
+    {% endif %}
     </div>
   </div>
 </label>

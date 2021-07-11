@@ -57,6 +57,9 @@ class Task(Base):
 
         return None
 
+    def get_time_elapsed(self):
+        return sum([tl.time_elapsed for tl in self.linkages if tl.time_elapsed])
+
 
 class TaskLinkage(Base):
     __tablename__ = 'TaskLinkages'
