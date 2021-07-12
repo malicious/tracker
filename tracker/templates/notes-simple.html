@@ -82,7 +82,7 @@ details > .desc {
   -webkit-transform: translate3d(0, 0, 0);
 }
 
-{{ note_macros.note_edit_css }}
+{{ note_macros.note_edit_css('note', ['edit', 'json']) }}
 </style>
 
 <script>
@@ -92,7 +92,7 @@ details > .desc {
 
 
 
-{% macro _render_normal_note(note) %}
+{% macro _render_normal_note_legacy(note) %}
     <details id="{{ note.note_id }}" class="{{ safen(note.type) }}">
       <summary>
       {% if note.sort_time %}
@@ -118,14 +118,31 @@ details > .desc {
 
 
 
+{% macro _render_note(n, scope) %}
+<div class="note-and-details" id="note-{{n.note_id}}-{{scope}}">
+  <div class="note-only">
+    <div class="note-desc"></div>
+  </div>
+</div>
+{% endmacro %}
+
+
+
 {% block content %}
 
 <div class="scope">
 <div class="notes">
 {% for note in notes_list %}
-  {{ _render_normal_note(note) }}
+  {{ _render_note(note) }}
 {% endfor %}
 </div>{# notes #}
 </div>
+
+{% for note in notes_list %}
+  {{ note_macros.render_with_tabs('note',
+                                  unique_id="{}-{}".format(note.note_id, loop.index),
+                                  desc=desc_to_html(note.short_desc),
+                                  tab_names=['edit', 'json']) }}
+{% endfor %}
 
 {% endblock %}

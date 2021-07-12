@@ -205,6 +205,9 @@ def _generate_jinja_kwargs(scope, domain):
     kwargs["week_lengthener"] = week_lengthener
 
     def desc_to_html(desc: str):
+        if not desc:
+            return ''
+
         # escape anything that makes the HTML weird
         desc = re.sub(r'<', r'&lt;', desc)
         # make newlines have effect
