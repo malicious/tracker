@@ -1,3 +1,4 @@
+{% import "shared-macros.jinja" as shared_macros %}
 {% import "task-macros.jinja" as task_macros %}
 
 {% extends "base.html" %}
@@ -5,35 +6,10 @@
 
 
 {% block head %}
+
 {{ super() }}
+
 <style type="text/css">
-:root {
-  --tab-label-fg-color: hsl(212, 32%, 60%);
-  --tab-selected-bg-color: hsl(210, 0%, 96%);
-  --tab-label-font-size: 12px;
-}
-
-.task-and-details {
-  padding-left: var(--default-left-right-margin);
-  padding-right: var(--default-left-right-margin);
-
-  -webkit-transform: translate3d(0, 0, 0);
-}
-.task-and-details:hover {
-  background: var(--default-hover-color);
-}
-
-.task-only {
-  font-size: 16px;
-  line-height: 24px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-}
-
-.bonus-options {
-  width: 100%;
-  position: relative;
-}
 .task-json > div {
   white-space: pre-wrap;
   margin: 12px;
@@ -45,106 +21,36 @@
   background: var(--default-bg-color);
 }
 
-/* styling for show/hide checkboxes */
-.bonus-options > label {
-  height: 24px;
-  line-height: 24px;
-  font-size: var(--tab-label-font-size);
-
-  position: absolute;
-  top: -24px;
-  color: var(--tab-label-fg-color);
-  text-align: center;
-}
-.bonus-options > label.show-edit {
-  width: 48px;
-  right: 0;
-}
-.bonus-options > label.show-json {
-  width: 48px;
-  right: 48px;
-}
-.bonus-options > input {
-  display: none;
-}
-
-.task-json, .task-edit {
-  background-color: var(--tab-selected-bg-color);
-  padding: 0.5em;
-  font-size: 80%;
-}
-input.show-json:checked ~ label.show-json,
-input.show-edit:checked ~ label.show-edit {
-  background-color: var(--tab-selected-bg-color);
-  border-bottom: 2px solid var(--tab-label-fg-color);
-}
-
-/* actually show/hide the peer elements */
-.task-json,
-.task-edit {
-  display: none;
-}
-input.show-json:checked ~ .task-json,
-input.show-edit:checked ~ .task-edit {
-  display: inherit;
-}
+{{ shared_macros.note_edit_css('task', ['edit', 'json']) }}
 
 {{ task_macros.task_edit_css }}
+
 </style>
 
+
+
 <script>
+{{ shared_macros.note_edit_js|safe }}
+
 {{ task_macros.task_edit_js|safe }}
+
 </script>
+
 {% endblock %}
-
-
-
-{% macro render_task(t, instance_id) %}
-<div class="task-and-details" id="task-{{t.task_id}}-{{instance_id}}">
-<label for="toggle-edit-{{t.task_id}}-{{instance_id}}">
-  <div class="task-only">
-    {{ t.desc }}
-  </div>
-</label>
-
-  <div class="bonus-options">
-    <input type="checkbox" id="toggle-json-{{t.task_id}}-{{instance_id}}" class="show-json"
-    {% if instance_id == 1 %}
-      checked
-    {% endif %}
-    >
-    <label for="toggle-json-{{t.task_id}}-{{instance_id}}" class="show-json">
-      <span>json</span>
-    </label>
-    <div class="task-json">
-      <div>{{ t.as_json() }}</div>
-      {# TODO: this avoids the newlines and other encoding that happen above. why? #}
-      {# <pre>{{ t.as_json_dict()['linkages'][0]['detailed_resolution'] }}</pre> #}
-    </div>
-
-    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{instance_id}}" class="show-edit"
-    {% if instance_id == 2 %}
-      checked
-    {% endif %}
-    >
-    <label for="toggle-edit-{{t.task_id}}-{{instance_id}}" class="show-edit">
-      <span>edit</span>
-    </label>
-    <div class="task-edit">
-      {{ task_macros.edit_block(t, backlink="task-{}-{}".format(t.task_id, instance_id)) }}
-    </div>
-
-  </div>
-</div>
-
-{% endmacro %}
 
 
 
 {% block content %}
 
 {% for task in tasks_list %}
-{{ render_task(task, loop.index) }}
+  {% set tabs = [('edit', task_macros.edit_block(task,
+                              backlink="task-{}-{}".format(task.task_id, loop.index))),
+                 ('json', "<div>{}</div>".format(task.as_json())),
+                 ] %}
+  {{ shared_macros.render_with_tabs('task',
+        unique_id="{}-{}".format(task.task_id, loop.index),
+        desc=task.desc,
+        tabs=tabs) }}
 {% endfor %}
 
 {% endblock %}
