@@ -85,11 +85,11 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
 
 
 
-{% macro render_with_tabs(item_type, unique_id, desc, tabs) %}
+{% macro render_with_tabs(item_type, item_styling, unique_id, desc, tabs) %}
 <div class="{{item_type}}-and-tabs" id="{{item_type}}-{{unique_id}}">
 {# The way this `label` wraps everything, it makes the whole row a clickable #}
 <label for="toggle-{{tabs[0][0]}}-{{unique_id}}">
-  <div class="{{item_type}}-only">
+  <div class="{{item_type}}-only {{item_styling}}">
     <div class="{{item_type}}-desc">{{ desc }}</div>
   </div>
 </label>

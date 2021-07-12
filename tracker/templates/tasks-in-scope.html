@@ -1,3 +1,4 @@
+{% import "shared-macros.jinja" as shared_macros %}
 {% import "task-macros.jinja" as task_macros %}
 
 {% extends "base.html" %}
@@ -7,12 +8,6 @@
 {% block head %}
 {{ super() }}
 <style type="text/css">
-:root {
-  --tab-label-fg-color: hsl(212, 32%, 60%);
-  --tab-selected-bg-color: hsl(210, 0%, 96%);
-  --tab-label-font-size: 12px;
-}
-
 body {
   overflow-wrap: anywhere;
   word-break: break-word; /* Safari */
@@ -63,23 +58,6 @@ body > .spacer-下 {
   padding-bottom: 12px;
 }
 
-.task-and-details {
-  padding-left: var(--default-left-right-margin);
-  padding-right: var(--default-left-right-margin);
-
-  -webkit-transform: translate3d(0, 0, 0);
-}
-.task-and-details:hover {
-  background: var(--default-hover-color);
-}
-
-.task-only {
-  font-size: 16px;
-  line-height: 24px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  display: flex;
-}
 .task-only > .task-scope {
   flex-shrink: 0;
   padding-right: 0.8em;
@@ -101,10 +79,6 @@ body > .spacer-下 {
 }
 
 
-.bonus-options {
-  width: 100%;
-  position: relative;
-}
 .task-json > div {
   white-space: pre-wrap;
   margin: 12px;
@@ -114,118 +88,52 @@ body > .spacer-下 {
   background: var(--default-bg-color);
 }
 
-.bonus-options > label {
-  height: 24px;
-  line-height: 24px;
-  font-size: var(--tab-label-font-size);
-
-  position: absolute;
-  top: -24px;
-  color: var(--tab-label-fg-color);
-  text-align: center;
-}
-.bonus-options > label.show-edit {
-  width: 48px;
-  right: 0;
-}
-.bonus-options > label.show-json {
-  width: 48px;
-  right: 48px;
-}
-.bonus-options > input {
-  display: none;
-}
-
-/* highlight json/edit labels when selected */
-.task-json, .task-edit {
-  background-color: var(--tab-selected-bg-color);
-  padding: 0.5em;
-  font-size: 80%;
-}
-input.show-json:checked ~ label.show-json,
-input.show-edit:checked ~ label.show-edit {
-  background-color: var(--tab-selected-bg-color);
-  border-bottom: 2px solid var(--tab-label-fg-color);
-}
-
-.task-json,
-.task-edit {
-  display: none;
-}
-input.show-json:checked ~ .task-json,
-input.show-edit:checked ~ .task-edit {
-  display: inherit;
-  x-border-top: 2px solid hsl(212, 12%, 72%);
-  x-border-bottom: 2px solid hsl(212, 12%, 72%);
-  x-box-shadow:
-      inset 0 5px 5px hsla(0, 0%, 0%, 0.1),
-      0 -2px 0 hsla(0, 0%, 100%, .15);
-  x-margin-bottom: 5px;
-  x-padding-bottom: 5px;
-}
-
-/* hide json/edit labels when not-hovered + not-selected */
-.task-and-details label.show-json,
-.task-and-details label.show-edit {
-  display: none;
-}
-.task-and-details input.show-json:checked ~ label.show-json,
-.task-and-details input.show-edit:checked ~ label.show-edit {
-  display: inherit;
-}
-.task-and-details:hover label.show-json,
-.task-and-details:hover label.show-edit {
-  display: inherit;
-}
+{{ shared_macros.note_edit_css('task', ['edit', 'json']) }}
 
 {{ task_macros.task_edit_css }}
 </style>
 
+
+
 <script>
+{{ shared_macros.note_edit_js|safe }}
+
 {{ task_macros.task_edit_js|safe }}
+
 </script>
+
 {% endblock %}
 
 
 
-{% macro render_task(t, scope) %}
-{% set resolution_to_print = t.linkage_at(scope, create_if_none=False).resolution %}
+{% macro _render_task_desc(t, resolution_to_print) %}
 
-<div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
-<label for="toggle-edit-{{t.task_id}}-{{scope}}">
-  <div class="task-only
-    {% if resolution_to_print %} resolved {% endif %}
-  ">
-    <div class="task-desc">
     {% if resolution_to_print %}
       <span class="task-resolution">({{ resolution_to_print }}) </span>
     {% endif %}
-      {{ t.desc }}
+
+    {{ t.desc }}
+
     {% if t.time_estimate %}
       <span class="task-time">{{ "`{0}h`".format(t.time_estimate) }}</span>
     {% endif %}
-    </div>
-  </div>
-</label>
 
-  <div class="bonus-options">
-    <input type="checkbox" id="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
-    <label for="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
-      <span>json</span>
-    </label>
-    <div class="task-json">
-      <div>{{ t.as_json() }}</div>
-    </div>
+{% endmacro %}
 
-    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
-    <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
-      <span>edit</span>
-    </label>
-    <div class="task-edit">{{ task_macros.edit_block(t, backlink="task-{}-{}".format(t.task_id, scope)) }}</div>
 
-  </div>
-</div>
 
+{% macro render_task(task, scope) %}
+  {% set tabs = [('edit', task_macros.edit_block(task,
+                              backlink="task-{}-{}".format(task.task_id, scope))),
+                 ('json', "<div>{}</div>".format(task.as_json())),
+                 ] %}
+  {% set resolution_to_print =
+         task.linkage_at(scope, create_if_none=False).resolution %}
+  {{ shared_macros.render_with_tabs('task',
+        item_styling="resolved" if resolution_to_print,
+        unique_id="{}-{}".format(task.task_id, scope),
+        desc=_render_task_desc(task, resolution_to_print),
+        tabs=tabs) }}
 {% endmacro %}
 
 
