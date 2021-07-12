@@ -1,3 +1,5 @@
+{% import "note-macros.jinja" as note_macros %}
+
 {% extends "base.html" %}
 
 
@@ -263,7 +265,7 @@ details > .desc {
   {# print normal notes #}
   {% if dict['notes'] %}
   <div class="notes">
-    {% for note in dict['notes'] %}
+  {% for note in dict['notes'] %}
     <details id="{{ note.note_id }}" class="{{ safen(note.type) }}">
       <summary>
       {% if note.sort_time %}
@@ -285,7 +287,7 @@ details > .desc {
         <pre>{{ pretty_print_note(note)|safe }}</pre>
       </div>
     </details>
-    {% endfor %}
+  {% endfor %}
   </div>{# notes #}
   {% endif %}
 

@@ -174,7 +174,7 @@ def _report_notes_for(scope, domain):
     return fmt.report()
 
 
-def _format_as_html(scope, domain, response_by_quarter):
+def _generate_jinja_kwargs(scope, domain):
     kwargs = {}
 
     def list_matching_domains(n: Note) -> str:
@@ -286,6 +286,20 @@ def _format_as_html(scope, domain, response_by_quarter):
         else:
             kwargs["next_scope"] = f'<a href="/report-notes?scope={next_scope}">{next_scope}</a>'
 
+    return kwargs
+
+
+def _format_as_html(scope, domain, response_by_quarter):
+    render_kwargs = _generate_jinja_kwargs(scope, domain)
+
     return render_template('note.html',
                            response_by_quarter=response_by_quarter,
-                           **kwargs)
+                           **render_kwargs)
+
+
+def edit_notes_simple(*args):
+    render_kwargs = _generate_jinja_kwargs(None, None)
+
+    return render_template('notes-simple.html',
+                           notes_list=args,
+                           **render_kwargs)
