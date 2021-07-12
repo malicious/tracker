@@ -1,4 +1,4 @@
-{% import "note-macros.jinja" as note_macros %}
+{% import "shared-macros.jinja" as note_macros %}
 
 {% extends "base.html" %}
 
@@ -7,81 +7,6 @@
 {% block head %}
 {{ super() }}
 <style type="text/css">
-/* quarter scopes */
-body > .scope {
-  /* TODO: this is temporary, should be applied to each element individually */
-  padding-left: var(--default-left-right-margin);
-  padding-right: var(--default-left-right-margin);
-}
-body > .scope > .spacer-上 {
-  height: 12px;
-}
-body > .scope > .scope-header-container {
-  position: sticky;
-  top: calc(var(--scope-nav-height));
-  height: 37px;
-  z-index: 3;
-  background-color: var(--default-bg-color);
-
-  padding-top: 16px;
-  padding-bottom: 12px;
-  margin-bottom: calc(36px - 8px - 12px); /* TODO: what is this */
-}
-body > .scope > .scope-header-container > .scope-header {
-  font-size: 36px;
-  line-height: 36px;
-  height: 37px;
-  x-disabled-border-bottom: 1pt solid dimgrey;
-  padding-bottom: 8px;
-}
-body > .scope > .scope-header-container > .scope-header::before {
-  content: "# ";
-}
-
-/* title and domain formatting */
-.title-and-domain {
-  display: flex;
-  flow-direction: row;
-}
-.title-and-domain > .title {
-  flex: 1 4 auto;
-}
-.title-and-domain > .domain {
-  flex: 1 2 auto;
-  padding-left: 1.3rem;
-  font-size: 80%;
-  text-align: right;
-
-  /* next two lines position the sub-div that has actual text */
-  display: flex;
-  flex-direction: column-reverse;
-}
-/* generic domain styling */
-.domain::before {
-  content: " "; /* these are nbsp's */
-}
-.domain, .domain a:link {
-  color: #aaa;
-}
-.domain a:hover {
-  color: blue;
-}
-
-/* individual note styling */
-.scope details {
-  font-size: 16px;
-  line-height: 24px;
-  margin-top: 8px;
-  margin-bottom: 8px;
-}
-details > .desc {
-  padding: 0.5em;
-  background-color: rgb(246, 246, 246);
-  font-size: 70%;
-
-  -webkit-transform: translate3d(0, 0, 0);
-}
-
 {{ note_macros.note_edit_css('note', ['edit', 'json']) }}
 </style>
 
@@ -92,57 +17,16 @@ details > .desc {
 
 
 
-{% macro _render_normal_note_legacy(note) %}
-    <details id="{{ note.note_id }}" class="{{ safen(note.type) }}">
-      <summary>
-      {% if note.sort_time %}
-        <span class="time">{{ shorten_sort_time(note.sort_time) }}</span>
-      {% endif %}
-
-      {% if note.short_desc %}
-        <span class="title">{{ desc_to_html(note.short_desc)|safe }}</span>
-      {% elif note.source %}
-        <span class="title">{{ note.source }}</span>
-      {% endif %}
-        <span class="domain">{{ match_domains(note)|safe }}</span>
-      </summary>
-      <div class="desc">
-      {% if note.desc %}
-        {{ desc_to_html(note.desc)|safe }}
-        <hr />
-      {% endif %}
-        <pre>{{ pretty_print_note(note)|safe }}</pre>
-      </div>
-    </details>
-{% endmacro %}
-
-
-
-{% macro _render_note(n, scope) %}
-<div class="note-and-details" id="note-{{n.note_id}}-{{scope}}">
-  <div class="note-only">
-    <div class="note-desc"></div>
-  </div>
-</div>
-{% endmacro %}
-
-
-
 {% block content %}
 
-<div class="scope">
-<div class="notes">
 {% for note in notes_list %}
-  {{ _render_note(note) }}
-{% endfor %}
-</div>{# notes #}
-</div>
-
-{% for note in notes_list %}
+  {% set tabs = [('edit', 'um. edit.'),
+                 ('json', "<pre>{}</pre>".format(pretty_print_note(note))),
+                 ] %}
   {{ note_macros.render_with_tabs('note',
                                   unique_id="{}-{}".format(note.note_id, loop.index),
                                   desc=desc_to_html(note.short_desc),
-                                  tab_names=['edit', 'json']) }}
+                                  tabs=tabs) }}
 {% endfor %}
 
 {% endblock %}

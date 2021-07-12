@@ -85,16 +85,17 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
 
 
 
-{% macro render_with_tabs(item_type, unique_id, desc, tab_names) %}
+{% macro render_with_tabs(item_type, unique_id, desc, tabs) %}
 <div class="{{item_type}}-and-tabs" id="{{item_type}}-{{unique_id}}">
-<label for="toggle-{{tab_names[0]}}-{{unique_id}}">
+{# The way this `label` wraps everything, it makes the whole row a clickable #}
+<label for="toggle-{{tabs[0][0]}}-{{unique_id}}">
   <div class="{{item_type}}-only">
     <div class="{{item_type}}-desc">{{ desc }}</div>
   </div>
 </label>
 
   <div class="tabs">
-  {% for tab_name in tab_names|reverse %}
+  {% for tab_name, tab_content in tabs %}
     <input type="checkbox" id="toggle-{{tab_name}}-{{unique_id}}" class="show-{{tab_name}}">
 
     <label for="toggle-{{tab_name}}-{{unique_id}}" class="show-{{tab_name}}">
@@ -102,8 +103,7 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
     </label>
 
     <div class="{{item_type}}-{{tab_name}}">
-      {# TODO: this is the actual HTML content that should go in such a tab #}
-      um. {{tab_name}}.
+      {{ tab_content }}
     </div>
 
   {% endfor %}
