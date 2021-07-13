@@ -114,8 +114,12 @@ body > .spacer-下 {
 
     {{ t.desc }}
 
-    {% if t.time_estimate %}
-      <span class="task-time">{{ "`{0}h`".format(t.time_estimate) }}</span>
+    {% if t.time_estimate and t.get_time_elapsed() %}
+      <span class="task-time">{{ "`{:.1f} => {:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</span>
+    {% elif t.time_estimate %}
+      <span class="task-time">{{ "`{:.1f}h`".format(t.time_estimate) }}</span>
+    {% elif t.get_time_elapsed() %}
+      <span class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</span>
     {% endif %}
 
 {% endmacro %}

@@ -207,11 +207,11 @@ input.show-edit:checked ~ .task-edit {
       {{ scope_to_print | safe }}
       {{ t.desc }}
     {% if t.time_estimate and t.get_time_elapsed() %}
-      <span class="task-time">{{ "`{0:.1f} => {1:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</span>
+      <span class="task-time">{{ "`{:.1f} => {:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</span>
     {% elif t.time_estimate %}
-      <span class="task-time">{{ "`{0}h`".format(t.time_estimate) }}</span>
+      <span class="task-time">{{ "`{:.1f}h`".format(t.time_estimate) }}</span>
     {% elif t.get_time_elapsed() %}
-      <span class="task-time">{{ "`=> {1:.3f}h`".format(t.get_time_elapsed()) }}</span>
+      <span class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</span>
     {% endif %}
     </div>
   </div>
