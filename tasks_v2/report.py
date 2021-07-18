@@ -4,6 +4,7 @@ from dateutil import parser
 from typing import Optional
 
 from flask import render_template, url_for
+from sqlalchemy import or_
 
 from tasks_v1.time_scope import TimeScope, TimeScopeUtils
 from tasks_v2.models import Task, TaskLinkage
@@ -187,9 +188,11 @@ def edit_tasks_all(show_resolved: bool):
         }
     else:
         today_scope_id = datetime.now().strftime("%G-ww%V.%u")
+        recent_tasks_cutoff = datetime.utcnow() - timedelta(hours=12)
         tasks_query = Task.query \
             .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
-            .filter(TaskLinkage.resolution == None) \
+            .filter(or_(TaskLinkage.resolution == None, \
+                        TaskLinkage.created_at > recent_tasks_cutoff)) \
             .order_by(Task.category)
 
         render_kwargs['tasks_by_scope'] = {
