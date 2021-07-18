@@ -66,13 +66,13 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
 }
 
 /* hide tab labels when not-hovered + not-selected */
-.note-and-tabs label.show-{{tab_name}} {
+.{{item_type}}-and-tabs label.show-{{tab_name}} {
   display: none;
 }
-.note-and-tabs input.show-{{tab_name}}:checked ~ label.show-{{tab_name}} {
+.{{item_type}}-and-tabs input.show-{{tab_name}}:checked ~ label.show-{{tab_name}} {
   display: inherit;
 }
-.note-and-tabs:hover label.show-{{tab_name}} {
+.{{item_type}}-and-tabs:hover label.show-{{tab_name}} {
   display: inherit;
 }
 {% endfor %}
