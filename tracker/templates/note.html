@@ -30,11 +30,6 @@ body > .spacer-下 {
 }
 
 /* quarter scopes */
-body > .scope {
-  /* TODO: this is temporary, should be applied to each element individually */
-  padding-left: var(--default-left-right-margin);
-  padding-right: var(--default-left-right-margin);
-}
 body > .scope > .spacer-上 {
   height: 12px;
 }
@@ -47,6 +42,8 @@ body > .scope > .scope-header-container {
 
   padding-top: 16px;
   padding-bottom: 12px;
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
   margin-bottom: calc(36px - 8px - 12px); /* TODO: what is this */
 }
 body > .scope > .scope-header-container > .scope-header {
@@ -71,6 +68,8 @@ body > .scope > .scope > .scope-header-container {
 
   padding-top: 16px;
   padding-bottom: 12px;
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
   margin-bottom: calc(32px - 8px - 12px); /* TODO: what is this */
 }
 body > .scope > .scope > .scope-header-container > .scope-header {
@@ -106,6 +105,8 @@ body > .scope > .scope > .scope > .scope-header-container {
   margin-top: calc(32px - 12px);
   padding-top: 12px;
   padding-bottom: 12px;
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
 }
 body > .scope > .scope > .scope > .scope-header-container > .scope-header::before {
   content: "### ";
@@ -149,6 +150,8 @@ body > .scope > .scope > .scope > .scope-header-container > .scope-header::befor
 .summaries > .row {
   display: flex;
   flow-direction: row;
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
 }
 .summaries > .row > .time-scope {
   flex: none;
@@ -172,7 +175,10 @@ body > .scope > .scope > .scope > .scope-header-container > .scope-header::befor
 
 /* event block styling */
 .events {
-  overflow: auto;
+  disabled-overflow: auto;
+  disabled-background-color: lemonchiffon;
+}
+.event .note-desc {
   background-color: lemonchiffon;
 }
 
@@ -182,6 +188,8 @@ body > .scope > .scope > .scope > .scope-header-container > .scope-header::befor
   line-height: 24px;
   margin-top: 8px;
   margin-bottom: 8px;
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
 }
 details > .desc {
   padding: 0.5em;
@@ -200,7 +208,7 @@ details > .desc {
   background: var(--default-bg-color);
 }
 
-{{ shared_macros.note_edit_css('note', ['edit', 'json']) }}
+{{ shared_macros.note_edit_css('note', ['json',]) }}
 
 </style>
 
@@ -271,31 +279,15 @@ details > .desc {
   {# print event notes #}
   {% if dict['events'] %}
   <div class="events">
-    {% for note in dict['events'] %}
-    <details id="{{ note.note_id }}" class="{{ safen(note.type) }}">
-      <summary>
-        {% if note.sort_time %}
-        <span class="time">{{ shorten_sort_time(note.sort_time) }}</span>
-        {% endif %}
-
-      {% if note.short_desc %}
-        <span class="title">{{ desc_to_html(note.short_desc)|safe }}</span>
-      {% elif note.source %}
-        <span class="title">{{ note.source }}</span>
-      {% endif %}
-      {% if match_domains(note) %}
-        <span class="domain">{{ match_domains(note)|safe }}</span>
-      {% endif %}
-      </summary>
-      <div class="desc">
-      {% if note.desc %}
-        {{ desc_to_html(note.desc)|safe }}
-        <hr />
-      {% endif %}
-        <pre>{{ pretty_print_note(note)|safe }}</pre>
-      </div>
-    </details>
-    {% endfor %}
+  {% for note in dict['events'] %}
+    {% set tabs = [('json', "<div>{}</div>".format(pretty_print_note(note))),
+                   ] %}
+    {{ shared_macros.render_with_tabs('note',
+        item_styling="event",
+        unique_id="{}-{}".format(note.note_id, loop.index),
+        desc=_render_note_desc(note, shorten_sort_time, desc_to_html, match_domains),
+        tabs=tabs) }}
+  {% endfor %}
   </div>{# events #}
   {% endif %}
 
@@ -303,8 +295,7 @@ details > .desc {
   {% if dict['notes'] %}
   <div class="notes">
   {% for note in dict['notes'] %}
-    {% set tabs = [('edit', 'um. edit.'),
-                   ('json', "<div>{}</div>".format(pretty_print_note(note))),
+    {% set tabs = [('json', "<div>{}</div>".format(pretty_print_note(note))),
                    ] %}
     {{ shared_macros.render_with_tabs('note',
         unique_id="{}-{}".format(note.note_id, loop.index),
