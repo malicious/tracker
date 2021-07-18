@@ -139,20 +139,21 @@ class NotesFormatter:
 
                 # tally up the number of per-day entries
                 for day_entries in week_entries["child_scopes"].values():
-                    if "notes" in day_entries:
-                        week_count += len(day_entries["notes"])
+                    for note_type in ["summaries", "events", "notes"]:
+                        if note_type in day_entries:
+                            week_count += len(day_entries[note_type])
 
                 # if there's not enough, move them all up
                 if week_count < MIN_CHILD_ENTRIES:
                     for day_scope in list(week_entries["child_scopes"].keys()):
                         day_entries = week_entries["child_scopes"][day_scope]
 
-                        # TODO: Move summaries and events, as well
-                        if "notes" in day_entries:
-                            if "notes" not in week_entries:
-                                week_entries["notes"] = []
-                            week_entries["notes"].extend(day_entries["notes"])
-                            del day_entries["notes"]
+                        for note_type in ["summaries", "events", "notes"]:
+                            if note_type in day_entries:
+                                if note_type not in week_entries:
+                                    week_entries[note_type] = []
+                                week_entries[note_type].extend(day_entries[note_type])
+                                del day_entries[note_type]
 
                         if not day_entries:
                             del week_entries["child_scopes"][day_scope]
@@ -161,8 +162,9 @@ class NotesFormatter:
                         del week_entries["child_scopes"]
 
                 # tally up the number of per-week entries
-                if "notes" in week_entries:
-                    quarter_count += len(week_entries["notes"])
+                for note_type in ["summaries", "events", "notes"]:
+                    if note_type in week_entries:
+                        quarter_count += len(week_entries[note_type])
 
                 quarter_count += week_count
 
@@ -170,11 +172,12 @@ class NotesFormatter:
                 for week_scope in list(quarter_entries["child_scopes"].keys()):
                     week_entries = quarter_entries["child_scopes"][week_scope]
 
-                    if "notes" in week_entries:
-                        if "notes" not in quarter_entries:
-                            quarter_entries["notes"] = []
-                        quarter_entries["notes"].extend(week_entries["notes"])
-                        del week_entries["notes"]
+                    for note_type in ["summaries", "events", "notes"]:
+                        if note_type in week_entries:
+                            if note_type not in quarter_entries:
+                                quarter_entries[note_type] = []
+                            quarter_entries[note_type].extend(week_entries[note_type])
+                            del week_entries[note_type]
 
                     if not week_entries:
                         del quarter_entries["child_scopes"][week_scope]

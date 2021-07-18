@@ -297,6 +297,7 @@ details > .desc {
 
   {# print event notes #}
   {% if dict['events'] %}
+  {% if dict['summaries'] %}<hr>{% endif %}
   <div class="events">
   {% for note in dict['events'] %}
     {% set tabs = [('json', "<div>{}</div>".format(pretty_print_note(note))),
@@ -312,6 +313,7 @@ details > .desc {
 
   {# print normal notes #}
   {% if dict['notes'] %}
+  {% if dict['summaries'] or dict['events'] %}<hr>{% endif %}
   <div class="notes">
   {% for note in dict['notes'] %}
     {% set tabs = [('json', "<div>{}</div>".format(pretty_print_note(note))),
