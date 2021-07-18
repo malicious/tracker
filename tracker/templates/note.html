@@ -222,10 +222,9 @@ details > .desc {
 
 
 
-{% macro _render_note_desc(n, shorten_sort_time, desc_to_html, match_domains) %}
-{% if n.sort_time %}
-  <span class="time">{{ shorten_sort_time(n.sort_time) }}</span>
-{% endif %}
+{% macro _render_note_desc(n, print_sort_time, desc_to_html, match_domains) %}
+
+{{ print_sort_time(n)|safe }}
 
 {% if n.short_desc %}
   {{ desc_to_html(n.short_desc)|safe }}
@@ -285,7 +284,7 @@ details > .desc {
     {{ shared_macros.render_with_tabs('note',
         item_styling="event",
         unique_id="{}-{}".format(note.note_id, loop.index),
-        desc=_render_note_desc(note, shorten_sort_time, desc_to_html, match_domains),
+        desc=_render_note_desc(note, generate_print_sort_time(scope_id), desc_to_html, match_domains),
         tabs=tabs) }}
   {% endfor %}
   </div>{# events #}
@@ -299,7 +298,7 @@ details > .desc {
                    ] %}
     {{ shared_macros.render_with_tabs('note',
         unique_id="{}-{}".format(note.note_id, loop.index),
-        desc=_render_note_desc(note, shorten_sort_time, desc_to_html, match_domains),
+        desc=_render_note_desc(note, generate_print_sort_time(scope_id), desc_to_html, match_domains),
         tabs=tabs) }}
   {% endfor %}
   </div>{# notes #}

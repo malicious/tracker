@@ -314,10 +314,29 @@ def _generate_jinja_kwargs(scope, domain):
 
     kwargs["pretty_print_note"] = pretty_print_note
 
-    def shorten_sort_time(dt) -> str:
-        return str(dt)[11:16]
+    def generate_print_sort_time(parent_scope_id):
+        def print_sort_time(n: Note) -> str:
+            if not n.sort_time:
+                return ''
 
-    kwargs["shorten_sort_time"] = shorten_sort_time
+            ns = TimeScope(n.time_scope_id)
+
+            if ns.type == TimeScope.Type.day:
+                ss = TimeScope(n.sort_time.strftime("%G-ww%V.%u"))
+                # print details only if it's the exact same day
+                if ns == parent_scope_id \
+                        and ss == parent_scope_id:
+                    return f'<span class="time">{str(n.sort_time)[11:16]}</span>'
+
+                # otherwise, just print the day
+                return f'<span class="time">{ss.shorten(parent_scope_id)}</span>'
+
+            # TODO: At a loss for what to do, fall back to str()
+            return str(n.sort_time)
+
+        return print_sort_time
+
+    kwargs["generate_print_sort_time"] = generate_print_sort_time
 
     def safen(s: str) -> str:
         if not s:
