@@ -319,23 +319,25 @@ def _generate_jinja_kwargs(scope, domain):
 
     def generate_print_sort_time(parent_scope_id):
         def print_sort_time(n: Note) -> str:
-            if not n.sort_time:
-                return ''
+            scope_id_to_print = TimeScope(n.time_scope_id)
 
-            ns = TimeScope(n.time_scope_id)
+            # For within-day notes, print something more detailed
+            if parent_scope_id.type == TimeScope.Type.day:
+                # Override with sort_time as needed
+                if n.sort_time:
+                    scope_id_to_print = TimeScope(n.sort_time.strftime("%G-ww%V.%u"))
 
-            if ns.type == TimeScope.Type.day:
-                ss = TimeScope(n.sort_time.strftime("%G-ww%V.%u"))
-                # print details only if it's the exact same day
-                if ns == parent_scope_id \
-                        and ss == parent_scope_id:
-                    return f'<span class="time">{str(n.sort_time)[11:16]}</span>'
+                    # If the days are identical, just print the time
+                    if parent_scope_id == scope_id_to_print:
+                        return f'<span class="time">{str(n.sort_time)[11:16]}</span>'
+                    else:
+                        return f'''<span class="time">{
+                            scope_id_to_print.shorten(parent_scope_id)
+                        } {
+                            str(n.sort_time)[11:16]
+                        }</span>'''
 
-                # otherwise, just print the day
-                return f'<span class="time">{ss.shorten(parent_scope_id)}</span>'
-
-            # TODO: At a loss for what to do, fall back to str()
-            return str(n.sort_time)
+            return f'<span class="time">{scope_id_to_print.shorten(parent_scope_id)}</span>'
 
         return print_sort_time
 
