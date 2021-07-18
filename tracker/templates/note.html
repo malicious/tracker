@@ -12,6 +12,12 @@
 
 <style type="text/css">
 :root {
+  --spacer-margin-size: 24.0%;
+
+  /* short text can be a little less visible, since there's not much of it? */
+  --short-text-low-priority-color: #c0c0c0;
+  --text-low-priority-color: #999;
+
 {% if prev_scope or next_scope %}
   --scope-nav-height: calc(24px + 24px);
 {% else %}
@@ -44,7 +50,6 @@ body > .scope > .scope-header-container {
   padding-bottom: 12px;
   padding-left: var(--default-left-right-margin);
   padding-right: var(--default-left-right-margin);
-  margin-bottom: calc(36px - 8px - 12px); /* TODO: what is this */
 }
 body > .scope > .scope-header-container > .scope-header {
   font-size: 36px;
@@ -55,6 +60,10 @@ body > .scope > .scope-header-container > .scope-header {
 }
 body > .scope > .scope-header-container > .scope-header::before {
   content: "# ";
+}
+body > .scope > .spacer-下 {
+  /* margin instead of height, so it can stack with other scopes' */
+  margin-bottom: 32px;
 }
 
 /* week scope */
@@ -82,6 +91,10 @@ body > .scope > .scope > .scope-header-container > .scope-header {
 }
 body > .scope > .scope > .scope-header-container > .scope-header::before {
   content: "## ";
+}
+body > .scope > .scope > .spacer-下 {
+  /* margin instead of height, so it can stack with other scopes' */
+  margin-bottom: 32px;
 }
 
 /* day scope */
@@ -135,7 +148,11 @@ body > .scope > .scope > .scope > .scope-header-container > .scope-header::befor
   content: " "; /* these are nbsp's */
 }
 .domain, .domain a:link {
-  color: #aaa;
+  color: var(--short-text-low-priority-color);
+}
+.domain a:visited {
+  /* TODO: this needs a better name */
+  color: var(--tab-label-fg-color);
 }
 .domain a:hover {
   color: blue;
@@ -159,7 +176,7 @@ body > .scope > .scope > .scope > .scope-header-container > .scope-header::befor
   padding-right: 1.2rem;
 }
 .summaries > .row > .time-scope a:link {
-  color: #c0c0c0;
+  color: var(--short-text-low-priority-color);
 }
 .summaries > .row > .time-scope a:hover {
   color: blue;
@@ -199,19 +216,23 @@ details > .desc {
   -webkit-transform: translate3d(0, 0, 0);
 }
 
+.note-spacer {
+  border: 1px solid var(--default-hover-color);
+
+  margin-left: var(--spacer-margin-size);
+  margin-right: var(--spacer-margin-size);
+  margin-top: 24px;
+  margin-bottom: 24px;
+}
+
 .sub-desc {
   white-space: pre-wrap;
+  color: var(--text-low-priority-color);
   font-size: 12px;
   line-height: 16px;
+
   margin-top: 8px;
   padding-left: 24px;
-
-  /* override the .note-desc lemonchiffon */
-  disabled-background-color: var(--default-bg-color);
-}
-.sub-desc:hover {
-  /* override the .note-desc lemonchiffon */
-  disabled-background-color: var(--default-hover-color);
 }
 
 .note-json > div {
@@ -297,7 +318,7 @@ details > .desc {
 
   {# print event notes #}
   {% if dict['events'] %}
-  {% if dict['summaries'] %}<hr>{% endif %}
+  {% if dict['summaries'] %}<div class="note-spacer"></div>{% endif %}
   <div class="events">
   {% for note in dict['events'] %}
     {% set tabs = [('json', "<div>{}</div>".format(pretty_print_note(note))),
@@ -313,7 +334,7 @@ details > .desc {
 
   {# print normal notes #}
   {% if dict['notes'] %}
-  {% if dict['summaries'] or dict['events'] %}<hr>{% endif %}
+  {% if dict['summaries'] or dict['events'] %}<div class="note-spacer"></div>{% endif %}
   <div class="notes">
   {% for note in dict['notes'] %}
     {% set tabs = [('json', "<div>{}</div>".format(pretty_print_note(note))),
@@ -332,6 +353,8 @@ details > .desc {
     {{ render_notes_in_scope(child_scope, child_dict) }}
   {% endfor %}
   {% endif %}
+
+  <div class="spacer-下"></div>
 
 </div>{# note-scope #}
 {%- endmacro %}

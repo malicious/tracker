@@ -139,7 +139,7 @@ class NotesFormatter:
 
                 # tally up the number of per-day entries
                 for day_entries in week_entries["child_scopes"].values():
-                    for note_type in ["summaries", "events", "notes"]:
+                    for note_type in ["events", "notes"]:
                         if note_type in day_entries:
                             week_count += len(day_entries[note_type])
 
@@ -148,7 +148,7 @@ class NotesFormatter:
                     for day_scope in list(week_entries["child_scopes"].keys()):
                         day_entries = week_entries["child_scopes"][day_scope]
 
-                        for note_type in ["summaries", "events", "notes"]:
+                        for note_type in ["events", "notes"]:
                             if note_type in day_entries:
                                 if note_type not in week_entries:
                                     week_entries[note_type] = []
@@ -162,17 +162,16 @@ class NotesFormatter:
                         del week_entries["child_scopes"]
 
                 # tally up the number of per-week entries
-                for note_type in ["summaries", "events", "notes"]:
+                for note_type in ["events", "notes"]:
                     if note_type in week_entries:
                         quarter_count += len(week_entries[note_type])
 
-                quarter_count += week_count
-
-            if quarter_count < MIN_CHILD_ENTRIES * 100:
+            if quarter_count < MIN_CHILD_ENTRIES:
                 for week_scope in list(quarter_entries["child_scopes"].keys()):
                     week_entries = quarter_entries["child_scopes"][week_scope]
 
-                    for note_type in ["summaries", "events", "notes"]:
+                    # NB Don't move week summaries, they're already-moved
+                    for note_type in ["events", "notes"]:
                         if note_type in week_entries:
                             if note_type not in quarter_entries:
                                 quarter_entries[note_type] = []
