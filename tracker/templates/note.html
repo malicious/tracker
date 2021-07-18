@@ -1,11 +1,13 @@
-{% import "shared-macros.jinja" as note_macros %}
+{% import "shared-macros.jinja" as shared_macros %}
 
 {% extends "base.html" %}
 
 
 
 {% block head %}
+
 {{ super() }}
+
 <title>{{ doc_title }}</title>
 
 <style type="text/css">
@@ -188,8 +190,43 @@ details > .desc {
 
   -webkit-transform: translate3d(0, 0, 0);
 }
+
+.note-json > div {
+  white-space: pre-wrap;
+  margin: 12px;
+  padding: 12px;
+  border: 1px solid rgba(29,28,29,.13);
+  border-radius: 6px;
+  background: var(--default-bg-color);
+}
+
+{{ shared_macros.note_edit_css('note', ['edit', 'json']) }}
+
 </style>
+
+<script>
+
+{{ shared_macros.note_edit_js|safe }}
+
+</script>
+
 {% endblock %}
+
+
+
+{% macro _render_note_desc(n, shorten_sort_time, desc_to_html, match_domains) %}
+{% if n.sort_time %}
+  <span class="time">{{ shorten_sort_time(n.sort_time) }}</span>
+{% endif %}
+
+{% if n.short_desc %}
+  {{ desc_to_html(n.short_desc)|safe }}
+{% elif n.source %}
+  {{ n.source }}
+{% endif %}
+
+<span class="domain">{{ match_domains(n)|safe }}</span>
+{% endmacro %}
 
 
 
@@ -266,27 +303,13 @@ details > .desc {
   {% if dict['notes'] %}
   <div class="notes">
   {% for note in dict['notes'] %}
-    <details id="{{ note.note_id }}" class="{{ safen(note.type) }}">
-      <summary>
-      {% if note.sort_time %}
-        <span class="time">{{ shorten_sort_time(note.sort_time) }}</span>
-      {% endif %}
-
-      {% if note.short_desc %}
-        <span class="title">{{ desc_to_html(note.short_desc)|safe }}</span>
-      {% elif note.source %}
-        <span class="title">{{ note.source }}</span>
-      {% endif %}
-        <span class="domain">{{ match_domains(note)|safe }}</span>
-      </summary>
-      <div class="desc">
-      {% if note.desc %}
-        {{ desc_to_html(note.desc)|safe }}
-        <hr />
-      {% endif %}
-        <pre>{{ pretty_print_note(note)|safe }}</pre>
-      </div>
-    </details>
+    {% set tabs = [('edit', 'um. edit.'),
+                   ('json', "<div>{}</div>".format(pretty_print_note(note))),
+                   ] %}
+    {{ shared_macros.render_with_tabs('note',
+        unique_id="{}-{}".format(note.note_id, loop.index),
+        desc=_render_note_desc(note, shorten_sort_time, desc_to_html, match_domains),
+        tabs=tabs) }}
   {% endfor %}
   </div>{# notes #}
   {% endif %}
