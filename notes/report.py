@@ -192,7 +192,7 @@ def _generate_jinja_kwargs(scope, domain):
                 return f'<a href="/report-notes?domain={escape(d)}">{d}</a>'
 
         matching_domains_as_html = [domain_to_html(d.domain_id) for d in matching_domains]
-        return ", ".join(matching_domains_as_html)
+        return " & ".join(matching_domains_as_html)
 
     kwargs["match_domains"] = list_matching_domains
 
