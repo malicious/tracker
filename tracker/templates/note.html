@@ -178,7 +178,7 @@ body > .scope > .scope > .scope > .scope-header-container > .scope-header::befor
   disabled-overflow: auto;
   disabled-background-color: lemonchiffon;
 }
-.event .note-desc {
+.event .short-desc {
   background-color: lemonchiffon;
 }
 
@@ -197,6 +197,21 @@ details > .desc {
   font-size: 70%;
 
   -webkit-transform: translate3d(0, 0, 0);
+}
+
+.sub-desc {
+  white-space: pre-wrap;
+  font-size: 12px;
+  line-height: 16px;
+  margin-top: 8px;
+  padding-left: 24px;
+
+  /* override the .note-desc lemonchiffon */
+  disabled-background-color: var(--default-bg-color);
+}
+.sub-desc:hover {
+  /* override the .note-desc lemonchiffon */
+  disabled-background-color: var(--default-hover-color);
 }
 
 .note-json > div {
@@ -227,12 +242,17 @@ details > .desc {
 {{ print_sort_time(n)|safe }}
 
 {% if n.short_desc %}
-  {{ desc_to_html(n.short_desc)|safe }}
+<span class="short-desc">{{ desc_to_html(n.short_desc)|safe }}</span>
 {% elif n.source %}
-  {{ n.source }}
+<span class="short-desc">{{ n.source }}</span>
 {% endif %}
 
 <span class="domain">{{ match_domains(n)|safe }}</span>
+
+{% if n.desc %}
+<div class="sub-desc">{{ n.desc }}</div>
+{% endif %}
+
 {% endmacro %}
 
 
