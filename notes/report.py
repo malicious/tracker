@@ -11,6 +11,8 @@ from tasks_v1.time_scope import TimeScopeUtils, TimeScope
 
 
 def report_notes(page_scope, page_domain):
+    # return  _report_notes_for(page_scope, page_domain, as_json=True)
+
     response_by_quarter = _report_notes_for(page_scope, page_domain)
     return _format_as_html(page_scope, page_domain, response_by_quarter)
 
@@ -126,6 +128,60 @@ class NotesFormatter:
             sort_and_attach(day_scope,
                             response_by_quarter[quarter_scope]["child_scopes"][week_scope]["child_scopes"][day_scope])
 
+        # And now, _un_-filter. Because we have great foresight.
+        MIN_CHILD_ENTRIES = 10
+
+        for quarter_scope, quarter_entries in response_by_quarter.items():
+            quarter_count = 0
+
+            for week_scope, week_entries in quarter_entries["child_scopes"].items():
+                week_count = 0
+
+                # tally up the number of per-day entries
+                for day_entries in week_entries["child_scopes"].values():
+                    if "notes" in day_entries:
+                        week_count += len(day_entries["notes"])
+
+                # if there's not enough, move them all up
+                if week_count < MIN_CHILD_ENTRIES:
+                    for day_scope in list(week_entries["child_scopes"].keys()):
+                        day_entries = week_entries["child_scopes"][day_scope]
+
+                        # TODO: Move summaries and events, as well
+                        if "notes" in day_entries:
+                            if "notes" not in week_entries:
+                                week_entries["notes"] = []
+                            week_entries["notes"].extend(day_entries["notes"])
+                            del day_entries["notes"]
+
+                        if not day_entries:
+                            del week_entries["child_scopes"][day_scope]
+
+                    if not week_entries["child_scopes"]:
+                        del week_entries["child_scopes"]
+
+                # tally up the number of per-week entries
+                if "notes" in week_entries:
+                    quarter_count += len(week_entries["notes"])
+
+                quarter_count += week_count
+
+            if quarter_count < MIN_CHILD_ENTRIES * 100:
+                for week_scope in list(quarter_entries["child_scopes"].keys()):
+                    week_entries = quarter_entries["child_scopes"][week_scope]
+
+                    if "notes" in week_entries:
+                        if "notes" not in quarter_entries:
+                            quarter_entries["notes"] = []
+                        quarter_entries["notes"].extend(week_entries["notes"])
+                        del week_entries["notes"]
+
+                    if not week_entries:
+                        del quarter_entries["child_scopes"][week_scope]
+
+                if not quarter_entries["child_scopes"]:
+                    del quarter_entries["child_scopes"]
+
         return response_by_quarter
 
     def report_as_json(self):
@@ -150,7 +206,7 @@ class NotesFormatter:
         return scope_notes_to_json(self.report())
 
 
-def _report_notes_for(scope, domain):
+def _report_notes_for(scope, domain, as_json=False):
     base_query = Note.query
 
     if scope:
@@ -170,6 +226,9 @@ def _report_notes_for(scope, domain):
     fmt = NotesFormatter()
     for note in base_query.all():
         fmt.add_note(note)
+
+    if as_json:
+        return fmt.report_as_json()
 
     return fmt.report()
 
