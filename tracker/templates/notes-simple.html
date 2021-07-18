@@ -9,7 +9,17 @@
 {{ super() }}
 
 <style type="text/css">
-{{ shared_macros.note_edit_css('note', ['edit', 'json']) }}
+.note-json > div,
+.note-md > div {
+  white-space: pre-wrap;
+  margin: 12px;
+  padding: 12px;
+  border: 1px solid rgba(29,28,29,.13);
+  border-radius: 6px;
+  background: var(--default-bg-color);
+}
+
+{{ shared_macros.note_edit_css('note', ['edit', 'md', 'json',]) }}
 </style>
 
 <script>
@@ -24,7 +34,8 @@
 
 {% for note in notes_list %}
   {% set tabs = [('edit', 'um. edit.'),
-                 ('json', "<pre>{}</pre>".format(pretty_print_note(note))),
+                 ('md', "<div>{}</div>".format(note.desc)),
+                 ('json', "<div>{}</div>".format(pretty_print_note(note))),
                  ] %}
   {{ shared_macros.render_with_tabs('note',
         unique_id="{}-{}".format(note.note_id, loop.index),
