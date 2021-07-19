@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 from collections import defaultdict
@@ -235,6 +236,12 @@ def _report_notes_for(scope, domain, as_json=False):
     return fmt.report()
 
 
+def _domain_to_color(domain: str) -> str:
+    domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
+    color_h = int(domain_hash[0:7], 16) % 256
+    return f"color: hsl({color_h}, 70%, 50%);"
+
+
 def _generate_jinja_kwargs(scope, domain):
     kwargs = {}
 
@@ -248,9 +255,9 @@ def _generate_jinja_kwargs(scope, domain):
 
         def domain_to_html(d):
             if scope:
-                return f'<a href="/report-notes?scope={scope}&domain={escape(d)}">{d}</a>'
+                return f'<a href="/report-notes?scope={scope}&domain={escape(d)}" style="{_domain_to_color(d)}">{d}</a>'
             else:
-                return f'<a href="/report-notes?domain={escape(d)}">{d}</a>'
+                return f'<a href="/report-notes?domain={escape(d)}" style="{_domain_to_color(d)}">{d}</a>'
 
         matching_domains_as_html = [domain_to_html(d.domain_id) for d in matching_domains]
         return " & ".join(matching_domains_as_html)
