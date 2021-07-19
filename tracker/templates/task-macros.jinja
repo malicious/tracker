@@ -38,14 +38,15 @@
   display: grid;
   grid-template-columns: min-content 7em min-content auto min-content;
 }
+.linkage-row, .linkage-header-row, .linkage-footer-row {
+  display: contents;
+  grid-column: 1 / 5;
+}
 .linkage-header-row label {
   font-size: 80%;
   padding: 0.5em;
   vertical-align: bottom;
-}
-.linkage-row, .linkage-header-row, .linkage-footer-row {
-  display: contents;
-  grid-column: 1 / 5;
+  min-width: 100px;
 }
 .linkage-row textarea {
   width: calc(100% - 0.6em);
@@ -138,6 +139,7 @@ function addTLRow(e) {
 
   var tl_block = tl_footer_row.parentNode;
   tl_block.insertBefore(new_row.content, tl_footer_row);
+  refreshBlockDeleteButtons(tl_block);
 }
 
 function enableNewTLButtons() {
@@ -156,7 +158,23 @@ function deleteTLRow(e) {
   console.log(`deleteTLRow: got button click on button ${e.target}`);
 
   var tl_row = e.target.parentNode.parentNode;
+  var tl_block = tl_row.parentNode;
+
   tl_row.remove();
+  refreshBlockDeleteButtons(tl_block);
+}
+
+function refreshBlockDeleteButtons(b) {
+    // Counts the number of rows in this block, and disables the button if there's exactly one.
+    // Otherwise, re-enables the first button (assumes its listener is still in place).
+    //
+    row_count = b.querySelectorAll(".linkage-row").length;
+    if (row_count == 1) {
+      b.querySelector(".linkage-row button.delete").disabled = true;
+    } else {
+      b.querySelector(".linkage-row button.delete").disabled = false;
+    }
+
 }
 
 function enableDeleteTLButtons() {
@@ -166,6 +184,11 @@ function enableDeleteTLButtons() {
   for (var i = 0, len = delete_tl_buttons.length; i < len; i++) {
     delete_tl_buttons[i].disabled = false;
     delete_tl_buttons[i].addEventListener("click", deleteTLRow, false);
+  }
+
+  const all_tasks = document.querySelectorAll(".linkage-block");
+  for (var i = 0, len = all_tasks.length; i < len; i++) {
+    refreshBlockDeleteButtons(all_tasks[i])
   }
 }
 
