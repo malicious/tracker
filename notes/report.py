@@ -238,7 +238,9 @@ def _report_notes_for(scope, domain, as_json=False):
 
 def _domain_to_color(domain: str) -> str:
     domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
-    color_h = int(domain_hash[0:7], 16) % 256
+    domain_hash_int = int(domain_hash[0:4], 16)
+
+    color_h = ((domain_hash_int + 4) % 8) * (256.0/8)
     return f"color: hsl({color_h}, 70%, 50%);"
 
 
