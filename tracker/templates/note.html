@@ -1,249 +1,302 @@
+{% import "shared-macros.jinja" as note_macros %}
+
 {% extends "base.html" %}
 
+
+
 {% block head %}
-    {{ super() }}
-    <title>{{ doc_title }}</title>
+{{ super() }}
+<title>{{ doc_title }}</title>
 
-    <style type="text/css">
-        body {
-            font-size: 100%;
-            margin-left:  80pt;
-            margin-right: 80pt;
-            margin-bottom: 20em;
-        }
-        .scope {
-            margin-bottom: 3.0em;
-        }
+<style type="text/css">
+:root {
+{% if prev_scope or next_scope %}
+  --scope-nav-height: calc(24px + 24px);
+{% else %}
+  --scope-nav-height: 0px;
+{% endif %}
+}
 
-        /* quarter scope */
-        body > .scope > .scope-id {
-            font-size: 200%;
-            margin-bottom: 0.8em;
-            border-bottom: 1pt solid dimgrey;
-            position: sticky;
-            top: 0px;
-            height: 1.6em;
-            background-color: #eee;
-            z-index: 2000;
-        }
-        body > .scope > .scope-id::before {
-            content: "# ";
-        }
+.top-toolbar {
+  text-align: center;
+  font-size: 12px;
+  line-height: 24px;
+  height: 24px;
+}
+body > .spacer-下 {
+  height: 640px;
+}
 
-        /* week scope */
-        body > .scope > .scope > .scope-id {
-            font-size: 150%;
-            position: sticky;
-            top: 2.2em;
-            background-color: #eee;
-            z-index: 1900;
-        }
-        body > .scope > .scope > .scope-id::before {
-            content: "## ";
-        }
+/* quarter scopes */
+body > .scope {
+  /* TODO: this is temporary, should be applied to each element individually */
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
+}
+body > .scope > .spacer-上 {
+  height: 12px;
+}
+body > .scope > .scope-header-container {
+  position: sticky;
+  top: calc(var(--scope-nav-height));
+  height: 37px;
+  z-index: 3;
+  background-color: var(--default-bg-color);
 
-        /* day scope */
-        body > .scope > .scope > .scope {
-            /* draw a nice box around the entire thing */
-            padding-top: 0.5em;
-            padding-left: 0.8em;
-            border: 1px solid #ddd;
-            margin-bottom: 0.5em;
-            padding-bottom: 1.0em;
-        }
-        body > .scope > .scope > .scope > .scope-id {
-            /* keep this sticky */
-            position: sticky;
-            top: 5.5em;
-            background-color: #eee;
-            z-index: 1800;
+  padding-top: 16px;
+  padding-bottom: 12px;
+  margin-bottom: calc(36px - 8px - 12px); /* TODO: what is this */
+}
+body > .scope > .scope-header-container > .scope-header {
+  font-size: 36px;
+  line-height: 36px;
+  height: 37px;
+  x-disabled-border-bottom: 1pt solid dimgrey;
+  padding-bottom: 8px;
+}
+body > .scope > .scope-header-container > .scope-header::before {
+  content: "# ";
+}
 
-            /* make this more visually distinctive */
-            color: black;
-            padding-bottom: 0.5em;
-        }
-        body > .scope > .scope > .scope > .scope-id::before {
-            content: "### ";
-        }
+/* week scope */
+body > .scope > .scope > .scope-header-container {
+  position: sticky;
+  top: calc(var(--scope-nav-height)
+    + 16px + 37px + 12px /* quarter scope */);
+  height: 33px;
+  z-index: 2;
+  background-color: var(--default-bg-color);
 
-        /* title and domain formatting */
-        .title-and-domain {
-            display: flex;
-            flow-direction: row;
-        }
-        .title-and-domain > .title {
-            flex: 1 4 auto;
-        }
-        .title-and-domain > .domain {
-            flex: 1 2 auto;
-            padding-left: 1.3rem;
-            font-size: 80%;
-            text-align: right;
+  padding-top: 16px;
+  padding-bottom: 12px;
+  margin-bottom: calc(32px - 8px - 12px); /* TODO: what is this */
+}
+body > .scope > .scope > .scope-header-container > .scope-header {
+  font-size: 24px;
+  line-height: 24px;
+  height: 25px;
+  color: black;
+  border-bottom: 1px solid dimgrey;
+  padding-bottom: 8px;
+}
+body > .scope > .scope > .scope-header-container > .scope-header::before {
+  content: "## ";
+}
 
-            /* next two lines position the sub-div that has actual text */
-            display: flex;
-            flex-direction: column-reverse;
-        }
-        /* generic domain styling */
-        .domain::before {
-            content: " "; /* these are nbsp's */
-        }
-        .domain, .domain a:link {
-            color: #aaa;
-        }
-        .domain a:hover {
-            color: blue;
-        }
+/* day scope */
+body > .scope > .scope > .scope {
+  /* draw a nice box around the entire thing */
+  padding-top: 0.5em;
+  padding-left: 0.8em;
+  x-disabled-border: 1px solid #ddd;
+  margin-bottom: 0.5em;
+  padding-bottom: 1.0em;
+}
+body > .scope > .scope > .scope > .scope-header-container {
+  position: sticky;
+  top: calc(var(--scope-nav-height)
+    + 16px + 37px + 12px /* quarter scope */
+    + 16px + 33px + 12px /* week scope */);
+  z-index: 1;
+  background-color: var(--default-bg-color);
+  font-weight: 600;
 
-        /* summary block styling */
-        .summaries {
-            display: flex;
-            flex-direction: column;
-            margin-bottom: 2.0em;
-        }
-        .summaries > .row {
-            display: flex;
-            flow-direction: row;
-        }
-        .summaries > .row > .time-scope {
-            flex: none;
-            padding-left: 0.4rem;
-            padding-right: 1.2rem;
-        }
-        .summaries > .row > .time-scope a:link {
-            color: #c0c0c0;
-        }
-        .summaries > .row > .time-scope a:hover {
-            color: blue;
-        }
-        .summaries > .row > .content-vertical {
-            flex: 4 2 auto;
-            min-width: 40%;
-        }
-        .summaries > .row > .content-vertical > .desc {
-            color: black;
-            white-space: pre-wrap;
-        }
+  margin-top: calc(32px - 12px);
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+body > .scope > .scope > .scope > .scope-header-container > .scope-header::before {
+  content: "### ";
+}
 
-        /* event block styling */
-        .events {
-            overflow: auto;
-            max-height: 300px;
-            background-color: lemonchiffon;
-        }
+/* title and domain formatting */
+.title-and-domain {
+  display: flex;
+  flow-direction: row;
+}
+.title-and-domain > .title {
+  flex: 1 4 auto;
+}
+.title-and-domain > .domain {
+  flex: 1 2 auto;
+  padding-left: 1.3rem;
+  font-size: 80%;
+  text-align: right;
 
-        /* individual note styling */
-        details > .desc {
-            padding: 0.5em;
-            background-color: rgb(246, 246, 246);
-            font-size: 70%;
-        }
-    </style>
+  /* next two lines position the sub-div that has actual text */
+  display: flex;
+  flex-direction: column-reverse;
+}
+/* generic domain styling */
+.domain::before {
+  content: " "; /* these are nbsp's */
+}
+.domain, .domain a:link {
+  color: #aaa;
+}
+.domain a:hover {
+  color: blue;
+}
+
+/* summary block styling */
+.summaries {
+  display: flex;
+  flex-direction: column;
+  margin-bottom: 2.0em;
+}
+.summaries > .row {
+  display: flex;
+  flow-direction: row;
+}
+.summaries > .row > .time-scope {
+  flex: none;
+  padding-left: 0.4rem;
+  padding-right: 1.2rem;
+}
+.summaries > .row > .time-scope a:link {
+  color: #c0c0c0;
+}
+.summaries > .row > .time-scope a:hover {
+  color: blue;
+}
+.summaries > .row > .content-vertical {
+  flex: 4 2 auto;
+  min-width: 40%;
+}
+.summaries > .row > .content-vertical > .desc {
+  color: black;
+  white-space: pre-wrap;
+}
+
+/* event block styling */
+.events {
+  overflow: auto;
+  background-color: lemonchiffon;
+}
+
+/* individual note styling */
+.scope details {
+  font-size: 16px;
+  line-height: 24px;
+  margin-top: 8px;
+  margin-bottom: 8px;
+}
+details > .desc {
+  padding: 0.5em;
+  background-color: rgb(246, 246, 246);
+  font-size: 70%;
+
+  -webkit-transform: translate3d(0, 0, 0);
+}
+</style>
 {% endblock %}
 
 
 
-{% macro scope(scope_id, dict) -%}
+{% macro render_notes_in_scope(scope_id, dict) -%}
 {% set ns = namespace() %}
 <div class="scope">
-    <div class="scope-id">{{ week_lengthener(scope_id) }}</div>
+  <div class="spacer-上"></div>
+  <div class="scope-header-container">
+    <div class="scope-header">{{ week_lengthener(scope_id) }}</div>
+  </div>
 
-    {# print summary notes #}
-    {% if dict['summaries'] %}
-    <div class="summaries">
-        {% set ns.prev_scope = None %}
-        {% for note in dict['summaries'] %}
-        <div class="row">
-            <div class="time-scope">
-                {% if not ns.prev_scope or ns.prev_scope != note.time_scope_id %}
-                <a href="/note/{{ note.note_id }}">{{ note.time_scope_id }}</a>
-                {% endif %}
-            </div>
+  {# print summary notes #}
+  {% if dict['summaries'] %}
+  <div class="summaries">
+    {% set ns.prev_scope = None %}
+    {% for note in dict['summaries'] %}
+    <div class="row">
+      <div class="time-scope">
+      {% if not ns.prev_scope or ns.prev_scope != note.time_scope_id %}
+        <a href="/note/{{ note.note_id }}">{{ note.time_scope_id }}</a>
+      {% endif %}
+      </div>
 
-            <div class="content-vertical">
-                <div class="title-and-domain">
-                    {% if note.short_desc %}
-                    <div class="title">{{ desc_to_html(note.short_desc)|safe }}</div>
-                    {% else %}
-                    <div class="desc">{{ desc_to_html(note.desc)|safe }}</div>
-                    {% endif %}
-                    <div class="domain">
-                        <div>{{ match_domains(note)|safe }}</div>
-                    </div>
-                </div>
-            </div>{# content-vertical #}
-        </div>{# row #}
-        {% set ns.prev_scope = note.time_scope_id %}
-        {% endfor %}
-    </div>{# summaries #}
-    {% endif %}
-
-    {# print event notes #}
-    {% if dict['events'] %}
-    <div class="events">
-        {% for note in dict['events'] %}
-        <details id="{{ note.note_id }}" class="{{ safen(note.type) }}">
-            <summary>
-                {% if note.sort_time %}
-                <span class="time">{{ shorten_sort_time(note.sort_time) }}</span>
-                {% endif %}
-
-                {% if note.short_desc %}
-                <span class="title">{{ desc_to_html(note.short_desc)|safe }}</span>
-                {% elif note.source %}
-                <span class="title">{{ note.source }}</span>
-                {% endif %}
-                {% if match_domains(note) %}
-                <span class="domain">{{ match_domains(note)|safe }}</span>
-                {% endif %}
-            </summary>
-            <div class="desc">
-                {% if note.desc %}
-                {{ desc_to_html(note.desc)|safe }}
-                <hr />
-                {% endif %}
-                <pre>{{ pretty_print_note(note)|safe }}</pre>
-            </div>
-        </details>
-        {% endfor %}
-    </div>{# events #}
-    {% endif %}
-
-    {# print normal notes #}
-    {% if dict['notes'] %}
-    <div class="notes">
-        {% for note in dict['notes'] %}
-        <details id="{{ note.note_id }}" class="{{ safen(note.type) }}">
-            <summary>
-                {% if note.sort_time %}
-                <span class="time">{{ shorten_sort_time(note.sort_time) }}</span>
-                {% endif %}
-
-                {% if note.short_desc %}
-                <span class="title">{{ desc_to_html(note.short_desc)|safe }}</span>
-                {% elif note.source %}
-                <span class="title">{{ note.source }}</span>
-                {% endif %}
-                <span class="domain">{{ match_domains(note)|safe }}</span>
-            </summary>
-            <div class="desc">
-                {% if note.desc %}
-                {{ desc_to_html(note.desc)|safe }}
-                <hr />
-                {% endif %}
-                <pre>{{ pretty_print_note(note)|safe }}</pre>
-            </div>
-        </details>
-        {% endfor %}
-    </div>{# notes #}
-    {% endif %}
-
-    {# print child scopes #}
-    {% if dict['child_scopes'] %}
-    {% for child_scope, child_dict in dict['child_scopes'].items()|sort(reverse=true, attribute="0") %}
-        {{ scope(child_scope, child_dict) }}
+      <div class="content-vertical">
+        <div class="title-and-domain">
+        {% if note.short_desc %}
+          <div class="title">{{ desc_to_html(note.short_desc)|safe }}</div>
+        {% else %}
+          <div class="desc">{{ desc_to_html(note.desc)|safe }}</div>
+        {% endif %}
+          <div class="domain">
+            <div>{{ match_domains(note)|safe }}</div>
+          </div>
+        </div>
+      </div>{# content-vertical #}
+    </div>{# row #}
+    {% set ns.prev_scope = note.time_scope_id %}
     {% endfor %}
-    {% endif %}
+  </div>{# summaries #}
+  {% endif %}
+
+  {# print event notes #}
+  {% if dict['events'] %}
+  <div class="events">
+    {% for note in dict['events'] %}
+    <details id="{{ note.note_id }}" class="{{ safen(note.type) }}">
+      <summary>
+        {% if note.sort_time %}
+        <span class="time">{{ shorten_sort_time(note.sort_time) }}</span>
+        {% endif %}
+
+      {% if note.short_desc %}
+        <span class="title">{{ desc_to_html(note.short_desc)|safe }}</span>
+      {% elif note.source %}
+        <span class="title">{{ note.source }}</span>
+      {% endif %}
+      {% if match_domains(note) %}
+        <span class="domain">{{ match_domains(note)|safe }}</span>
+      {% endif %}
+      </summary>
+      <div class="desc">
+      {% if note.desc %}
+        {{ desc_to_html(note.desc)|safe }}
+        <hr />
+      {% endif %}
+        <pre>{{ pretty_print_note(note)|safe }}</pre>
+      </div>
+    </details>
+    {% endfor %}
+  </div>{# events #}
+  {% endif %}
+
+  {# print normal notes #}
+  {% if dict['notes'] %}
+  <div class="notes">
+  {% for note in dict['notes'] %}
+    <details id="{{ note.note_id }}" class="{{ safen(note.type) }}">
+      <summary>
+      {% if note.sort_time %}
+        <span class="time">{{ shorten_sort_time(note.sort_time) }}</span>
+      {% endif %}
+
+      {% if note.short_desc %}
+        <span class="title">{{ desc_to_html(note.short_desc)|safe }}</span>
+      {% elif note.source %}
+        <span class="title">{{ note.source }}</span>
+      {% endif %}
+        <span class="domain">{{ match_domains(note)|safe }}</span>
+      </summary>
+      <div class="desc">
+      {% if note.desc %}
+        {{ desc_to_html(note.desc)|safe }}
+        <hr />
+      {% endif %}
+        <pre>{{ pretty_print_note(note)|safe }}</pre>
+      </div>
+    </details>
+  {% endfor %}
+  </div>{# notes #}
+  {% endif %}
+
+  {# print child scopes #}
+  {% if dict['child_scopes'] %}
+  {% for child_scope, child_dict in dict['child_scopes'].items()|sort(reverse=true, attribute="0") %}
+    {{ render_notes_in_scope(child_scope, child_dict) }}
+  {% endfor %}
+  {% endif %}
 
 </div>{# note-scope #}
 {%- endmacro %}
@@ -251,10 +304,9 @@
 
 
 {% block content %}
-
-{% set ns = namespace() %}
 {% for quarter, quarter_dict in response_by_quarter.items()|sort(reverse=true, attribute='0') %}
-{{ scope(quarter, quarter_dict) }}
-
+{{ render_notes_in_scope(quarter, quarter_dict) }}
 {% endfor %}
+
+<div class="spacer-下"></div>
 {% endblock %}

@@ -1,0 +1,32 @@
+{% import "shared-macros.jinja" as note_macros %}
+
+{% extends "base.html" %}
+
+
+
+{% block head %}
+{{ super() }}
+<style type="text/css">
+{{ note_macros.note_edit_css('note', ['edit', 'json']) }}
+</style>
+
+<script>
+{{ note_macros.note_edit_js|safe }}
+</script>
+{% endblock %}
+
+
+
+{% block content %}
+
+{% for note in notes_list %}
+  {% set tabs = [('edit', 'um. edit.'),
+                 ('json', "<pre>{}</pre>".format(pretty_print_note(note))),
+                 ] %}
+  {{ note_macros.render_with_tabs('note',
+                                  unique_id="{}-{}".format(note.note_id, loop.index),
+                                  desc=desc_to_html(note.short_desc),
+                                  tabs=tabs) }}
+{% endfor %}
+
+{% endblock %}
