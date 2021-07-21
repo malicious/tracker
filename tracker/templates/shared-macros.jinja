@@ -1,0 +1,112 @@
+{% macro note_edit_css(item_type, tab_names) %}
+:root {
+  --tab-label-fg-color: hsl(212, 32%, 60%);
+  --tab-selected-bg-color: hsl(210, 0%, 96%);
+  --tab-label-font-size: 12px;
+}
+
+.{{item_type}}-and-tabs {
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
+
+  -webkit-transform: translate3d(0, 0, 0);
+}
+.{{item_type}}-and-tabs:hover {
+  background: var(--default-hover-color);
+}
+
+.{{item_type}}-only {
+  font-size: 16px;
+  line-height: 24px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  display: flex;
+}
+
+.tabs {
+  width: 100%;
+  position: relative;
+}
+.tabs > input {
+  display: none;
+}
+.tabs > label {
+  height: 24px;
+  line-height: 24px;
+  font-size: var(--tab-label-font-size);
+
+  position: absolute;
+  top: -24px;
+  color: var(--tab-label-fg-color);
+  text-align: center;
+}
+{% for tab_name in tab_names %}
+.tabs > label.show-{{tab_name}} {
+  width: 48px;
+  right: calc(48px * {{ loop.index - 1 }});
+}
+{% endfor %}
+
+{% for tab_name in tab_names %}
+/* highlight tab labels when selected */
+.{{item_type}}-{{tab_name}} {
+  background-color: var(--tab-selected-bg-color);
+  padding: 0.5em;
+  font-size: 12px;
+
+  display: none;
+}
+input.show-{{tab_name}}:checked ~ label.show-{{tab_name}} {
+  background-color: var(--tab-selected-bg-color);
+  border-top: 2px solid var(--tab-label-fg-color);
+  border-radius: 6px;
+}
+input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
+  display: inherit;
+}
+
+/* hide tab labels when not-hovered + not-selected */
+.{{item_type}}-and-tabs label.show-{{tab_name}} {
+  display: none;
+}
+.{{item_type}}-and-tabs input.show-{{tab_name}}:checked ~ label.show-{{tab_name}} {
+  display: inherit;
+}
+.{{item_type}}-and-tabs:hover label.show-{{tab_name}} {
+  display: inherit;
+}
+{% endfor %}
+{% endmacro %}{# note_edit_css #}
+
+
+
+{% set note_edit_js %}
+{% endset %}{# note_edit_js #}
+
+
+
+{% macro render_with_tabs(item_type, item_styling, unique_id, desc, tabs) %}
+<div class="{{item_type}}-and-tabs" id="{{item_type}}-{{unique_id}}">
+{# The way this `label` wraps everything, it makes the whole row a clickable #}
+<label for="toggle-{{tabs[0][0]}}-{{unique_id}}">
+  <div class="{{item_type}}-only {{item_styling}}">
+    <div class="{{item_type}}-desc">{{ desc }}</div>
+  </div>
+</label>
+
+  <div class="tabs">
+  {% for tab_name, tab_content in tabs %}
+    <input type="checkbox" id="toggle-{{tab_name}}-{{unique_id}}" class="show-{{tab_name}}">
+
+    <label for="toggle-{{tab_name}}-{{unique_id}}" class="show-{{tab_name}}">
+      <span>{{ tab_name }}</span>
+    </label>
+
+    <div class="{{item_type}}-{{tab_name}}">
+      {{ tab_content }}
+    </div>
+
+  {% endfor %}
+  </div>{# tabs #}
+</div>
+{% endmacro %}

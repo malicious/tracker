@@ -1,59 +1,95 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    {% block head %}
-    <meta charset="UTF-8">
-    <style type="text/css">
-        body {
-            font-family: 'Source Code Pro', monospace;
-            line-height: 1.55;
-            overflow-wrap: break-word;
-            color: dimgray;
-            background-color: #eee;
-        }
-        a {
-            color: blue;
-            text-decoration: none;
-        }
-        a:visited {
-            color: blue;
-        }
 
-        .time_scope_nav {
-            font-size: 125%;
-            padding: 0.3em 0 0.3em 0;
-            display: table;
-            width: 100%;
-        }
-        .time_scope_nav .left {
-            display: table-cell;
-            padding-left: 0.8em;
-        }
-        .time_scope_nav .right {
-            display: table-cell;
-            text-align: right;
-            padding-right: 0.8em;
-        }
-    </style>
-    {% endblock %}
+{% block head %}
+<meta charset="UTF-8">
+<style type="text/css">
+:root {
+  --default-bg-color: #eee;
+  --default-fg-color: dimgray;
+  --disabled-fg-color: #aaa;
+  --default-hover-color: #ddd;
+  --default-left-right-margin: 8.0%;
+{% if prev_scope or next_scope %}
+  --scope-nav-height: calc(24px + 24px);
+{% else %}
+  --scope-nav-height: 0px;
+{% endif %}
+}
+body {
+  font-family: 'Source Code Pro', monospace;
+  overflow-wrap: break-word;
+  color: var(--default-fg-color);
+  background-color: var(--default-bg-color);
+  margin: 0;
+}
+a {
+  color: blue;
+  text-decoration: none;
+}
+a:visited {
+  color: blue;
+}
+
+.scope-nav {
+  /* general display stuff */
+  font-size: 24px;
+  line-height: 24px;
+  height: 24px;
+  display: table;
+  padding-top: 24px;
+
+  /* sample (reference) width calculations */
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
+  width: calc(100% - 2 * var(--default-left-right-margin));
+}
+.scope-nav .left {
+  display: table-cell;
+  padding-left: 0.8em;
+}
+.scope-nav .right {
+  display: table-cell;
+  text-align: right;
+  padding-right: 0.8em;
+}
+
+/* sticky header */
+.scope-nav {
+  position: sticky;
+  top: 0px;
+  z-index: 100;
+  background-color: var(--default-bg-color);
+}
+.scope-spacer-上, .scope-spacer-下 {
+  height: 12px;
+}
+</style>
+{% endblock %}
+
 </head>
 
 
 
 <body>
-<div class="time_scope_nav">
-    {% if prev_scope %}
-        <div class="left">{{ prev_scope|safe }}</div>
-    {% endif %}
-    {% if next_scope %}
-        <div class="right">{{ next_scope|safe }}</div>
-    {% endif %}
+
+{% if prev_scope or next_scope %}
+<div class="scope-spacer-上"></div>
+<div class="scope-nav">
+  {% if prev_scope %}
+    <div class="left">{{ prev_scope|safe }}</div>
+  {% endif %}
+  {% if next_scope %}
+    <div class="right">{{ next_scope|safe }}</div>
+  {% endif %}
 </div>
-
-
+<div class="scope-spacer-下"></div>
+{% endif %}
 
 {% block content %}
 {% endblock %}
+
 </body>
 </html>
 

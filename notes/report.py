@@ -1,3 +1,4 @@
+import hashlib
 import json
 import re
 from collections import defaultdict
@@ -11,6 +12,8 @@ from tasks_v1.time_scope import TimeScopeUtils, TimeScope
 
 
 def report_notes(page_scope, page_domain):
+    # return  _report_notes_for(page_scope, page_domain, as_json=True)
+
     response_by_quarter = _report_notes_for(page_scope, page_domain)
     return _format_as_html(page_scope, page_domain, response_by_quarter)
 
@@ -126,6 +129,62 @@ class NotesFormatter:
             sort_and_attach(day_scope,
                             response_by_quarter[quarter_scope]["child_scopes"][week_scope]["child_scopes"][day_scope])
 
+        # And now, _un_-filter. Because we have great foresight.
+        MIN_CHILD_ENTRIES = 10
+
+        for quarter_scope, quarter_entries in response_by_quarter.items():
+            quarter_count = 0
+
+            for week_scope, week_entries in quarter_entries["child_scopes"].items():
+                week_count = 0
+
+                # tally up the number of per-day entries
+                for day_entries in week_entries["child_scopes"].values():
+                    for note_type in ["events", "notes"]:
+                        if note_type in day_entries:
+                            week_count += len(day_entries[note_type])
+
+                # if there's not enough, move them all up
+                if week_count < MIN_CHILD_ENTRIES:
+                    for day_scope in list(week_entries["child_scopes"].keys()):
+                        day_entries = week_entries["child_scopes"][day_scope]
+
+                        for note_type in ["events", "notes"]:
+                            if note_type in day_entries:
+                                if note_type not in week_entries:
+                                    week_entries[note_type] = []
+                                week_entries[note_type].extend(day_entries[note_type])
+                                del day_entries[note_type]
+
+                        if not day_entries:
+                            del week_entries["child_scopes"][day_scope]
+
+                    if not week_entries["child_scopes"]:
+                        del week_entries["child_scopes"]
+
+                # tally up the number of per-week entries
+                for note_type in ["events", "notes"]:
+                    if note_type in week_entries:
+                        quarter_count += len(week_entries[note_type])
+
+            if quarter_count < MIN_CHILD_ENTRIES:
+                for week_scope in list(quarter_entries["child_scopes"].keys()):
+                    week_entries = quarter_entries["child_scopes"][week_scope]
+
+                    # NB Don't move week summaries, they're already-moved
+                    for note_type in ["events", "notes"]:
+                        if note_type in week_entries:
+                            if note_type not in quarter_entries:
+                                quarter_entries[note_type] = []
+                            quarter_entries[note_type].extend(week_entries[note_type])
+                            del week_entries[note_type]
+
+                    if not week_entries:
+                        del quarter_entries["child_scopes"][week_scope]
+
+                if not quarter_entries["child_scopes"]:
+                    del quarter_entries["child_scopes"]
+
         return response_by_quarter
 
     def report_as_json(self):
@@ -150,7 +209,7 @@ class NotesFormatter:
         return scope_notes_to_json(self.report())
 
 
-def _report_notes_for(scope, domain):
+def _report_notes_for(scope, domain, as_json=False):
     base_query = Note.query
 
     if scope:
@@ -171,10 +230,21 @@ def _report_notes_for(scope, domain):
     for note in base_query.all():
         fmt.add_note(note)
 
+    if as_json:
+        return fmt.report_as_json()
+
     return fmt.report()
 
 
-def _format_as_html(scope, domain, response_by_quarter):
+def _domain_to_color(domain: str) -> str:
+    domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
+    domain_hash_int = int(domain_hash[0:4], 16)
+
+    color_h = ((domain_hash_int + 4) % 8) * (256.0/8)
+    return f"color: hsl({color_h}, 70%, 50%);"
+
+
+def _generate_jinja_kwargs(scope, domain):
     kwargs = {}
 
     def list_matching_domains(n: Note) -> str:
@@ -187,12 +257,12 @@ def _format_as_html(scope, domain, response_by_quarter):
 
         def domain_to_html(d):
             if scope:
-                return f'<a href="/report-notes?scope={scope}&domain={escape(d)}">{d}</a>'
+                return f'<a href="/report-notes?scope={scope}&domain={escape(d)}" style="{_domain_to_color(d)}">{d}</a>'
             else:
-                return f'<a href="/report-notes?domain={escape(d)}">{d}</a>'
+                return f'<a href="/report-notes?domain={escape(d)}" style="{_domain_to_color(d)}">{d}</a>'
 
         matching_domains_as_html = [domain_to_html(d.domain_id) for d in matching_domains]
-        return ", ".join(matching_domains_as_html)
+        return " & ".join(matching_domains_as_html)
 
     kwargs["match_domains"] = list_matching_domains
 
@@ -205,6 +275,9 @@ def _format_as_html(scope, domain, response_by_quarter):
     kwargs["week_lengthener"] = week_lengthener
 
     def desc_to_html(desc: str):
+        if not desc:
+            return ''
+
         # escape anything that makes the HTML weird
         desc = re.sub(r'<', r'&lt;', desc)
         # make newlines have effect
@@ -252,10 +325,31 @@ def _format_as_html(scope, domain, response_by_quarter):
 
     kwargs["pretty_print_note"] = pretty_print_note
 
-    def shorten_sort_time(dt) -> str:
-        return str(dt)[11:16]
+    def generate_print_sort_time(parent_scope_id):
+        def print_sort_time(n: Note) -> str:
+            scope_id_to_print = TimeScope(n.time_scope_id)
 
-    kwargs["shorten_sort_time"] = shorten_sort_time
+            # For within-day notes, print something more detailed
+            if parent_scope_id.type == TimeScope.Type.day:
+                # Override with sort_time as needed
+                if n.sort_time:
+                    scope_id_to_print = TimeScope(n.sort_time.strftime("%G-ww%V.%u"))
+
+                    # If the days are identical, just print the time
+                    if parent_scope_id == scope_id_to_print:
+                        return f'<span class="time">{str(n.sort_time)[11:16]}</span>'
+                    else:
+                        return f'''<span class="time">{
+                            scope_id_to_print.shorten(parent_scope_id)
+                        } {
+                            str(n.sort_time)[11:16]
+                        }</span>'''
+
+            return f'<span class="time">{scope_id_to_print.shorten(parent_scope_id)}</span>'
+
+        return print_sort_time
+
+    kwargs["generate_print_sort_time"] = generate_print_sort_time
 
     def safen(s: str) -> str:
         if not s:
@@ -286,6 +380,20 @@ def _format_as_html(scope, domain, response_by_quarter):
         else:
             kwargs["next_scope"] = f'<a href="/report-notes?scope={next_scope}">{next_scope}</a>'
 
+    return kwargs
+
+
+def _format_as_html(scope, domain, response_by_quarter):
+    render_kwargs = _generate_jinja_kwargs(scope, domain)
+
     return render_template('note.html',
                            response_by_quarter=response_by_quarter,
-                           **kwargs)
+                           **render_kwargs)
+
+
+def edit_notes_simple(*args):
+    render_kwargs = _generate_jinja_kwargs(None, None)
+
+    return render_template('notes-simple.html',
+                           notes_list=args,
+                           **render_kwargs)

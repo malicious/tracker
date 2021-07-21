@@ -2,7 +2,7 @@ import os
 
 import click
 import sqlalchemy
-from flask import Blueprint, Flask, request
+from flask import Blueprint, Flask, redirect, request
 from flask.cli import with_appcontext
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -19,11 +19,12 @@ def init_app(app: Flask):
     if not app.config['TESTING']:
         load_models(os.path.abspath(os.path.join(app.instance_path, 'notes.db')))
     _register_cli(app)
-    _register_bp(app)
+    _register_endpoints(app)
+    _register_rest_endpoints(app)
 
 
 def _register_cli(app):
-    @click.command('import-notes')
+    @click.command('import-notes', help='Import notes from CSV file')
     @click.argument('csv_file', type=click.File('r'))
     @with_appcontext
     def notes_from_csv(csv_file):
@@ -32,16 +33,8 @@ def _register_cli(app):
     app.cli.add_command(notes_from_csv)
 
 
-def _register_bp(app):
+def _register_endpoints(app):
     notes_bp = Blueprint('notes', __name__)
-
-    @notes_bp.route("/note/<note_id>")
-    def get_note(note_id):
-        note: Note = Note.query \
-            .filter(Note.note_id == note_id) \
-            .one()
-
-        return note.to_json(include_domains=True)
 
     @notes_bp.route("/report-notes")
     def report_notes_all():
@@ -57,7 +50,47 @@ def _register_bp(app):
 
         return report.report_notes(page_scope=page_scope, page_domain=page_domain)
 
+    @notes_bp.route("/refresh-notes")
+    def refresh_notes():
+        filename = None
+        try:
+            filename = escape(request.args.get("filename"))
+        except ValueError:
+            return {"error": "invalid filename"}
+
+        with open(filename, 'r') as csv_file:
+            add.import_from_csv(csv_file, db_session)
+
+        # silently redirect back to current page that user clicked on
+        # - ideally, client has JavaScript that doesn't actually move the browser
+        # - double-ideally, client updates in a way that doesn't force page refresh
+        return redirect(request.referrer or url_for('.report_notes_all'))
+
+    @notes_bp.route("/note/<int:note_id>")
+    def edit_one_note(note_id):
+        note: Note = Note.query \
+            .filter(Note.note_id == note_id) \
+            .one_or_none()
+        if not note:
+            return {"error": f"invalid note_id: {note_id}"}
+
+        return report.edit_notes_simple(note, note, note)
+
     app.register_blueprint(notes_bp, url_prefix='/')
+
+
+def _register_rest_endpoints(app: Flask):
+    notes_rest_bp = Blueprint('notes-rest', __name__)
+
+    @notes_rest_bp.route("/note/<int:note_id>")
+    def get_note(note_id):
+        note: Note = Note.query \
+            .filter(Note.note_id == note_id) \
+            .one()
+
+        return note.to_json(include_domains=True)
+
+    app.register_blueprint(notes_rest_bp, url_prefix='/v2')
 
 
 def load_models(current_db_path: str):

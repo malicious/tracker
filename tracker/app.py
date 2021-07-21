@@ -20,13 +20,14 @@ def create_app(settings_overrides: Dict = {}):
             pass
 
     notes.init_app(app)
-    tasks_v1.init_app(app)
+    tasks_v1.init_app(app, legacy_mode=True)
     tasks_v2.init_app(app)
 
     try:
         from flask_debugtoolbar import DebugToolbarExtension
 
         app.config['SECRET_KEY'] = '7'
+        app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
         toolbar = DebugToolbarExtension(app)
     except ImportError:
         pass

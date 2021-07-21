@@ -93,7 +93,15 @@ class TimeScope(str):
             "end": str(self.end),
         }
 
+    def minimize(self, delta_scope) -> str:
+        return TimeScope(delta_scope).shorten(self)
+
     def shorten(self, reference_scope) -> str:
+        """
+        Returns a "short" string representing this scope.
+
+        Deprecated, use `minimize()` instead.
+        """
         if reference_scope[0:4] != self[0:4]:
             return self
         elif reference_scope != self:

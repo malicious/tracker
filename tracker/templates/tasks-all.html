@@ -1,0 +1,281 @@
+{% import "task-macros.jinja" as task_macros %}
+
+{% extends "base.html" %}
+
+
+
+{% block head %}
+{{ super() }}
+<style type="text/css">
+:root {
+  --tab-label-fg-color: hsl(212, 32%, 60%);
+  --tab-selected-bg-color: hsl(210, 0%, 96%);
+  --tab-label-font-size: 12px;
+  --tasks-future-fg-color: hsl(214, 40%, 65%);
+}
+
+body {
+  overflow-wrap: anywhere;
+  word-break: break-word; /* Safari */
+}
+body > .spacer-下 {
+  height: 640px;
+}
+
+.scope-container > .spacer-上 {
+  height: 12px;
+}
+.scope-header-container {
+  position: sticky;
+  top: calc(var(--scope-nav-height));
+  height: 33px; /* includes 1px border */
+  z-index: 2;
+  background-color: var(--default-bg-color);
+
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
+  padding-top: 16px;
+  padding-bottom: 12px;
+  margin-bottom: calc(32px - 8px - 12px);
+}
+.scope-container-post-spacer {
+  height: 64px;
+}
+.scope-header {
+  font-size: 24px;
+  line-height: 24px;
+  height: 24px;
+  color: black;
+  border-bottom: 1px solid dimgrey;
+  padding-bottom: 8px;
+}
+.category-header {
+  position: sticky;
+  top: calc(var(--scope-nav-height)
+    + 16px + 33px + 12px /* .scope-header and its -container */);
+  z-index: 1;
+  background-color: var(--default-bg-color);
+  font-weight: 600;
+
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
+  margin-top: calc(32px - 12px);
+  padding-top: 12px;
+  padding-bottom: 12px;
+}
+
+.task-and-details {
+  padding-left: var(--default-left-right-margin);
+  padding-right: var(--default-left-right-margin);
+
+  -webkit-transform: translate3d(0, 0, 0);
+}
+.task-and-details:hover {
+  background: var(--default-hover-color);
+}
+
+.task-only {
+  font-size: 16px;
+  line-height: 24px;
+  padding-top: 8px;
+  padding-bottom: 8px;
+  display: flex;
+}
+.task-only > .task-scope {
+  flex-shrink: 0;
+  padding-right: 0.8em;
+  text-align: right;
+}
+.task-only > .task-desc {
+  flex: 1 1 0;
+  flex-grow: 1;
+}
+.task-scope {
+  color: #bbb;
+}
+.task-time {
+  color: brown;
+}
+
+.resolved, .resolved .task-scope, .resolved .task-time {
+  color: var(--disabled-fg-color);
+}
+.future, .future .task-scope, .future .task-time {
+  color: var(--tasks-future-fg-color);
+}
+
+.bonus-options {
+  width: 100%;
+  position: relative;
+}
+.task-json > div {
+  white-space: pre-wrap;
+  margin: 12px;
+  padding: 12px;
+  border: 1px solid rgba(29,28,29,.13);
+  border-radius: 6px;
+  background: var(--default-bg-color);
+}
+
+.bonus-options > label {
+  height: 24px;
+  line-height: 24px;
+  font-size: var(--tab-label-font-size);
+
+  position: absolute;
+  top: -24px;
+  color: var(--tab-label-fg-color);
+  text-align: center;
+}
+.bonus-options > label.show-edit {
+  width: 48px;
+  right: 0;
+}
+.bonus-options > label.show-json {
+  width: 48px;
+  right: 48px;
+}
+.bonus-options > input {
+  display: none;
+}
+
+/* highlight json/edit labels when selected */
+.task-json, .task-edit {
+  background-color: var(--tab-selected-bg-color);
+  padding: 0.5em;
+  font-size: 80%;
+}
+input.show-json:checked ~ label.show-json,
+input.show-edit:checked ~ label.show-edit {
+  background-color: var(--tab-selected-bg-color);
+  border-bottom: 2px solid var(--tab-label-fg-color);
+}
+
+.task-json,
+.task-edit {
+  display: none;
+}
+input.show-json:checked ~ .task-json,
+input.show-edit:checked ~ .task-edit {
+  display: inherit;
+  x-border-top: 2px solid hsl(212, 12%, 72%);
+  x-border-bottom: 2px solid hsl(212, 12%, 72%);
+  x-box-shadow:
+      inset 0 5px 5px hsla(0, 0%, 0%, 0.1),
+      0 -2px 0 hsla(0, 0%, 100%, .15);
+  x-margin-bottom: 5px;
+  x-padding-bottom: 5px;
+}
+
+/* hide json/edit labels when not-hovered + not-selected */
+.task-and-details label.show-json,
+.task-and-details label.show-edit {
+  display: none;
+}
+.task-and-details input.show-json:checked ~ label.show-json,
+.task-and-details input.show-edit:checked ~ label.show-edit {
+  display: inherit;
+}
+.task-and-details:hover label.show-json,
+.task-and-details:hover label.show-edit {
+  display: inherit;
+}
+
+{{ task_macros.task_edit_css }}
+</style>
+
+<script>
+{{ task_macros.task_edit_js|safe }}
+</script>
+{% endblock %}
+
+
+
+{% macro render_task(t, scope) %}
+{% set scope_to_print, resolution_to_print, is_future_task = compute_render_info_for(t) %}
+
+<div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
+<label for="toggle-edit-{{t.task_id}}-{{scope}}">
+  <div class="task-only
+    {% if resolution_to_print %} resolved {% endif %}
+    {% if is_future_task %} future {% endif %}
+  ">
+    <div class="task-desc">
+    {% if resolution_to_print %}
+      <span class="task-resolution">({{ resolution_to_print }}) </span>
+    {% endif %}
+      {{ scope_to_print | safe }}
+      {{ t.desc }}
+    {% if t.time_estimate and t.get_time_elapsed() %}
+      <span class="task-time">{{ "`{:.1f} => {:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</span>
+    {% elif t.time_estimate %}
+      <span class="task-time">{{ "`{:.1f}h`".format(t.time_estimate) }}</span>
+    {% elif t.get_time_elapsed() %}
+      <span class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</span>
+    {% endif %}
+    </div>
+  </div>
+</label>
+
+  <div class="bonus-options">
+    <input type="checkbox" id="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
+    <label for="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
+      <span>json</span>
+    </label>
+    <div class="task-json">
+      <div>{{ t.as_json() }}</div>
+    </div>
+
+    {% if false and t.linkages|length > 1 and not resolution_to_print %}
+    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
+    {% else %}
+    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
+    {% endif %}
+    <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
+      <span>edit</span>
+    </label>
+    <div class="task-edit">{{ task_macros.edit_block(t, backlink="task-{}-{}".format(t.task_id, scope)) }}</div>
+
+  </div>
+</div>
+
+{% endmacro %}
+
+
+
+{% block content %}
+
+{% set ns = namespace() %}
+{% for scope, scope_tasks in tasks_by_scope.items() if scope_tasks %}
+<div class="scope-container">
+  <div class="spacer-上"></div>
+  <div class="scope-header-container">
+    <div class="scope-header">## {{ scope }}</div>
+  </div>
+
+  <div class="category-container">
+  {% set ns.prev_task = None %}
+  {% for task in scope_tasks %}
+    {% if ns.prev_task and task.category != ns.prev_task.category %}
+  </div>{# category-container #}
+  <div class="category-container">
+    {% endif %}
+
+    {# if this is the start of a new category, print heading #}
+    {% if task.category
+       and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
+    <div class="category-header">### {{ task.category }}</div>
+    {% endif %}
+
+    {{ render_task(task, scope) }}
+    {% set ns.prev_task = task %}
+  {% endfor %}
+  </div>{# category-container #}
+
+</div>{# scope-container #}
+<!-- this is _outside_ `.scope-container` because the sticky header shouldn't be on top of it -->
+<div class="scope-container-post-spacer"></div>
+{% endfor %}
+
+<div class="spacer-下"></div>
+{% endblock %}
