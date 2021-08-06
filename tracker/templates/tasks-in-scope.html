@@ -8,6 +8,10 @@
 {% block head %}
 {{ super() }}
 <style type="text/css">
+:root {
+  --text-low-priority-color: #999;
+}
+
 body {
   overflow-wrap: anywhere;
   word-break: break-word; /* Safari */
@@ -75,7 +79,7 @@ body > .spacer-下 {
 }
 
 .resolved, .resolved .task-scope, .resolved .task-time {
-  color: var(--disabled-fg-color);
+  color: var(--text-low-priority-color);
 }
 
 
@@ -86,6 +90,17 @@ body > .spacer-下 {
   border: 1px solid rgba(29,28,29,.13);
   border-radius: 6px;
   background: var(--default-bg-color);
+}
+
+.sub-desc {
+  white-space: pre-wrap;
+  color: var(--text-low-priority-color);
+  font-size: 12px;
+  line-height: 16px;
+
+  margin-top: 8px;
+  padding-left: 24px;
+  max-width: 600px;
 }
 
 {{ shared_macros.note_edit_css('task', ['edit', 'json']) }}
@@ -106,7 +121,7 @@ body > .spacer-下 {
 
 
 
-{% macro _render_task_desc(t, resolution_to_print) %}
+{% macro _render_task_desc(t, scope, resolution_to_print) %}
 
     {% if resolution_to_print %}
       <span class="task-resolution">({{ resolution_to_print }}) </span>
@@ -120,6 +135,16 @@ body > .spacer-下 {
       <span class="task-time">{{ "`{:.1f}h`".format(t.time_estimate) }}</span>
     {% elif t.get_time_elapsed() %}
       <span class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</span>
+    {% endif %}
+
+    {% if t.linkages|length == 1 %}
+      {% if t.linkages[0].detailed_resolution %}
+        <div class="sub-desc">{{ t.linkages[0].detailed_resolution }}</div>
+      {% endif %}
+    {% elif t.linkage_at(scope, False) %}
+      {% if t.linkage_at(scope, False).detailed_resolution %}
+        <div class="sub-desc">{{ t.linkage_at(scope, False).detailed_resolution }}</div>
+      {% endif %}
     {% endif %}
 
 {% endmacro %}
@@ -136,7 +161,7 @@ body > .spacer-下 {
   {{ shared_macros.render_with_tabs('task',
         item_styling="resolved" if resolution_to_print,
         unique_id="{}-{}".format(task.task_id, scope),
-        desc=_render_task_desc(task, resolution_to_print),
+        desc=_render_task_desc(task, scope, resolution_to_print),
         tabs=tabs) }}
 {% endmacro %}
 
