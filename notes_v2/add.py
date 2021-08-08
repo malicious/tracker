@@ -1,6 +1,7 @@
 import csv
 import json
-from typing import List
+import sys
+from typing import List, Dict
 
 from notes_v2.models import Note, NoteDomain
 
@@ -56,7 +57,7 @@ def _add_domains(session, note_id, encoded_domain_ids: str, expect_duplicates: b
 
 
 def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Note:
-    encoded_domain_ids = ""
+    encoded_domain_ids = None
     if 'domains' in csv_entry:
         encoded_domain_ids = csv_entry['domains']
         del csv_entry['domains']
@@ -81,8 +82,10 @@ def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Note:
         session.add(target_note)
         session.flush()
 
-    _add_domains(session, target_note.note_id, encoded_domain_ids,
-                 expect_duplicates=expect_duplicates if target_note else False)
+    if encoded_domain_ids:
+        _add_domains(session, target_note.note_id, encoded_domain_ids,
+                     expect_duplicates=expect_duplicates if target_note else False)
+
     return target_note
 
 
@@ -91,3 +94,24 @@ def all_from_csv(session, csv_file, expect_duplicates: bool):
         one_from_csv(session, csv_entry, expect_duplicates)
 
     session.commit()
+
+
+def all_to_csv(outfile=sys.stdout):
+    def one_to_csv(n: Note) -> Dict:
+        note_as_json = n.as_json(include_domains=True)
+        del note_as_json['note_id']
+
+        if 'domains' in note_as_json:
+            split_domains = [d.replace('&', '&&') for d in note_as_json['domains']]
+            encoded_domain_ids = " & ".join(split_domains)
+
+            note_as_json['domains'] = encoded_domain_ids
+
+        return note_as_json
+
+    fields = ['created_at', 'sort_time', 'time_scope_id', 'source', 'desc', 'detailed_desc', 'domains']
+    writer = csv.DictWriter(outfile, fieldnames=fields, lineterminator='\n')
+
+    writer.writeheader()
+    for n in Note.query.all():
+        writer.writerow(one_to_csv(n))

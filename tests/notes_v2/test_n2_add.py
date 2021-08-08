@@ -1,7 +1,7 @@
 import io
 
-from notes_v2.add import _special_tokenize, all_from_csv
-from notes_v2.models import Note
+from notes_v2.add import _special_tokenize, all_from_csv, all_to_csv
+from notes_v2.models import Note, NoteDomain
 
 
 def test_tokenize_simple():
@@ -55,3 +55,45 @@ def test_from_csv_duplicate(note_v2_session):
 
     assert len(Note.query.all()) == 1
     assert Note.query.one()
+
+
+def test_to_from_csv(note_v2_session):
+    import_export_test_file = """created_at,sort_time,time_scope_id,source,desc,detailed_desc,domains
+,,2021-ww31.6,,"long, long description, with commas",,
+"""
+    all_from_csv(note_v2_session, io.StringIO(import_export_test_file), expect_duplicates=False)
+    assert len(Note.query.all()) > 0
+
+    outfile = io.StringIO()
+    all_to_csv(outfile)
+    assert outfile.getvalue() == import_export_test_file
+
+
+def test_to_from_csv_stress(note_v2_session):
+    io_test_file = """created_at,sort_time,time_scope_id,source,desc,detailed_desc,domains
+,,2021-ww31.6,,"long, long description, with commas",,
+2000-01-01 00:00:00,,2021-ww31.7,"maybe-invalid\r\ncopy-pasted CRLF newlines",okie desc,,domains: no
+2000-01-01 00:00:00,2021-08-08 15:37:55.679000,2021-ww31.7,,"escaped ""desc""
+with regular LF-only newline",unniecode ❲😎😎😎❳,domains: no & domains: yes
+"""
+    expected_count = 3
+
+    input_data = io_test_file
+    for _ in range(5):
+        # Clear existing DB contents, if needed
+        NoteDomain.query.delete()
+        Note.query.delete()
+        note_v2_session.commit()
+
+        # Import
+        all_from_csv(note_v2_session, io.StringIO(input_data), expect_duplicates=False)
+        assert len(Note.query.all()) == expected_count
+
+        # Export
+        outfile = io.StringIO()
+        all_to_csv(outfile)
+
+        assert outfile.getvalue() == input_data
+        input_data = outfile.getvalue()
+
+    assert input_data == io_test_file
