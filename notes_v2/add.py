@@ -1,4 +1,5 @@
 import csv
+import json
 from typing import List
 
 from notes_v2.models import Note, NoteDomain
@@ -60,10 +61,20 @@ def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Note:
         encoded_domain_ids = csv_entry['domains']
         del csv_entry['domains']
 
-    target_note = False
+    target_note = None
     if expect_duplicates:
-        # TODO: check if Note is a duplicate
-        pass
+        inexact_match_exists = session.query(
+            Note.query.filter_by(time_scope_id=csv_entry['time_scope_id'],
+                                 desc=csv_entry['desc'])
+                .exists()
+        ).scalar()
+        if inexact_match_exists:
+            thorough_match = Note.query.filter_by(**csv_entry).all()
+            if len(thorough_match) > 1:
+                print(f"WARN: Skipping CSV row with duplicate entries {json.dumps(csv_entry, indent=2)}")
+                return None
+            elif len(thorough_match) == 1:
+                target_note = thorough_match[0]
 
     if not target_note:
         target_note = Note.from_dict(csv_entry)

@@ -73,6 +73,15 @@ class Note(Base):
 
     @classmethod
     def from_dict(cls, serialized: Dict):
+        # Remove entries that have an empty string value, because that's how the CSV package works
+        for field in list(serialized.keys()):
+            if not serialized[field]:
+                del serialized[field]
+
+        # If there's nothing _left_ for that dict, just, stop
+        if not serialized:
+            return None
+
         # Convert datetime objects into... datetimes
         for datetime_field in ['sort_time', 'created_at']:
             if datetime_field in serialized:

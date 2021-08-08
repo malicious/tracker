@@ -25,4 +25,33 @@ def test_from_csv_minimal(note_v2_session):
     all_from_csv(note_v2_session, io.StringIO(minimal_csv_test_file), expect_duplicates=False)
 
     # one row == one note
+    assert len(Note.query.all()) == 1
+    assert Note.query.one()
+
+
+def test_from_csv_full(note_v2_session):
+    csv_test_file = """source,created_at,sort_time,time_scope_id,source,desc,detailed_desc,domains
+,,,2021-ww21.1,,"still, minimally-populated task",,
+,,,2021-ww21.1,,second minimal task,,
+,,,2021-ww21.1,,aaand a third task,,
+,,,2021-ww21.1,,"please automate this CSV editing",,
+,,,2021-ww21.2,,"still, minimally-populated task",,domain: 21.1 & domain: 21.2
+,2021-07-01 00:00,,2021-ww22.1,,task but with datetime,,
+,2021-07-01 00:00,,2021-ww22.2,,task but with datetime,,domain: 22.1 & domain: 22.2 &&_&&
+behind the waterfall,2021-07-02 23:59:48.001,2021-08-02 23:59:48.002,2021-ww23.1,doubled source field,task but with datetime,,
+behind the waterfall,2021-07-02 23:59:48.001,2021-08-02 23:59:48.002,2021-ww23.2,doubled source field,task but with datetime,,d-d-d-domain
+"""
+    all_from_csv(note_v2_session, io.StringIO(csv_test_file), expect_duplicates=False)
+
+    assert len(Note.query.all()) == 9
+
+
+def test_from_csv_duplicate(note_v2_session):
+    duplicitous_csv_test_file = """time_scope_id,desc
+2021-ww31.6,"long, long description, with commas"
+"""
+    all_from_csv(note_v2_session, io.StringIO(duplicitous_csv_test_file), expect_duplicates=False)
+    all_from_csv(note_v2_session, io.StringIO(duplicitous_csv_test_file), expect_duplicates=True)
+
+    assert len(Note.query.all()) == 1
     assert Note.query.one()
