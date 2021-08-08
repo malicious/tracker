@@ -1,5 +1,6 @@
 from typing import Dict
 
+from dateutil import parser
 from sqlalchemy import String, Column, Integer, ForeignKey, UniqueConstraint, DateTime, Index
 from sqlalchemy.orm import declarative_base, relationship
 
@@ -42,6 +43,42 @@ class Note(Base):
     )
 
     domains = relationship('NoteDomain', backref='Note')
+
+    def as_json(self, include_domains: bool = False) -> Dict:
+        """
+        Converts the Note into a dict object, usable for JSON-y functions
+
+        This is also the serialization format; this dict gets converted into CSV
+        (eventually, after stripping `note_id`).
+        """
+        response_dict = {
+            'note_id': self.note_id,
+            'time_scope_id': self.time_scope_id,
+            'desc': self.desc,
+        }
+
+        for datetime_field in ['sort_time', 'created_at']:
+            if getattr(self, datetime_field) is not None:
+                response_dict[datetime_field] = str(getattr(self, datetime_field))
+
+        for field in ['source', 'detailed_desc']:
+            if getattr(self, field) is not None:
+                response_dict[field] = getattr(self, field)
+
+        if include_domains:
+            if self.domains:
+                response_dict['domains'] = [nd.domain_id for nd in self.domains]
+
+        return response_dict
+
+    @classmethod
+    def from_dict(cls, serialized: Dict):
+        # Convert datetime objects into... datetimes
+        for datetime_field in ['sort_time', 'created_at']:
+            if datetime_field in serialized:
+                serialized[datetime_field] = parser.parse(serialized[datetime_field])
+
+        return cls(**serialized)
 
 
 class NoteDomain(Base):
