@@ -7,7 +7,7 @@ from markupsafe import escape
 import sqlalchemy
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from notes_v2 import add
+from notes_v2 import add, report
 from notes_v2.models import Base, Note
 # noinspection PyUnresolvedReferences
 from . import models
@@ -51,5 +51,9 @@ def _register_rest_endpoints(app):
     def get_note(note_id):
         n = Note.query.filter_by(note_id=escape(note_id)).one()
         return n.as_json(True)
+
+    @notes_v2_rest_bp.route("/stats/domains")
+    def get_domain_stats():
+        return report.domain_stats(db_session)
 
     app.register_blueprint(notes_v2_rest_bp, url_prefix='/v2')
