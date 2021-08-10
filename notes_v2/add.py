@@ -6,6 +6,9 @@ from typing import List, Dict
 from notes_v2.models import Note, NoteDomain
 
 
+_valid_csv_fields = ['created_at', 'sort_time', 'time_scope_id', 'source', 'desc', 'detailed_desc', 'domains']
+
+
 def _special_tokenize(encoded_domain_ids: str, strip_and_sort: bool = True) -> List[str]:
     split_domain_ids = []
 
@@ -57,6 +60,9 @@ def _add_domains(session, note_id, encoded_domain_ids: str, expect_duplicates: b
 
 
 def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Note:
+    # Filter CSV file to only have valid columns
+    csv_entry = { k: csv_entry[k] for k in _valid_csv_fields }
+
     encoded_domain_ids = None
     if 'domains' in csv_entry:
         encoded_domain_ids = csv_entry['domains']
@@ -79,6 +85,8 @@ def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Note:
 
     if not target_note:
         target_note = Note.from_dict(csv_entry)
+
+    if target_note:
         session.add(target_note)
         session.flush()
 
@@ -109,8 +117,7 @@ def all_to_csv(outfile=sys.stdout):
 
         return note_as_json
 
-    fields = ['created_at', 'sort_time', 'time_scope_id', 'source', 'desc', 'detailed_desc', 'domains']
-    writer = csv.DictWriter(outfile, fieldnames=fields, lineterminator='\n')
+    writer = csv.DictWriter(outfile, fieldnames=_valid_csv_fields, lineterminator='\n')
 
     writer.writeheader()
     for n in Note.query.all():
