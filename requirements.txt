@@ -1,4 +1,5 @@
 --editable .
+jsondiff
 pytest
 pytest-clarity
 pytest-socket

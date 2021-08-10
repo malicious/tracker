@@ -1,12 +1,14 @@
 import os
 
 import click
+from flask import Blueprint
 from flask.cli import with_appcontext
+from markupsafe import escape
 import sqlalchemy
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from notes_v2 import add
-from notes_v2.models import Base
+from notes_v2.models import Base, Note
 # noinspection PyUnresolvedReferences
 from . import models
 
@@ -16,6 +18,7 @@ db_session = None
 def init_app(app):
     if not app.config['TESTING']:
         load_models(os.path.abspath(os.path.join(app.instance_path, 'notes-v2.db')))
+    _register_rest_endpoints(app)
 
     @click.command('n2/add', help='Import notes from a CSV file')
     @click.option('--expect-duplicates', default=False, show_default=True)
@@ -39,3 +42,14 @@ def load_models(current_db_path: str):
                                              bind=engine))
 
     Base.query = db_session.query_property()
+
+
+def _register_rest_endpoints(app):
+    notes_v2_rest_bp = Blueprint('notes-v2-rest', __name__)
+
+    @notes_v2_rest_bp.route("/note/<int:note_id>")
+    def get_note(note_id):
+        n = Note.query.filter_by(note_id=escape(note_id)).one()
+        return n.as_json(True)
+
+    app.register_blueprint(notes_v2_rest_bp, url_prefix='/v2')
