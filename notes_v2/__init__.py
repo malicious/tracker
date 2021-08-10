@@ -18,6 +18,7 @@ db_session = None
 def init_app(app):
     if not app.config['TESTING']:
         load_models(os.path.abspath(os.path.join(app.instance_path, 'notes-v2.db')))
+    _register_endpoints(app)
     _register_rest_endpoints(app)
 
     @click.command('n2/add', help='Import notes from a CSV file')
@@ -49,6 +50,17 @@ def load_models(current_db_path: str):
                                              bind=engine))
 
     Base.query = db_session.query_property()
+
+
+def _register_endpoints(app):
+    notes_v2_bp = Blueprint('notes-v2', __name__)
+
+    @notes_v2_bp.route("/note_v2/<int:note_id>")
+    def edit_one_note(note_id):
+        n = Note.query.filter_by(note_id=note_id).one()
+        return report.edit_notes_simple(n, n)
+
+    app.register_blueprint(notes_v2_bp, url_prefix='')
 
 
 def _register_rest_endpoints(app):
