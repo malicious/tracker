@@ -21,13 +21,20 @@ def init_app(app):
     _register_rest_endpoints(app)
 
     @click.command('n2/add', help='Import notes from a CSV file')
-    @click.option('--expect-duplicates', default=False, show_default=True)
     @click.argument('csv_file', type=click.File('r'))
     @with_appcontext
-    def n2_add(expect_duplicates, csv_file):
-        add.all_from_csv(db_session, csv_file, expect_duplicates)
+    def n2_add(csv_file):
+        add.all_from_csv(db_session, csv_file, expect_duplicates=False)
 
     app.cli.add_command(n2_add)
+
+    @click.command('n2/update', help='Update notes from a partially-imported CSV file')
+    @click.argument('csv_file', type=click.File('r'))
+    @with_appcontext
+    def n2_update(csv_file):
+        add.all_from_csv(db_session, csv_file, expect_duplicates=True)
+
+    app.cli.add_command(n2_update)
 
 
 def load_models(current_db_path: str):
