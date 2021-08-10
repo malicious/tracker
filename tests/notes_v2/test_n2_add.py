@@ -97,3 +97,23 @@ with regular LF-only newline",unniecode ❲😎😎😎❳,domains: no & domains
         input_data = outfile.getvalue()
 
     assert input_data == io_test_file
+
+
+def test_with_blank_lines(note_v2_session):
+    csv_test_file = """time_scope_id,desc
+2021-ww32.2,desc early
+,
+,
+2021-ww32.2,desc later
+"""
+    all_from_csv(note_v2_session, io.StringIO(csv_test_file), expect_duplicates=False)
+    assert len(Note.query.all()) == 2
+
+
+def test_with_extra_columns(note_v2_session):
+    csv_test_file = """time_scope_id,desc,fake_column,super fake column
+2021-ww32.2,desc early,,
+2021-ww32.2,desc later,,
+"""
+    all_from_csv(note_v2_session, io.StringIO(csv_test_file), expect_duplicates=False)
+    assert len(Note.query.all()) == 2

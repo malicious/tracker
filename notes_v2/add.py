@@ -61,7 +61,8 @@ def _add_domains(session, note_id, encoded_domain_ids: str, expect_duplicates: b
 
 def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Note:
     # Filter CSV file to only have valid columns
-    csv_entry = { k: csv_entry[k] for k in _valid_csv_fields }
+    present_fields = [field for field in _valid_csv_fields if field in csv_entry.keys()]
+    csv_entry = { field: csv_entry[field] for field in present_fields }
 
     encoded_domain_ids = None
     if 'domains' in csv_entry:
