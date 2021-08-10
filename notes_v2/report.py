@@ -5,6 +5,20 @@ from flask import render_template
 from notes_v2.models import Note, NoteDomain
 
 
+def edit_notes():
+    def render_n2_desc(n: Note):
+        return n.desc
+
+    def render_n2_json(n: Note) -> str:
+        return json.dumps(n.as_json(include_domains=True), indent=2)
+
+    # TODO: Turn this into a real notes page
+    return render_template('notes-simple.html',
+                           note_desc_as_html=render_n2_desc,
+                           pretty_print_note=render_n2_json,
+                           notes_list=Note.query.all())
+
+
 def edit_notes_simple(*args):
     """
     Render a list of Notes as simply as possible

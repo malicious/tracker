@@ -60,6 +60,10 @@ def _register_endpoints(app):
         n = Note.query.filter_by(note_id=note_id).one()
         return report.edit_notes_simple(n, n)
 
+    @notes_v2_bp.route("/notes")
+    def edit_notes():
+        return report.edit_notes()
+
     app.register_blueprint(notes_v2_bp, url_prefix='')
 
 
