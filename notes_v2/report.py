@@ -1,8 +1,25 @@
+import hashlib
 import json
 
 from flask import render_template
 
 from notes_v2.models import Note, NoteDomain
+
+
+def _render_n2_domains(n: Note):
+    def domain_to_css_color(domain: str) -> str:
+        domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
+        domain_hash_int = int(domain_hash[0:4], 16)
+
+        color_h = ((domain_hash_int + 4) % 8) * (256.0/8)
+        return f"color: hsl({color_h}, 70%, 50%);"
+
+    def domain_to_html_link(domain: str) -> str:
+        # TODO: Convert to <a> once domain filters are in place
+        return f'<span style="{domain_to_css_color(domain)}">{domain}</span>'
+
+    domains_as_html = [domain_to_html_link(d) for d in n.domain_ids]
+    return " & ".join(domains_as_html)
 
 
 def edit_notes():
@@ -16,7 +33,7 @@ def edit_notes():
         output_str += f'<span class="desc">{n.desc}</span>\n'
 
         # And color-coded, hyperlinked domains
-        output_str += f'<span class="domains">{n.domain_ids}</span>\n'
+        output_str += f'<span class="domains">{_render_n2_domains(n)}</span>\n'
 
         # detailed_desc, only if needed
         if n.detailed_desc:
