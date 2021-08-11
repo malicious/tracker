@@ -1,7 +1,7 @@
 import os
 
 import click
-from flask import Blueprint
+from flask import Blueprint, request
 from flask.cli import with_appcontext
 from markupsafe import escape
 import sqlalchemy
@@ -74,6 +74,19 @@ def _register_rest_endpoints(app):
     def get_note(note_id):
         n = Note.query.filter_by(note_id=escape(note_id)).one()
         return n.as_json(True)
+
+    @notes_v2_rest_bp.route("/notes")
+    def get_notes():
+        # TODO: How to make this multiple?
+        page_scopes = []
+        if request.args.get('scope'):
+            page_scopes.append(escape(request.args.get('scope')))
+
+        page_domains = []
+        if request.args.get('domain'):
+            page_domains.append(escape(request.args.get('domain')))
+
+        return report.notes_json_tree(page_domains, page_scopes)
 
     @notes_v2_rest_bp.route("/stats/domains")
     def get_domain_stats():
