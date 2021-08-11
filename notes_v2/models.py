@@ -53,8 +53,7 @@ class Note(Base):
         """
         Converts the Note into a dict object, usable for JSON-y functions
 
-        This is also the serialization format; this dict gets converted into CSV
-        (eventually, after stripping `note_id`).
+        This is also the serialization format; this dict gets converted into CSV.
         """
         response_dict = {
             'note_id': self.note_id,

@@ -108,7 +108,6 @@ def all_from_csv(session, csv_file, expect_duplicates: bool):
 def all_to_csv(outfile=sys.stdout):
     def one_to_csv(n: Note) -> Dict:
         note_as_json = n.as_json(include_domains=True)
-        del note_as_json['note_id']
 
         if 'domains' in note_as_json:
             split_domains = [d.replace('&', '&&') for d in note_as_json['domains']]
