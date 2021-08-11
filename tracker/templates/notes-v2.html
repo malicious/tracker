@@ -1,0 +1,44 @@
+{% import "shared-macros.jinja" as shared_macros %}
+
+{% extends "base.html" %}
+
+
+
+{% block head %}
+
+{{ super() }}
+
+<style type="text/css">
+.note-json > div,
+.note-md > div {
+  white-space: pre-wrap;
+  margin: 12px;
+  padding: 12px;
+  border: 1px solid rgba(29,28,29,.13);
+  border-radius: 6px;
+  background: var(--default-bg-color);
+}
+
+{{ shared_macros.note_edit_css('note', ['json',]) }}
+</style>
+
+<script>
+{{ shared_macros.note_edit_js|safe }}
+</script>
+
+{% endblock %}
+
+
+
+{% block content %}
+
+{% for note in notes_list %}
+  {% set tabs = [('json', "<div>{}</div>".format(render_n2_json(note))),
+                 ] %}
+  {{ shared_macros.render_with_tabs('note',
+        unique_id="{}-{}".format(note.note_id, loop.index),
+        desc=render_n2_desc(note),
+        tabs=tabs) }}
+{% endfor %}
+
+{% endblock %}

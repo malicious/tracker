@@ -7,15 +7,29 @@ from notes_v2.models import Note, NoteDomain
 
 def edit_notes():
     def render_n2_desc(n: Note):
-        return n.desc
+        output_str = ""
+
+        # Generate a <span> that holds some kind of sort_time
+        output_str += f'<span class="time">{n.time_scope_id}</span>\n'
+
+        # Print the description
+        output_str += f'<span class="desc">{n.desc}</span>\n'
+
+        # And color-coded, hyperlinked domains
+        output_str += f'<span class="domains">{n.domain_ids}</span>\n'
+
+        # detailed_desc, only if needed
+        if n.detailed_desc:
+            output_str += f'<div class="detailed-desc">{n.detailed_desc}</div>'
+
+        return output_str
 
     def render_n2_json(n: Note) -> str:
         return json.dumps(n.as_json(include_domains=True), indent=2)
 
-    # TODO: Turn this into a real notes page
-    return render_template('notes-simple.html',
-                           note_desc_as_html=render_n2_desc,
-                           pretty_print_note=render_n2_json,
+    return render_template('notes-v2.html',
+                           render_n2_desc=render_n2_desc,
+                           render_n2_json=render_n2_json,
                            notes_list=Note.query.all())
 
 

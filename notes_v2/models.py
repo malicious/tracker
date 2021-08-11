@@ -1,4 +1,4 @@
-from typing import Dict
+from typing import Dict, List
 
 from dateutil import parser
 from sqlalchemy import String, Column, Integer, ForeignKey, UniqueConstraint, DateTime, Index
@@ -43,6 +43,11 @@ class Note(Base):
     )
 
     domains = relationship('NoteDomain', backref='Note')
+
+    def get_domain_ids(self) -> List[str]:
+        return [nd.domain_id for nd in self.domains]
+
+    domain_ids = property(get_domain_ids)
 
     def as_json(self, include_domains: bool = False) -> Dict:
         """
