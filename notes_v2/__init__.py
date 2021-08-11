@@ -62,7 +62,15 @@ def _register_endpoints(app):
 
     @notes_v2_bp.route("/notes")
     def edit_notes():
-        return report.edit_notes()
+        page_scopes = []
+        if request.args.get('scope'):
+            page_scopes.append(escape(request.args.get('scope')))
+
+        page_domains = []
+        if request.args.get('domain'):
+            page_domains.append(escape(request.args.get('domain')))
+
+        return report.edit_notes(page_domains, page_scopes)
 
     app.register_blueprint(notes_v2_bp, url_prefix='')
 

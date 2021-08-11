@@ -83,7 +83,7 @@ class NoteStapler:
     def _add_by_day(self, scope: TimeScope) -> int:
         new_notes = list(self.filtered_query \
                          .filter_by(time_scope_id=scope) \
-                         .order_by(time_scope_id.desc()) \
+                         .order_by(Note.time_scope_id.desc()) \
                          .all())
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
@@ -120,7 +120,7 @@ class NoteStapler:
         elif scope.is_day():
             self._add_by_day(scope)
 
-        raise ValueError(f"TimeScope has unknown type: {scope}")
+        raise ValueError(f"TimeScope has unknown type: {repr(scope)}")
 
     def add_everything(self) -> None:
         notes = self.filtered_query.all()
@@ -173,7 +173,7 @@ def _render_n2_domains(n: Note):
     return " & ".join(domains_as_html)
 
 
-def edit_notes():
+def edit_notes(domains: List[str], scope_ids: List[str]):
     def render_n2_desc(n: Note):
         output_str = ""
 
@@ -198,7 +198,7 @@ def edit_notes():
     return render_template('notes-v2.html',
                            render_n2_desc=render_n2_desc,
                            render_n2_json=render_n2_json,
-                           notes_list=Note.query.all())
+                           notes_tree=notes_json_tree(domains, scope_ids))
 
 
 def edit_notes_simple(*args):
@@ -223,7 +223,7 @@ def notes_json_tree(domains: List[str], scope_ids: List[str]):
     ns = NoteStapler(domains_filter=domains)
 
     for scope_id in scope_ids:
-        ns.add_by_scope(scope_id)
+        ns.add_by_scope(TimeScope(scope_id))
 
     if not scope_ids:
         ns.add_everything()
