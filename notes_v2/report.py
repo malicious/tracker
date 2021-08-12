@@ -24,7 +24,7 @@ class NoteStapler:
     def __init__(self, domains_filter: List[str]):
         self.filtered_query = Note.query
         if domains_filter:
-            domains_filter_sql = [NoteDomain.domain_id == d for d in domains_filter]
+            domains_filter_sql = [NoteDomain.domain_id.like(d + "%") for d in domains_filter]
             self.filtered_query = self.filtered_query \
                 .join(NoteDomain, Note.note_id == NoteDomain.note_id) \
                 .filter(or_(*domains_filter_sql))
