@@ -117,3 +117,35 @@ def test_with_extra_columns(note_v2_session):
 """
     all_from_csv(note_v2_session, io.StringIO(csv_test_file), expect_duplicates=False)
     assert len(Note.query.all()) == 2
+
+
+def test_with_note_id(note_v2_session):
+    io_test_file = """created_at,sort_time,time_scope_id,source,desc,detailed_desc,domains
+,,2021-ww31.6,,"long, long description, with commas",
+2000-01-01 00:00:00,,2021-ww31.7,"maybe-invalid\r\ncopy-pasted CRLF newlines",okie desc,,domains: no
+2000-01-01 00:00:00,2021-08-08 15:37:55.679000,2021-ww31.7,,"escaped ""desc""
+with regular LF-only newline",unniecode ❲😎😎😎❳,domains: no & domains: yes
+"""
+
+    # Do import/export loop _once_, to get note_id's added to file
+    all_from_csv(note_v2_session, io.StringIO(io_test_file), expect_duplicates=False)
+
+    note_id_annotated_version = io.StringIO()
+    all_to_csv(note_id_annotated_version, write_note_id=True)
+
+    # Now, stress test, with the note_id's intact
+    input_string = note_id_annotated_version.getvalue()
+    for _ in range(3):
+        NoteDomain.query.delete()
+        Note.query.delete()
+        note_v2_session.commit()
+
+        input_stringio = io.StringIO(input_string)
+        all_from_csv(note_v2_session, input_stringio, expect_duplicates=False)
+
+        output_stringio = io.StringIO()
+        all_to_csv(output_stringio, write_note_id=True)
+
+        assert output_stringio.getvalue() == note_id_annotated_version.getvalue()
+        assert output_stringio.getvalue() == note_id_annotated_version.getvalue()
+        input_string = output_stringio.getvalue()

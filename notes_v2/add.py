@@ -105,9 +105,11 @@ def all_from_csv(session, csv_file, expect_duplicates: bool):
     session.commit()
 
 
-def all_to_csv(outfile=sys.stdout):
+def all_to_csv(outfile=sys.stdout, write_note_id: bool = False):
     def one_to_csv(n: Note) -> Dict:
         note_as_json = n.as_json(include_domains=True)
+        if not write_note_id:
+            del note_as_json['note_id']
 
         if 'domains' in note_as_json:
             split_domains = [d.replace('&', '&&') for d in note_as_json['domains']]
@@ -117,7 +119,10 @@ def all_to_csv(outfile=sys.stdout):
 
         return note_as_json
 
-    writer = csv.DictWriter(outfile, fieldnames=_valid_csv_fields, lineterminator='\n')
+    fieldnames = list(_valid_csv_fields)
+    if write_note_id:
+        fieldnames.append('note_id')
+    writer = csv.DictWriter(outfile, fieldnames=fieldnames, lineterminator='\n')
 
     writer.writeheader()
     for n in Note.query.all():
