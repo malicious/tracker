@@ -212,7 +212,7 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         return output_str
 
     def render_n2_json(n: Note) -> str:
-        return json.dumps(n.as_json(include_domains=True), indent=2)
+        return escape(json.dumps(n.as_json(include_domains=True), indent=2))
 
     return render_template('notes-v2.html',
                            render_n2_desc=render_n2_desc,
@@ -230,7 +230,7 @@ def edit_notes_simple(*args):
         return n.desc
 
     def render_n2_json(n: Note) -> str:
-        return json.dumps(n.as_json(include_domains=True), indent=2)
+        return escape(json.dumps(n.as_json(include_domains=True), indent=2))
 
     return render_template('notes-simple.html',
                            note_desc_as_html=render_n2_desc,
