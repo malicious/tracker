@@ -38,6 +38,14 @@ def init_app(app):
 
     app.cli.add_command(n2_update)
 
+    @click.command('n2/export', help='Export all notes as CSV output')
+    @click.option('--write-note-id/--skip-note-id', default=False, show_default=True)
+    @with_appcontext
+    def n2_export(write_note_id):
+        add.all_to_csv(write_note_id=write_note_id)
+
+    app.cli.add_command(n2_export)
+
 
 def load_models(current_db_path: str):
     engine = sqlalchemy.create_engine('sqlite:///' + current_db_path)
