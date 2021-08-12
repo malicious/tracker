@@ -3,6 +3,7 @@ import os
 import click
 from flask import Blueprint, request
 from flask.cli import with_appcontext
+from flask.json import JSONEncoder
 from markupsafe import escape
 import sqlalchemy
 from sqlalchemy.orm import scoped_session, sessionmaker
@@ -77,6 +78,15 @@ def _register_endpoints(app):
 
 def _register_rest_endpoints(app):
     notes_v2_rest_bp = Blueprint('notes-v2-rest', __name__)
+
+    # Add JSON encoder to handle Note types
+    class NoteEncoder(JSONEncoder):
+        def default(self, obj):
+            if isinstance(obj, Note):
+                return obj.as_json(include_domains=True)
+            return super(NoteEncoder, self).default(obj)
+
+    notes_v2_rest_bp.json_encoder = NoteEncoder
 
     @notes_v2_rest_bp.route("/note/<int:note_id>")
     def get_note(note_id):

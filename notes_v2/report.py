@@ -126,7 +126,7 @@ class NoteStapler:
         notes = self.filtered_query.all()
         for n in notes:
             note_list = self._construct_scope_tree(TimeScope(n.time_scope_id))[NOTES_KEY]
-            note_list.append(n.as_json(include_domains=True))
+            note_list.append(n)
 
         # Once we're done, iteratively check if we need to do collapsing
         for quarter in list(self.scope_tree.keys()):
