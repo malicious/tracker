@@ -25,6 +25,7 @@ class NoteStapler:
         self.filtered_query = Note.query
         if domains_filter:
             domains_filter_sql = [NoteDomain.domain_id.like(d + "%") for d in domains_filter]
+            # TODO: Combining domain and scope filtering doesn't work
             self.filtered_query = self.filtered_query \
                 .join(NoteDomain, Note.note_id == NoteDomain.note_id) \
                 .filter(or_(*domains_filter_sql))
@@ -83,7 +84,7 @@ class NoteStapler:
 
     def _add_by_day(self, scope: TimeScope) -> int:
         new_notes = list(self.filtered_query \
-                         .filter_by(time_scope_id=scope) \
+                         .filter(Note.time_scope_id == scope) \
                          .order_by(Note.time_scope_id.desc()) \
                          .all())
 
@@ -94,12 +95,12 @@ class NoteStapler:
     def _add_by_week(self, scope: TimeScope) -> int:
         total_notes_count = 0
         for day_scope in scope.child_scopes:
-            added_notes = self._add_by_day(day_scope)
+            added_notes = self._add_by_day(TimeScope(day_scope))
             total_notes_count += added_notes
 
         new_notes = list(self.filtered_query \
-                         .filter_by(time_scope_id=scope) \
-                         .order_by(time_scope_id.desc()) \
+                         .filter(Note.time_scope_id == scope) \
+                         .order_by(Note.time_scope_id.asc()) \
                          .all())
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
@@ -110,8 +111,27 @@ class NoteStapler:
         if total_notes_count <= self.week_promotion_threshold:
             self._collapse_scope_tree(scope)
 
-    def _add_by_quarter(self, scope: str):
-        return NotImplementedError()
+        return total_notes_count
+
+    def _add_by_quarter(self, scope: TimeScope) -> int:
+        total_notes_count = 0
+        for week_scope in scope.child_scopes:
+            added_notes = self._add_by_week(TimeScope(week_scope))
+            total_notes_count += added_notes
+
+        new_notes = list(self.filtered_query \
+                         .filter(Note.time_scope_id == scope) \
+                         .order_by(Note.time_scope_id.asc()) \
+                         .all())
+
+        notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
+        notes_list.extend(new_notes)
+        total_notes_count += len(new_notes)
+
+        if total_notes_count <= self.quarter_promotion_threshold:
+            self._collapse_scope_tree(scope)
+
+        return total_notes_count
 
     def add_by_scope(self, scope: TimeScope) -> None:
         if scope.is_quarter():
@@ -120,10 +140,11 @@ class NoteStapler:
             self._add_by_week(scope)
         elif scope.is_day():
             self._add_by_day(scope)
-
-        raise ValueError(f"TimeScope has unknown type: {repr(scope)}")
+        else:
+            raise ValueError(f"TimeScope has unknown type: {repr(scope)}")
 
     def add_everything(self) -> None:
+        # TODO: Remove scopes with empty NOTES_KEY
         notes = self.filtered_query.all()
         for n in notes:
             note_list = self._construct_scope_tree(TimeScope(n.time_scope_id))[NOTES_KEY]
