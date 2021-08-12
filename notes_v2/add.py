@@ -6,7 +6,7 @@ from typing import List, Dict
 from notes_v2.models import Note, NoteDomain
 
 
-_valid_csv_fields = ['created_at', 'sort_time', 'time_scope_id', 'source', 'desc', 'detailed_desc', 'domains']
+_valid_csv_fields = ['created_at', 'sort_time', 'time_scope_id', 'domains', 'source', 'desc', 'detailed_desc']
 
 
 def _special_tokenize(encoded_domain_ids: str, strip_and_sort: bool = True) -> List[str]:
