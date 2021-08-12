@@ -9,14 +9,27 @@
 {{ super() }}
 
 <style type="text/css">
-.note-json > div,
-.note-md > div {
+:root {
+  --text-low-priority-color: #999;
+}
+
+.note-json > div {
   white-space: pre-wrap;
   margin: 12px;
   padding: 12px;
   border: 1px solid rgba(29,28,29,.13);
   border-radius: 6px;
   background: var(--default-bg-color);
+}
+
+.detailed-desc {
+  white-space: pre-wrap;
+  color: var(--text-low-priority-color);
+  font-size: 12px;
+  line-height: 16px;
+
+  margin-top: 8px;
+  padding-left: 24px;
 }
 
 {{ shared_macros.note_edit_css('note', ['json',]) }}
@@ -30,27 +43,39 @@
 
 
 
+{% macro render_n2(note, scope) %}
+  {% set tabs = [('json', "<div>{}</div>".format(render_n2_json(note))),
+                 ] %}
+  {{ shared_macros.render_with_tabs('note',
+        unique_id="{}-{}".format(note.note_id, scope),
+        desc=render_n2_desc(note, scope),
+        tabs=tabs) }}
+
+{% endmacro %}
+
+
+
 {% block content %}
 
-{% for quarter_scope, quarter_dict in notes_tree.items() %}
-  <h1>quarter: {{ quarter_scope }}</h1> <br>
+{% for quarter_scope, quarter_dict in notes_tree.items()|sort(reverse=true, attribute='0') %}
+  <h1>quarter: {{ quarter_scope }}</h1>
 
   {% for quarter_note in quarter_dict["notes"] %}
-    {{ quarter_note.desc }} <br>
+    {{ render_n2(quarter_note, quarter_scope) }}
   {% endfor %}
 
-  {% for week_scope, week_dict in quarter_dict.items() if not week_scope == "notes" %}
-    <h2>week: {{ week_scope }}</h2> <br>
+  {% for week_scope, week_dict in quarter_dict.items()|sort(reverse=true, attribute='0') if not week_scope == "notes" %}
+    <h2>week: {{ week_scope }}</h2>
 
     {% for week_note in week_dict["notes"] %}
-      {{ week_note.desc }} <br>
+      {{ render_n2(week_note, week_scope) }}
     {% endfor %}
 
-    {% for day_scope, day_dict in week_dict.items() if not day_scope == "notes" %}
-      <h3>day: {{ day_scope }}</h3> <br>
+    {% for day_scope, day_dict in week_dict.items()|sort(reverse=true, attribute='0') if not day_scope == "notes" %}
+      <h3>day: {{ day_scope }}</h3>
 
       {% for day_note in day_dict["notes"] %}
-        {{ day_note.desc }} <br>
+        {{ render_n2(day_note, day_scope) }}
       {% endfor %}
 
     {% endfor %}{# day #}

@@ -3,6 +3,7 @@ import json
 from typing import Dict, List
 
 from flask import render_template
+from markupsafe import escape
 from sqlalchemy import or_
 
 from notes_v2.models import Note, NoteDomain
@@ -173,12 +174,30 @@ def _render_n2_domains(n: Note):
     return " & ".join(domains_as_html)
 
 
+def _render_n2_time(n: Note, scope):
+    display_time = TimeScope(n.time_scope_id).minimize_vs(scope)
+    # If we're showing a sub-day scope, draw the time, instead
+    if TimeScope(scope).is_day() and n.sort_time:
+        # For same-day notes, just show %H:%m
+        if scope == TimeScope.from_datetime(n.sort_time):
+            display_time = n.sort_time.strftime('%H:%m')
+        # For different day, show the day _also_
+        else:
+            display_time = f'''{
+                TimeScope.from_datetime(n.sort_time).minimize_vs(scope)
+            } {
+                n.sort_time.strftime('%H:%m')
+            }'''
+
+    return display_time
+
+
 def edit_notes(domains: List[str], scope_ids: List[str]):
-    def render_n2_desc(n: Note):
+    def render_n2_desc(n: Note, scope):
         output_str = ""
 
         # Generate a <span> that holds some kind of sort_time
-        output_str += f'<span class="time">{n.time_scope_id}</span>\n'
+        output_str += f'<span class="time">{_render_n2_time(n, scope)}</span>\n'
 
         # Print the description
         output_str += f'<span class="desc">{n.desc}</span>\n'
@@ -188,7 +207,7 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
 
         # detailed_desc, only if needed
         if n.detailed_desc:
-            output_str += f'<div class="detailed-desc">{n.detailed_desc}</div>'
+            output_str += f'<div class="detailed-desc">{escape(n.detailed_desc)}</div>'
 
         return output_str
 
