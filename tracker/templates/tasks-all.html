@@ -256,58 +256,14 @@ input.show-edit:checked ~ .task-edit {
 {# ================================================================= #}
 
 {% macro render_add_panel() %}
-<form action="{{url_for("tasks-v2-rest.create_task")}}" method="post">
+<form action="#" method="post">
+  {{ task_macros.task_add_header() }}
 
-<div class="task-edit-task-only">
-  <div>
-    <label>category</label>
-    <input class="category" name="task-category" placeholder="None">
+  <div class="linkage-block">
+    {{ task_macros.linkage_headers|safe }}
+    {{ task_macros.linkage_row_new('new', '', '') }}
+    {{ task_macros.linkage_footer_row('create task')|safe }}
   </div>
-  <div class="not-saved">
-    <label>desc</label>
-    <textarea class="desc" name="task-desc"></textarea>
-  </div>
-  <div>
-    <label>time_estimate</label>
-    <input class="time_estimate" name="task-time_estimate" placeholder="None">
-  </div>
-</div>
-
-<div class="linkage-block">
-  {{ task_macros.linkage_headers|safe }}
-
-  <div class="linkage-row not-saved">
-    <div>
-      <input name="tl-new-time_scope_id">
-      <input name="tl-new-created_at">
-    </div>
-    <div>
-      <input name="tl-new-time_elapsed">
-    </div>
-    <div>
-      <input name="tl-new-resolution">
-    </div>
-    <div>
-      <input name="tl-new-detailed_resolution">
-    </div>
-    <div>
-      <button>存</button>
-      <button class="delete" disabled>x</button>
-    </div>
-  </div>
-
-  <div class="linkage-footer-row">
-    <div>
-      <button class="new" disabled>add row</button>
-    </div>
-    <div></div>
-    <div></div>
-    <div style="text-align: right;">
-      <button>create task</button>
-    </div>
-  </div>
-</div>
-
 </form>
 
 {% endmacro %}

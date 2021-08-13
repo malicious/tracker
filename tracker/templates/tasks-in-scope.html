@@ -103,23 +103,30 @@ body > .spacer-下 {
   max-width: 600px;
 }
 
-{{ shared_macros.note_edit_css('task', ['edit', 'json']) }}
+.task-add-panel {
+  position: sticky;
+  bottom: 0;
+  background-color: white;
+  z-index: 4;
+}
 
+{{ shared_macros.note_edit_css('task', ['edit', 'json']) }}
+{{ shared_macros.note_edit_css('task-add', ['add']) }}
 {{ task_macros.task_edit_css }}
 </style>
 
 
 
 <script>
-{{ shared_macros.note_edit_js|safe }}
-
-{{ task_macros.task_edit_js|safe }}
-
+  {{ shared_macros.note_edit_js|safe }}
+  {{ task_macros.task_edit_js|safe }}
 </script>
 
 {% endblock %}
 
 
+
+{# ================================================================= #}
 
 {% macro _render_task_desc(t, scope, resolution_to_print) %}
 
@@ -167,6 +174,34 @@ body > .spacer-下 {
 
 
 
+{# ================================================================= #}
+
+{% macro render_add_panel() %}
+<form action="#" method="post">
+  {{ task_macros.task_add_header() }}
+
+  <div class="linkage-block">
+    {{ task_macros.linkage_headers|safe }}
+    {{ task_macros.linkage_row_new('new', '', '') }}
+    {{ task_macros.linkage_footer_row('create task')|safe }}
+  </div>
+</form>
+
+{% endmacro %}
+
+{% macro task_add_panel() %}
+{% set tabs = [('add', render_add_panel()),
+               ] %}
+{{ shared_macros.render_with_tabs('task-add',
+    desc='[add task]',
+    tabs=tabs) }}
+
+{% endmacro %}
+
+
+
+{# ================================================================= #}
+
 {% block content %}
 
 {% set ns = namespace() %}
@@ -200,6 +235,10 @@ body > .spacer-下 {
 <!-- this is _outside_ `.scope-container` because the sticky header shouldn't be on top of it -->
 <div class="scope-container-post-spacer"></div>
 {% endfor %}
+
+<div class="task-add-panel">
+{{ task_add_panel() }}
+</div>
 
 <div class="spacer-下"></div>
 {% endblock %}
