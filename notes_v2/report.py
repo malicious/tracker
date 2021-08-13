@@ -179,7 +179,7 @@ class NoteStapler:
                 self._collapse_scope_tree(quarter)
 
 
-def _render_n2_domains(n: Note, scope_ids: List[str], ignore_type_domains: bool = True):
+def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], ignore_type_domains: bool = True):
     def domain_to_css_color(domain: str) -> str:
         domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
         domain_hash_int = int(domain_hash[0:4], 16)
@@ -192,10 +192,18 @@ def _render_n2_domains(n: Note, scope_ids: List[str], ignore_type_domains: bool 
             ''.join([f'&scope={scope_id}' for scope_id in scope_ids])
         }" style="{domain_to_css_color(domain)}">{domain}</a>'''
 
-    if ignore_type_domains:
-        domains_as_html = [domain_to_html_link(d) for d in n.domain_ids if d[:6] != "type: "]
-    else:
-        domains_as_html = [domain_to_html_link(d) for d in n.domain_ids]
+    def should_display_domain(d: str) -> bool:
+        # Don't render any domains that are an exact match for the page
+        if d in page_domains:
+            return False
+
+        # Ignore domains that start with `type: `, maybe
+        if ignore_type_domains and d[:6] == "type: ":
+            return False
+
+        return True
+
+    domains_as_html = [domain_to_html_link(d) for d in n.domain_ids if should_display_domain(d)]
     return " & ".join(domains_as_html)
 
 
@@ -228,7 +236,7 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         output_str += f'<span class="desc">{n.desc}</span>\n'
 
         # And color-coded, hyperlinked domains
-        output_str += f'<span class="domains">{_render_n2_domains(n, scope_ids)}</span>\n'
+        output_str += f'<span class="domains">{_render_n2_domains(n, domains, scope_ids)}</span>\n'
 
         # detailed_desc, only if needed
         if n.detailed_desc:
