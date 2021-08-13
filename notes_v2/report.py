@@ -213,13 +213,13 @@ def _render_n2_time(n: Note, scope):
     if TimeScope(scope).is_day() and n.sort_time:
         # For same-day notes, just show %H:%m
         if scope == TimeScope.from_datetime(n.sort_time):
-            display_time = n.sort_time.strftime('%H:%m')
+            display_time = n.sort_time.strftime('%H:%M')
         # For different day, show the day _also_
         else:
             display_time = f'''{
                 TimeScope.from_datetime(n.sort_time).minimize_vs(scope)
             } {
-                n.sort_time.strftime('%H:%m')
+                n.sort_time.strftime('%H:%M')
             }'''
 
     return display_time
