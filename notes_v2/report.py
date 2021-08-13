@@ -179,7 +179,7 @@ class NoteStapler:
                 self._collapse_scope_tree(quarter)
 
 
-def _render_n2_domains(n: Note):
+def _render_n2_domains(n: Note, scope_ids: List[str]):
     def domain_to_css_color(domain: str) -> str:
         domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
         domain_hash_int = int(domain_hash[0:4], 16)
@@ -188,8 +188,9 @@ def _render_n2_domains(n: Note):
         return f"color: hsl({color_h}, 70%, 50%);"
 
     def domain_to_html_link(domain: str) -> str:
-        # TODO: Convert to <a> once domain filters are in place
-        return f'<span style="{domain_to_css_color(domain)}">{domain}</span>'
+        return f'''<a href="/notes?domain={escape(domain)}{
+            ''.join([f'&scope={scope_id}' for scope_id in scope_ids])
+        }" style="{domain_to_css_color(domain)}">{domain}</a>'''
 
     domains_as_html = [domain_to_html_link(d) for d in n.domain_ids]
     return " & ".join(domains_as_html)
@@ -224,7 +225,7 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         output_str += f'<span class="desc">{n.desc}</span>\n'
 
         # And color-coded, hyperlinked domains
-        output_str += f'<span class="domains">{_render_n2_domains(n)}</span>\n'
+        output_str += f'<span class="domains">{_render_n2_domains(n, scope_ids)}</span>\n'
 
         # detailed_desc, only if needed
         if n.detailed_desc:
