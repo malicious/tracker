@@ -58,28 +58,37 @@
 {% block content %}
 
 {% for quarter_scope, quarter_dict in notes_tree.items()|sort(reverse=true, attribute='0') %}
+{% if quarter_dict|length > 1 or quarter_dict["notes"] %}
   <h1>quarter: {{ quarter_scope }}</h1>
+{% endif %}
 
   {% for quarter_note in quarter_dict["notes"] %}
     {{ render_n2(quarter_note, quarter_scope) }}
   {% endfor %}
 
   {% for week_scope, week_dict in quarter_dict.items()|sort(reverse=true, attribute='0') if not week_scope == "notes" %}
+  {% if week_dict|length > 1 or week_dict["notes"] %}
     <h2>week: {{ week_scope }}</h2>
+  {% endif %}
 
     {% for week_note in week_dict["notes"] %}
       {{ render_n2(week_note, week_scope) }}
     {% endfor %}
 
     {% for day_scope, day_dict in week_dict.items()|sort(reverse=true, attribute='0') if not day_scope == "notes" %}
+    {% if day_dict["notes"] %}
       <h3>day: {{ day_scope }}</h3>
+    {% endif %}
 
       {% for day_note in day_dict["notes"] %}
         {{ render_n2(day_note, day_scope) }}
       {% endfor %}
 
     {% endfor %}{# day #}
+
+  {% if week_dict|length > 1 or week_dict["notes"] %}
     <hr>
+  {% endif %}
   {% endfor %}{# week #}
 {% endfor %}{# quarter #}
 
