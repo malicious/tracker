@@ -1,7 +1,8 @@
 import csv
 import json
 import sys
-from typing import List, Dict
+from dateutil import parser
+from typing import List, Dict, Optional
 
 from notes_v2.models import Note, NoteDomain
 
@@ -59,10 +60,12 @@ def _add_domains(session, note_id, encoded_domain_ids: str, expect_duplicates: b
         session.add(new_nd)
 
 
-def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Note:
+def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Optional[Note]:
     # Filter CSV file to only have valid columns
     present_fields = [field for field in _valid_csv_fields if field in csv_entry.keys()]
-    csv_entry = { field: csv_entry[field] for field in present_fields }
+    csv_entry = { field: csv_entry[field] for field in present_fields if csv_entry[field] }
+    if not csv_entry:
+        return None
 
     encoded_domain_ids = None
     if 'domains' in csv_entry:
@@ -77,19 +80,24 @@ def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Note:
                 .exists()
         ).scalar()
         if inexact_match_exists:
-            thorough_match = Note.query.filter_by(**csv_entry).all()
+            matchmaker_dict = dict(csv_entry)
+            for field in ['sort_time', 'created_at']:
+                # db search needs datetime objects, not the CSV string
+                if field in matchmaker_dict:
+                    matchmaker_dict[field] = parser.parse(matchmaker_dict[field])
+
+            thorough_match = Note.query.filter_by(**matchmaker_dict).all()
+
             if len(thorough_match) > 1:
-                print(f"WARN: Skipping CSV row with duplicate entries {json.dumps(csv_entry, indent=2)}")
                 return None
             elif len(thorough_match) == 1:
                 target_note = thorough_match[0]
 
     if not target_note:
         target_note = Note.from_dict(csv_entry)
-
-    if target_note:
-        session.add(target_note)
-        session.flush()
+        if target_note:
+            session.add(target_note)
+            session.flush()
 
     if encoded_domain_ids:
         _add_domains(session, target_note.note_id, encoded_domain_ids,
