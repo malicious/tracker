@@ -179,7 +179,7 @@ class NoteStapler:
                 self._collapse_scope_tree(quarter)
 
 
-def _render_n2_domains(n: Note, scope_ids: List[str]):
+def _render_n2_domains(n: Note, scope_ids: List[str], ignore_type_domains: bool = True):
     def domain_to_css_color(domain: str) -> str:
         domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
         domain_hash_int = int(domain_hash[0:4], 16)
@@ -192,7 +192,10 @@ def _render_n2_domains(n: Note, scope_ids: List[str]):
             ''.join([f'&scope={scope_id}' for scope_id in scope_ids])
         }" style="{domain_to_css_color(domain)}">{domain}</a>'''
 
-    domains_as_html = [domain_to_html_link(d) for d in n.domain_ids]
+    if ignore_type_domains:
+        domains_as_html = [domain_to_html_link(d) for d in n.domain_ids if d[:6] != "type: "]
+    else:
+        domains_as_html = [domain_to_html_link(d) for d in n.domain_ids]
     return " & ".join(domains_as_html)
 
 
