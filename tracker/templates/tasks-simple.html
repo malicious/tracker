@@ -36,18 +36,14 @@
 }
 
 {{ shared_macros.note_edit_css('task', ['edit', 'json']) }}
-
 {{ task_macros.task_edit_css }}
-
 </style>
 
 
 
 <script>
-{{ shared_macros.note_edit_js|safe }}
-
-{{ task_macros.task_edit_js|safe }}
-
+  {{ shared_macros.note_edit_js|safe }}
+  {{ task_macros.task_edit_js|safe }}
 </script>
 
 {% endblock %}

@@ -177,7 +177,7 @@ body > .spacer-下 {
 {# ================================================================= #}
 
 {% macro render_add_panel() %}
-<form action="#" method="post">
+<form action="{{url_for('tasks-v2-rest.create_task')}}" method="post">
   {{ task_macros.task_add_header() }}
 
   <div class="linkage-block">
@@ -236,9 +236,10 @@ body > .spacer-下 {
 <div class="scope-container-post-spacer"></div>
 {% endfor %}
 
+<div class="spacer-下"></div>
+
 <div class="task-add-panel">
 {{ task_add_panel() }}
 </div>
 
-<div class="spacer-下"></div>
 {% endblock %}

@@ -105,9 +105,10 @@ def _register_rest_endpoints(app: Flask):
 
     @tasks_v2_rest_bp.route("/task", methods=['post'])
     def create_task():
-        task = update.create_task(db_session, request.form)
+        t = update.create_task(db_session, request.form)
         # TODO: do something more creative than redirect back to referrer
-        return redirect(f"{request.referrer}#{request.form['backlink']}")
+        # NB This isn't exactly how the anchors (CSS ID's) are generated
+        return redirect(f"{request.referrer}#task-{t.task_id}-{t.linkages[0].time_scope_id}")
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>")
     def get_task(task_id):
