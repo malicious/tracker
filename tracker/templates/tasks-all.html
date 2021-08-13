@@ -1,3 +1,4 @@
+{% import "shared-macros.jinja" as shared_macros %}
 {% import "task-macros.jinja" as task_macros %}
 
 {% extends "base.html" %}
@@ -181,11 +182,20 @@ input.show-edit:checked ~ .task-edit {
   display: inherit;
 }
 
+.task-add-panel {
+  position: sticky;
+  bottom: 0;
+  background-color: white;
+  z-index: 4;
+}
+
+{{ shared_macros.note_edit_css('task-add', ['add',]) }}
 {{ task_macros.task_edit_css }}
 </style>
 
 <script>
-{{ task_macros.task_edit_js|safe }}
+  {{ shared_macros.note_edit_js|safe }}
+  {{ task_macros.task_edit_js|safe }}
 </script>
 {% endblock %}
 
@@ -243,6 +253,78 @@ input.show-edit:checked ~ .task-edit {
 
 
 
+{# ================================================================= #}
+
+{% macro render_add_panel() %}
+<form action="{{url_for("tasks-v2-rest.create_task")}}" method="post">
+
+<div class="task-edit-task-only">
+  <div>
+    <label>category</label>
+    <input class="category" name="task-category" placeholder="None">
+  </div>
+  <div class="not-saved">
+    <label>desc</label>
+    <textarea class="desc" name="task-desc"></textarea>
+  </div>
+  <div>
+    <label>time_estimate</label>
+    <input class="time_estimate" name="task-time_estimate" placeholder="None">
+  </div>
+</div>
+
+<div class="linkage-block">
+  {{ task_macros.linkage_headers|safe }}
+
+  <div class="linkage-row not-saved">
+    <div>
+      <input name="tl-new-time_scope_id">
+      <input name="tl-new-created_at">
+    </div>
+    <div>
+      <input name="tl-new-time_elapsed">
+    </div>
+    <div>
+      <input name="tl-new-resolution">
+    </div>
+    <div>
+      <input name="tl-new-detailed_resolution">
+    </div>
+    <div>
+      <button>存</button>
+      <button class="delete" disabled>x</button>
+    </div>
+  </div>
+
+  <div class="linkage-footer-row">
+    <div>
+      <button class="new" disabled>add row</button>
+    </div>
+    <div></div>
+    <div></div>
+    <div style="text-align: right;">
+      <button>create task</button>
+    </div>
+  </div>
+</div>
+
+</form>
+
+{% endmacro %}
+
+{% macro task_add_panel() %}
+{% set tabs = [('add', render_add_panel()),
+               ] %}
+{{ shared_macros.render_with_tabs('task-add',
+    desc='[add task]',
+    tabs=tabs) }}
+
+{% endmacro %}
+
+
+
+{# ================================================================= #}
+
 {% block content %}
 
 {% set ns = namespace() %}
@@ -276,6 +358,10 @@ input.show-edit:checked ~ .task-edit {
 <!-- this is _outside_ `.scope-container` because the sticky header shouldn't be on top of it -->
 <div class="scope-container-post-spacer"></div>
 {% endfor %}
+
+<div class="task-add-panel">
+{{ task_add_panel() }}
+</div>
 
 <div class="spacer-下"></div>
 {% endblock %}
