@@ -11,7 +11,6 @@ import tasks_v2
 
 def create_app(settings_overrides: Dict = {}):
     app = Flask(__name__, instance_relative_config=True)
-    app.config['JSON_AS_ASCII'] = False
     app.config.update(settings_overrides)
 
     # Make the parent directory for our SQLite databases
