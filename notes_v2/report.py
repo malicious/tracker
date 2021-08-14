@@ -194,7 +194,7 @@ def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], i
 
     def should_display_domain(d: str) -> bool:
         # Don't render any domains that are an exact match for the page
-        if d in page_domains:
+        if len(page_domains) == 1 and d == page_domains[0]:
             return False
 
         # Ignore domains that start with `type: `, maybe

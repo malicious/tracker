@@ -71,14 +71,8 @@ def _register_endpoints(app):
 
     @notes_v2_bp.route("/notes")
     def edit_notes():
-        page_scopes = []
-        if request.args.get('scope'):
-            page_scopes.append(escape(request.args.get('scope')))
-
-        page_domains = []
-        if request.args.get('domain'):
-            page_domains.append(escape(request.args.get('domain')))
-
+        page_scopes = [escape(arg) for arg in request.args.getlist('scope')]
+        page_domains = [escape(arg) for arg in request.args.getlist('domain')]
         return report.edit_notes(page_domains, page_scopes)
 
     app.register_blueprint(notes_v2_bp, url_prefix='')
@@ -103,15 +97,8 @@ def _register_rest_endpoints(app):
 
     @notes_v2_rest_bp.route("/notes")
     def get_notes():
-        # TODO: How to make this multiple?
-        page_scopes = []
-        if request.args.get('scope'):
-            page_scopes.append(escape(request.args.get('scope')))
-
-        page_domains = []
-        if request.args.get('domain'):
-            page_domains.append(escape(request.args.get('domain')))
-
+        page_scopes = [escape(arg) for arg in request.args.getlist('scope')]
+        page_domains = [escape(arg) for arg in request.args.getlist('domain')]
         return report.notes_json_tree(page_domains, page_scopes)
 
     @notes_v2_rest_bp.route("/stats/domains")
