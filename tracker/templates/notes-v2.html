@@ -4,6 +4,8 @@
 
 
 
+{# ================================================================= #}
+
 {% block head %}
 
 {{ super() }}
@@ -48,16 +50,7 @@
   padding: 8px;
 }
 
-.note-add-panel {
-  position: sticky;
-  bottom: 0px;
-  background-color: white;
-  margin-top: 8px;
-}
-
 {{ shared_macros.note_edit_css('note', ['json',]) }}
-
-{{ shared_macros.note_edit_css('note-add', ['add',]) }}
 </style>
 
 <script>
@@ -67,6 +60,8 @@
 {% endblock %}
 
 
+
+{# ================================================================= #}
 
 {% macro render_n2(note, scope) %}
   {% set tabs = [('json', "<div>{}</div>".format(render_n2_json(note))),
@@ -79,6 +74,8 @@
 {% endmacro %}
 
 
+
+{# ================================================================= #}
 
 {% block content %}
 
@@ -120,23 +117,5 @@
   {% endif %}
   {% endfor %}{# week #}
 {% endfor %}{# quarter #}
-
-
-
-{% macro render_add_panel() %}
-  hello this is a panel<br>
-  longer panel
-  <hr>
-  more panel
-
-{% endmacro %}
-
-<div class="note-add-panel">
-{% set tabs = [('add', render_add_panel()),
-               ] %}
-{{ shared_macros.render_with_tabs('note-add',
-      desc='[add note]',
-      tabs=tabs) }}
-</div>
 
 {% endblock %}
