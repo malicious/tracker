@@ -40,6 +40,12 @@
 
   font-size: 24px;
   line-height: 24px;
+  z-index: 4;
+}
+.domain-header > span {
+  /* color based off of var(--default-bg-color) */
+  background: rgba(240, 240, 240, 0.8);
+  padding: 8px;
 }
 
 .note-add-panel {
@@ -76,7 +82,9 @@
 
 {% block content %}
 
-<div class="domain-header">{{ header }}</div>
+<div class="domain-header">
+  <span>{{ header }}</span>
+</div>
 
 {% for quarter_scope, quarter_dict in notes_tree.items()|sort(reverse=true, attribute='0') %}
 {% if quarter_dict|length > 1 or quarter_dict["notes"] %}
