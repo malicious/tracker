@@ -108,7 +108,14 @@ def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Optional[Note]:
 
 def all_from_csv(session, csv_file, expect_duplicates: bool):
     for csv_entry in csv.DictReader(csv_file):
-        one_from_csv(session, csv_entry, expect_duplicates)
+        try:
+            one_from_csv(session, csv_entry, expect_duplicates)
+        except KeyError:
+            print('-' * 72)
+            print(f"WARN: Couldn\'t import CSV row")
+            print(json.dumps(csv_entry, indent=2))
+            print()
+            continue
 
     session.commit()
 
