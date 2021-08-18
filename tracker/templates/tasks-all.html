@@ -269,7 +269,7 @@ input.show-edit:checked ~ .task-edit {
 {% endmacro %}
 
 {% macro task_add_panel() %}
-{% set tabs = [('add', render_add_panel()),
+{% set tabs = [('add', render_add_panel(), ''),
                ] %}
 {{ shared_macros.render_with_tabs('task-add',
     desc='[add task]',

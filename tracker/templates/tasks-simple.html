@@ -69,8 +69,8 @@
 
 {% for task in tasks_list %}
   {% set tabs = [('edit', task_macros.edit_block(task,
-                              backlink="task-{}-{}".format(task.task_id, loop.index))),
-                 ('json', "<div>{}</div>".format(task.as_json())),
+                              backlink="task-{}-{}".format(task.task_id, loop.index)), ''),
+                 ('json', "<div>{}</div>".format(task.as_json()), ''),
                  ] %}
   {{ shared_macros.render_with_tabs('task',
         unique_id="{}-{}".format(task.task_id, loop.index),

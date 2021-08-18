@@ -160,8 +160,8 @@ body > .spacer-下 {
 
 {% macro render_task(task, scope) %}
   {% set tabs = [('edit', task_macros.edit_block(task,
-                              backlink="task-{}-{}".format(task.task_id, scope))),
-                 ('json', "<div>{}</div>".format(task.as_json())),
+                              backlink="task-{}-{}".format(task.task_id, scope)), ''),
+                 ('json', "<div>{}</div>".format(task.as_json()), ''),
                  ] %}
   {% set resolution_to_print =
          task.linkage_at(scope, create_if_none=False).resolution %}
@@ -190,7 +190,7 @@ body > .spacer-下 {
 {% endmacro %}
 
 {% macro task_add_panel() %}
-{% set tabs = [('add', render_add_panel()),
+{% set tabs = [('add', render_add_panel(), ''),
                ] %}
 {{ shared_macros.render_with_tabs('task-add',
     desc='[add task]',
