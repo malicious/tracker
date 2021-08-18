@@ -79,9 +79,11 @@
 
 {% block content %}
 
+{% if header %}
 <div class="domain-header">
   <span>{{ header }}</span>
 </div>
+{% endif %}
 
 {% for quarter_scope, quarter_dict in notes_tree.items()|sort(reverse=true, attribute='0') %}
 {% if quarter_dict|length > 1 or quarter_dict["notes"] %}
