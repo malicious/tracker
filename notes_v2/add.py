@@ -1,8 +1,10 @@
 import csv
 import json
 import sys
-from dateutil import parser
 from typing import List, Dict, Optional
+
+from dateutil import parser
+from sqlalchemy.exc import IntegrityError
 
 from notes_v2.models import Note, NoteDomain
 
@@ -110,7 +112,7 @@ def all_from_csv(session, csv_file, expect_duplicates: bool):
     for csv_entry in csv.DictReader(csv_file):
         try:
             one_from_csv(session, csv_entry, expect_duplicates)
-        except KeyError:
+        except (KeyError, IntegrityError):
             print('-' * 72)
             print(f"WARN: Couldn\'t import CSV row")
             print(json.dumps(csv_entry, indent=2))
