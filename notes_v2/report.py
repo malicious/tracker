@@ -238,10 +238,6 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         # And color-coded, hyperlinked domains
         output_str += f'<span class="domains">{_render_n2_domains(n, domains, scope_ids)}</span>\n'
 
-        # detailed_desc, only if needed
-        if n.detailed_desc:
-            output_str += f'<div class="detailed-desc">{escape(n.detailed_desc)}</div>'
-
         return output_str
 
     def render_n2_json(n: Note) -> str:

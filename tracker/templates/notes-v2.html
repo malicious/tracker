@@ -11,11 +11,14 @@
 {{ super() }}
 
 <style type="text/css">
+{{ shared_macros.note_edit_css('note', ['json',]) }}
+{{ shared_macros.note_edit_css('note-plus', ['資訊', 'json',]) }}
+
 :root {
   --text-low-priority-color: #999;
 }
 
-.note-json > div {
+.note-json > div, .note-plus-json > div {
   white-space: pre-wrap;
   margin: 12px;
   padding: 12px;
@@ -24,7 +27,7 @@
   background: var(--default-bg-color);
 }
 
-.detailed-desc {
+.note-plus-資訊 > div {
   white-space: pre-wrap;
   color: var(--text-low-priority-color);
   font-size: 12px;
@@ -32,6 +35,11 @@
 
   margin-top: 8px;
   padding-left: 24px;
+}
+
+/* show .note-plus labels even when not hovering*/
+.note-plus-and-tabs label.show-資訊 {
+  display: inherit;
 }
 
 .domain-header {
@@ -49,8 +57,6 @@
   background: rgba(240, 240, 240, 0.8);
   padding: 8px;
 }
-
-{{ shared_macros.note_edit_css('note', ['json',]) }}
 </style>
 
 <script>
@@ -64,12 +70,29 @@
 {# ================================================================= #}
 
 {% macro render_n2(note, scope) %}
-  {% set tabs = [('json', "<div>{}</div>".format(render_n2_json(note))),
-                 ] %}
+{% if note.detailed_desc %}
+  {% set tabs = [
+                  ('資訊',
+                   "<div>{}</div>".format(note.detailed_desc),
+                   'checked' if note.detailed_desc|length < 100 else ''
+                  ),
+                  ('json', "<div>{}</div>".format(render_n2_json(note)), ''),
+                ] %}
+
+  {{ shared_macros.render_with_tabs('note-plus',
+        unique_id="{}-{}".format(note.note_id, scope),
+        desc=render_n2_desc(note, scope),
+        tabs=tabs) }}
+
+{% else %}
+  {% set tabs = [('json', "<div>{}</div>".format(render_n2_json(note)), ''),] %}
+
   {{ shared_macros.render_with_tabs('note',
         unique_id="{}-{}".format(note.note_id, scope),
         desc=render_n2_desc(note, scope),
         tabs=tabs) }}
+
+{% endif %}
 
 {% endmacro %}
 

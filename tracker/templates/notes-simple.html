@@ -33,9 +33,9 @@
 {% block content %}
 
 {% for note in notes_list %}
-  {% set tabs = [('edit', 'um. edit.'),
-                 ('md', "<div>{}</div>".format(note.desc)),
-                 ('json', "<div>{}</div>".format(pretty_print_note(note))),
+  {% set tabs = [('edit', 'um. edit.', ''),
+                 ('md', "<div>{}</div>".format(note.desc), ''),
+                 ('json', "<div>{}</div>".format(pretty_print_note(note)), ''),
                  ] %}
   {{ shared_macros.render_with_tabs('note',
         unique_id="{}-{}".format(note.note_id, loop.index),
