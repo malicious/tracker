@@ -73,10 +73,10 @@
 {% if note.detailed_desc %}
   {% set tabs = [
                   ('資訊',
-                   "<div>{}</div>".format(note.detailed_desc),
-                   'checked' if note.detailed_desc|length < 100 else ''
+                   "<div>{}</div>".format(note.detailed_desc|escape),
+                   'checked' if note.detailed_desc|length < 200 else ''
                   ),
-                  ('json', "<div>{}</div>".format(render_n2_json(note)), ''),
+                  ('json', "<div>{}</div>".format(render_n2_json(note)|escape), ''),
                 ] %}
 
   {{ shared_macros.render_with_tabs('note-plus',
@@ -85,7 +85,7 @@
         tabs=tabs) }}
 
 {% else %}
-  {% set tabs = [('json', "<div>{}</div>".format(render_n2_json(note)), ''),] %}
+  {% set tabs = [('json', "<div>{}</div>".format(render_n2_json(note)|escape), ''),] %}
 
   {{ shared_macros.render_with_tabs('note',
         unique_id="{}-{}".format(note.note_id, scope),
@@ -102,9 +102,9 @@
 
 {% block content %}
 
-{% if header %}
+{% if domain_header %}
 <div class="domain-header">
-  <span>{{ header }}</span>
+  <span>{{ domain_header }}</span>
 </div>
 {% endif %}
 

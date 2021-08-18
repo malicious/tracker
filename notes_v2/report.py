@@ -241,10 +241,10 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         return output_str
 
     def render_n2_json(n: Note) -> str:
-        return escape(json.dumps(n.as_json(include_domains=True), indent=2))
+        return json.dumps(n.as_json(include_domains=True), indent=2)
 
     return render_template('notes-v2.html',
-                           header=' & '.join(domains),
+                           domain_header=' & '.join(domains),
                            render_n2_desc=render_n2_desc,
                            render_n2_json=render_n2_json,
                            notes_tree=notes_json_tree(domains, scope_ids))
