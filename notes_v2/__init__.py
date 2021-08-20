@@ -1,3 +1,5 @@
+import os
+
 import sqlalchemy
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -6,6 +8,11 @@ from notes_v2.models import Base
 from . import models
 
 db_session = None
+
+
+def init_app(app):
+    if not app.config['TESTING']:
+        load_models(os.path.abspath(os.path.join(app.instance_path, 'notes-v2.db')))
 
 
 def load_models(current_db_path: str):

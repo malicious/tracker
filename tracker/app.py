@@ -4,6 +4,7 @@ from typing import Dict
 from flask import Flask
 
 import notes
+import notes_v2
 import tasks_v1
 import tasks_v2
 
@@ -20,6 +21,7 @@ def create_app(settings_overrides: Dict = {}):
             pass
 
     notes.init_app(app)
+    notes_v2.init_app(app)
     tasks_v1.init_app(app)
     tasks_v2.init_app(app)
 
