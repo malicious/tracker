@@ -10,6 +10,10 @@
 
 {{ super() }}
 
+{% if domain_header %}
+<title>{{ domain_header }}</title>
+{% endif %}
+
 <style type="text/css">
 {{ shared_macros.note_edit_css('note', ['json',]) }}
 {{ shared_macros.note_edit_css('note-plus', ['資訊', 'json',]) }}
