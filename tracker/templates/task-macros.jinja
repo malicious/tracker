@@ -48,7 +48,7 @@
 
 {# ================================================================= #}
 
-{% set _linkage_header_row %}
+{% macro linkage_header_row() %}
   <div class="linkage-header-row">
     <label>time_scope_id / created_at</label>
     <label>time_elapsed</label>
@@ -56,7 +56,7 @@
     <label>detailed_resolution</label>
     <div></div>
   </div>
-{% endset %}
+{% endmacro %}
 
 
 
@@ -321,7 +321,7 @@ document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
   {{ task_edit_header(t) }}
 
   <div class="linkage-block">
-    {{ _linkage_header_row }}
+    {{ linkage_header_row() }}
     {% for tl in t.linkages %}
       {{ linkage_row(tl) }}
     {% endfor %}
