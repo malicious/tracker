@@ -282,7 +282,10 @@ function refreshBlockDeleteButtons(b) {
     if (row_count == 1) {
       b.querySelector(".linkage-row button.delete").disabled = true;
     } else {
-      b.querySelector(".linkage-row button.delete").disabled = false;
+      const tl_buttons = b.querySelectorAll(".linkage-row button.delete");
+      for (var i = 0, len = tl_buttons.length; i < len; i++) {
+        tl_buttons[i].disabled = false;
+      }
     }
 
 }
