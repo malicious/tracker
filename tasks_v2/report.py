@@ -147,6 +147,17 @@ def compute_ignoring_scope(todays_date):
 
     Returns a function that returns a tuple of (scope to print, resolution to print, is future task)
     """
+    def minimize_vs_today(printed_scope_id) -> str:
+        todays_scope_id = todays_date.strftime("%G-ww%V.%u")
+        if todays_scope_id == printed_scope_id:
+            return ''
+
+        # If the years are different, there's nothing to minimize
+        if todays_scope_id[0:4] != printed_scope_id[0:4]:
+            return printed_scope_id
+
+        return printed_scope_id[5:]
+
     def _compute(t):
         # TODO: import the db session and use exists()/scalar()
         open_linkages_exist = TaskLinkage.query \
@@ -156,20 +167,14 @@ def compute_ignoring_scope(todays_date):
         if not open_linkages_exist:
             return '', t.linkages[-1].resolution, False
 
-        # If exactly one open linkage remains, use its source scope
-        if len(t.linkages) == 1:
-            rendered_scope = render_scope(t.linkages[0].time_scope, todays_date)
-            return rendered_scope, t.linkages[-1].resolution, False
-
         # By this point multiple linkages exist, but at least one is open
         latest_open = [tl for tl in t.linkages if not tl.resolution][-1]
         if latest_open.time_scope - todays_date > timedelta(days=3):
-            # Far-future tasks get special styling
-            return latest_open.time_scope_id, None, True
+            return minimize_vs_today(latest_open.time_scope_id), None, True
         elif latest_open.time_scope > todays_date:
-            # Near-future tasks are just... normal?
-            return latest_open.time_scope_id, None, False
+            return minimize_vs_today(latest_open.time_scope_id), None, False
         else:
+            # TODO: past-tasks are the only ones that get their scope shrunken
             rendered_scope = render_scope(latest_open.time_scope, todays_date)
             return rendered_scope, t.linkages[-1].resolution, False
 

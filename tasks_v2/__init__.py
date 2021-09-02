@@ -73,6 +73,9 @@ def _register_endpoints(app: Flask):
 
     @tasks_v2_bp.route("/tasks/<scope_id>")
     def edit_tasks_in_scope(scope_id):
+        if scope_id == 'week':
+            return redirect(url_for(".edit_tasks_in_scope", scope_id=datetime.now().strftime("%G-ww%V")))
+
         page_scope = None
         try:
             parsed_scope = TimeScope(scope_id)
@@ -102,9 +105,10 @@ def _register_rest_endpoints(app: Flask):
 
     @tasks_v2_rest_bp.route("/task", methods=['post'])
     def create_task():
-        task = update.create_task(db_session, request.form)
+        t = update.create_task(db_session, request.form)
         # TODO: do something more creative than redirect back to referrer
-        return redirect(f"{request.referrer}#{request.form['backlink']}")
+        # NB This isn't exactly how the anchors (CSS ID's) are generated
+        return redirect(f"{request.referrer}#task-{t.task_id}-{t.linkages[0].time_scope_id}")
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>")
     def get_task(task_id):

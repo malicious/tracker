@@ -8,6 +8,10 @@
 {% block head %}
 {{ super() }}
 <style type="text/css">
+:root {
+  --text-low-priority-color: #999;
+}
+
 body {
   overflow-wrap: anywhere;
   word-break: break-word; /* Safari */
@@ -75,7 +79,7 @@ body > .spacer-下 {
 }
 
 .resolved, .resolved .task-scope, .resolved .task-time {
-  color: var(--disabled-fg-color);
+  color: var(--text-low-priority-color);
 }
 
 
@@ -88,17 +92,66 @@ body > .spacer-下 {
   background: var(--default-bg-color);
 }
 
-{{ shared_macros.note_edit_css('task', ['edit', 'json']) }}
+.sub-desc {
+  white-space: pre-wrap;
+  color: var(--text-low-priority-color);
+  font-size: 12px;
+  line-height: 16px;
 
+  margin-top: 8px;
+  padding-left: 24px;
+  max-width: 600px;
+}
+
+.task-add-panel {
+  position: sticky;
+  bottom: 0;
+  background-color: white;
+  z-index: 4;
+}
+
+{{ shared_macros.note_edit_css('task', ['edit', 'json']) }}
+{{ shared_macros.note_edit_css('task-add', ['add']) }}
 {{ task_macros.task_edit_css }}
 </style>
 
 
 
 <script>
-{{ shared_macros.note_edit_js|safe }}
+  {{ shared_macros.note_edit_js|safe }}
+  {{ task_macros.task_edit_js|safe }}
 
-{{ task_macros.task_edit_js|safe }}
+  function populate_add_panel() {
+    // Populate the add_panel when it's shown
+    const task_add_panel = document.querySelector(".task-add-panel");
+    const add_checkbox = task_add_panel.querySelector("input.show-add");
+
+    console.log(add_checkbox);
+    add_checkbox.addEventListener('change', (e) => {
+      tl_row = e.target.parentNode.querySelector(".linkage-row");
+
+      /* generate target cell contents */
+      generation_time = new Date();
+      time_scope_str = toTimeScopeId(new Date(generation_time));
+      created_at_str = generation_time.toISOString()
+        .split('T').join(' ') // remove the ISO8601 'T'
+        .split('Z')[0]; // and remove anything past the 'Z'
+
+      /* fill in target cells */
+      time_scope_id = tl_row.querySelector('input[name="tl-new-blank-time_scope_id"]');
+      if (time_scope_id && !time_scope_id.value) {
+        console.log("Filling in time_scope_id: ", time_scope_str)
+        time_scope_id.value = time_scope_str;
+      }
+
+      created_at = tl_row.querySelector('input[name="tl-new-blank-created_at"]');
+      if (created_at && !created_at.value) {
+        console.log("Filling in created_at: ", created_at_str)
+        created_at.value = created_at_str;
+      }
+    });
+  }
+  document.addEventListener("DOMContentLoaded", populate_add_panel);
 
 </script>
 
@@ -106,7 +159,9 @@ body > .spacer-下 {
 
 
 
-{% macro _render_task_desc(t, resolution_to_print) %}
+{# ================================================================= #}
+
+{% macro _render_task_desc(t, scope, resolution_to_print) %}
 
     {% if resolution_to_print %}
       <span class="task-resolution">({{ resolution_to_print }}) </span>
@@ -122,25 +177,63 @@ body > .spacer-下 {
       <span class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</span>
     {% endif %}
 
+    {% if t.linkages|length == 1 %}
+      {% if t.linkages[0].detailed_resolution %}
+        <div class="sub-desc">{{ t.linkages[0].detailed_resolution }}</div>
+      {% endif %}
+    {% elif t.linkage_at(scope, False) %}
+      {% if t.linkage_at(scope, False).detailed_resolution %}
+        <div class="sub-desc">{{ t.linkage_at(scope, False).detailed_resolution }}</div>
+      {% endif %}
+    {% endif %}
+
 {% endmacro %}
 
 
 
 {% macro render_task(task, scope) %}
   {% set tabs = [('edit', task_macros.edit_block(task,
-                              backlink="task-{}-{}".format(task.task_id, scope))),
-                 ('json', "<div>{}</div>".format(task.as_json())),
+                              backlink="task-{}-{}".format(task.task_id, scope)), ''),
+                 ('json', "<div>{}</div>".format(task.as_json()), ''),
                  ] %}
   {% set resolution_to_print =
          task.linkage_at(scope, create_if_none=False).resolution %}
   {{ shared_macros.render_with_tabs('task',
         item_styling="resolved" if resolution_to_print,
         unique_id="{}-{}".format(task.task_id, scope),
-        desc=_render_task_desc(task, resolution_to_print),
+        desc=_render_task_desc(task, scope, resolution_to_print),
         tabs=tabs) }}
 {% endmacro %}
 
 
+
+{# ================================================================= #}
+
+{% macro render_add_panel() %}
+<form action="{{url_for('tasks-v2-rest.create_task')}}" method="post">
+  {{ task_macros.task_add_header() }}
+
+  <div class="linkage-block">
+    {{ task_macros.linkage_headers|safe }}
+    {{ task_macros.linkage_row_new('new-blank', '', '') }}
+    {{ task_macros.linkage_footer_row('create task')|safe }}
+  </div>
+</form>
+
+{% endmacro %}
+
+{% macro task_add_panel() %}
+{% set tabs = [('add', render_add_panel(), ''),
+               ] %}
+{{ shared_macros.render_with_tabs('task-add',
+    desc='[add task]',
+    tabs=tabs) }}
+
+{% endmacro %}
+
+
+
+{# ================================================================= #}
 
 {% block content %}
 
@@ -177,4 +270,9 @@ body > .spacer-下 {
 {% endfor %}
 
 <div class="spacer-下"></div>
+
+<div class="task-add-panel">
+{{ task_add_panel() }}
+</div>
+
 {% endblock %}

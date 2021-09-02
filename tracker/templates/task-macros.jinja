@@ -1,3 +1,132 @@
+{# ================================================================= #}
+
+{% macro task_edit_header(t) %}
+<div class="task-edit-task-only">
+  <div>
+    <label>task_id</label>
+    <span>{{t.task_id}}</span>
+    <a href="{{url_for("tasks-v2.edit_one_task", task_id=t.task_id)}}">[edit task]</a>
+    <button class="clone" formaction="{{url_for("tasks-v2-rest.create_task")}}">clone task</button>
+  </div>
+  <div>
+    <label>category</label>
+    <input class="category" name="task-category" placeholder="None" value="{{t.category if t.category}}">
+  </div>
+  <div>
+    <label>desc</label>
+    <textarea class="desc" name="task-desc">{{t.desc}}</textarea>
+  </div>
+  <div>
+    <label>time_estimate</label>
+    <input class="time_estimate" name="task-time_estimate" placeholder="None" value="{{t.time_estimate if t.time_estimate}}">
+  </div>
+</div>
+
+{% endmacro %}
+
+
+
+{% macro task_add_header() %}
+<div class="task-edit-task-only">
+  <div>
+    <label>category</label>
+    <input class="category" name="task-category" placeholder="None">
+  </div>
+  <div class="not-saved">
+    <label>desc</label>
+    <textarea class="desc" name="task-desc"></textarea>
+  </div>
+  <div>
+    <label>time_estimate</label>
+    <input class="time_estimate" name="task-time_estimate" placeholder="None">
+  </div>
+</div>
+
+{% endmacro %}
+
+
+
+{# ================================================================= #}
+
+{% macro linkage_header_row() %}
+  <div class="linkage-header-row">
+    <label>time_scope_id / created_at</label>
+    <label>time_elapsed</label>
+    <label>resolution</label>
+    <label>detailed_resolution</label>
+    <div></div>
+  </div>
+{% endmacro %}
+
+
+
+{% macro linkage_footer_row(button_name='save task') %}
+  <div class="linkage-footer-row">
+    <div>
+      <button class="new" disabled>add row</button>
+    </div>
+    <div></div>
+    <div></div>
+    <div style="text-align: right;">
+      <button>{{ button_name }}</button>
+    </div>
+  </div>
+{% endmacro %}
+
+
+
+{% macro linkage_row(tl) %}
+<div class="linkage-row">
+  <div>
+    <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}" readonly="readonly">
+    <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}" readonly="readonly">
+  </div>
+  <div>
+    <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}">
+  </div>
+  <div>
+    <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution | escape if tl.resolution}}">
+  </div>
+  <div>
+    <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
+  </div>
+  <div>
+    <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
+    <button class="delete" disabled>x</button>
+  </div>
+</div>
+{% endmacro %}
+
+
+
+{% macro linkage_row_new(row_id, time_scope_str, created_at_str) %}
+<div class="linkage-row not-saved">
+  <div>
+    {# TODO: actual formatting #}
+    <input name="tl-{{row_id}}-time_scope_id" value="{{time_scope_str}}" placeholder="[enable javascript]">
+    <input name="tl-{{row_id}}-created_at"    value="{{created_at_str}}" placeholder="[enable javascript]">
+  </div>
+  <div>
+    <input name="tl-{{row_id}}-time_elapsed" placeholder="None">
+  </div>
+  <div>
+    <input name="tl-{{row_id}}-resolution"   placeholder="None">
+  </div>
+  <div>
+    <textarea name="tl-{{row_id}}-detailed_resolution" placeholder="None"></textarea>
+  </div>
+  <div>
+    <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
+    <button class="delete" disabled>x</button>
+    {# TODO: 'disabled' might mess with javascript render #}
+  </div>
+</div>
+{% endmacro %}
+
+
+
+{# ================================================================= #}
+
 {% set task_edit_css %}
 :root {
   --not-saved-bg-color: rgb(250, 250, 230);
@@ -102,26 +231,7 @@ function addTLRow(e) {
   // add a new "template" row, right above `div.linkage-footer-row`
   new_row = document.createElement('template');
   new_row.innerHTML = `
-<div class="linkage-row not-saved">
-  <div>
-    {# TODO: actual formatting #}
-    <input name="tl-${new_row_id}-time_scope_id" value="${time_scope_str}">
-    <input name="tl-${new_row_id}-created_at" value="${created_at_str}">
-  </div>
-  <div>
-    <input name="tl-${new_row_id}-time_elapsed" placeholder="None">
-  </div>
-  <div>
-    <input name="tl-${new_row_id}-resolution"   placeholder="None">
-  </div>
-  <div>
-    <textarea name="tl-${new_row_id}-detailed_resolution" placeholder="None"></textarea>
-  </div>
-  <div>
-    <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
-    <button class="delete">x</button>
-  </div>
-</div>
+{{ linkage_row_new('${new_row_id}', '${time_scope_str}', '${created_at_str}') }}
 `;
 
   // add delete listener
@@ -172,7 +282,10 @@ function refreshBlockDeleteButtons(b) {
     if (row_count == 1) {
       b.querySelector(".linkage-row button.delete").disabled = true;
     } else {
-      b.querySelector(".linkage-row button.delete").disabled = false;
+      const tl_buttons = b.querySelectorAll(".linkage-row button.delete");
+      for (var i = 0, len = tl_buttons.length; i < len; i++) {
+        tl_buttons[i].disabled = false;
+      }
     }
 
 }
@@ -200,85 +313,19 @@ document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
 
 
 
-{% set linkage_headers %}
-  <div class="linkage-header-row">
-    <label>time_scope_id / created_at</label>
-    <label>time_elapsed</label>
-    <label>resolution</label>
-    <label>detailed_resolution</label>
-    <div></div>
-  </div>
-{% endset %}
-
-
-
-{% macro linkage_row(tl) %}
-<div class="linkage-row">
-  <div>
-    <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}" readonly="readonly">
-    <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}" readonly="readonly">
-  </div>
-  <div>
-    <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}">
-  </div>
-  <div>
-    <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution | escape if tl.resolution}}">
-  </div>
-  <div>
-    <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
-  </div>
-  <div>
-    <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
-    <button class="delete" disabled>x</button>
-  </div>
-</div>
-{% endmacro %}
-
-
+{# ================================================================= #}
 
 {% macro edit_block(t, backlink) %}
 <form action="{{url_for("tasks-v2-rest.edit_task", task_id=t.task_id)}}" method="post">
-<input type="hidden" name="backlink" value="{{backlink}}">
+  <input type="hidden" name="backlink" value="{{backlink}}">
+  {{ task_edit_header(t) }}
 
-<div class="task-edit-task-only">
-  <div>
-    <label>task_id</label>
-    <span>{{t.task_id}}</span>
-    <a href="{{url_for("tasks-v2.edit_one_task", task_id=t.task_id)}}">[edit task]</a>
-    <button class="clone" formaction="{{url_for("tasks-v2-rest.create_task")}}">clone task</button>
+  <div class="linkage-block">
+    {{ linkage_header_row() }}
+    {% for tl in t.linkages %}
+      {{ linkage_row(tl) }}
+    {% endfor %}
+    {{ linkage_footer_row() }}
   </div>
-  <div>
-    <label>category</label>
-    <input class="category" name="task-category" value="{{t.category if t.category}}">
-  </div>
-  <div>
-    <label>desc</label>
-    <textarea class="desc" name="task-desc">{{t.desc}}</textarea>
-  </div>
-  <div>
-    <label>time_estimate</label>
-    <input class="time_estimate" name="task-time_estimate" value="{{t.time_estimate if t.time_estimate}}">
-  </div>
-</div>
-
-<div class="linkage-block">
-  {{ linkage_headers }}
-
-{% for tl in t.linkages %}
-  {{ linkage_row(tl) }}
-{% endfor %}
-
-  <div class="linkage-footer-row">
-    <div>
-      <button class="new" disabled>add row</button>
-    </div>
-    <div></div>
-    <div></div>
-    <div style="text-align: right;">
-      <button>save task</button>
-    </div>
-  </div>
-</div>
-
 </form>
 {% endmacro %}
