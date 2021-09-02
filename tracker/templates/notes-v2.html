@@ -1,0 +1,150 @@
+{% import "shared-macros.jinja" as shared_macros %}
+
+{% extends "base.html" %}
+
+
+
+{# ================================================================= #}
+
+{% block head %}
+
+{{ super() }}
+
+{% if domain_header %}
+<title>{{ domain_header }}</title>
+{% endif %}
+
+<style type="text/css">
+{{ shared_macros.note_edit_css('note', ['json',]) }}
+{{ shared_macros.note_edit_css('note-plus', ['資訊', 'json',]) }}
+
+:root {
+  --text-low-priority-color: #999;
+}
+
+.note-json > div, .note-plus-json > div {
+  white-space: pre-wrap;
+  margin: 12px;
+  padding: 12px;
+  border: 1px solid rgba(29,28,29,.13);
+  border-radius: 6px;
+  background: var(--default-bg-color);
+}
+
+.note-plus-資訊 > div {
+  white-space: pre-wrap;
+  color: var(--text-low-priority-color);
+  font-size: 12px;
+  line-height: 16px;
+
+  margin-top: 8px;
+  padding-left: 24px;
+}
+
+/* show .note-plus labels even when not hovering*/
+.note-plus-and-tabs label.show-資訊 {
+  display: inherit;
+}
+
+.domain-header {
+  position: sticky;
+  top: 0px;
+  text-align: center;
+  padding: 16px;
+
+  font-size: 24px;
+  line-height: 24px;
+  z-index: 4;
+}
+.domain-header > span {
+  /* color based off of var(--default-bg-color) */
+  background: rgba(240, 240, 240, 0.8);
+  padding: 8px;
+}
+</style>
+
+<script>
+{{ shared_macros.note_edit_js|safe }}
+</script>
+
+{% endblock %}
+
+
+
+{# ================================================================= #}
+
+{% macro render_n2(note, scope) %}
+{% if note.detailed_desc %}
+  {% set tabs = [
+                  ('資訊',
+                   "<div>{}</div>".format(note.detailed_desc|escape),
+                   'checked' if note.detailed_desc|length < 200 else ''
+                  ),
+                  ('json', "<div>{}</div>".format(render_n2_json(note)|escape), ''),
+                ] %}
+
+  {{ shared_macros.render_with_tabs('note-plus',
+        unique_id="{}-{}".format(note.note_id, scope),
+        desc=render_n2_desc(note, scope),
+        tabs=tabs) }}
+
+{% else %}
+  {% set tabs = [('json', "<div>{}</div>".format(render_n2_json(note)|escape), ''),] %}
+
+  {{ shared_macros.render_with_tabs('note',
+        unique_id="{}-{}".format(note.note_id, scope),
+        desc=render_n2_desc(note, scope),
+        tabs=tabs) }}
+
+{% endif %}
+
+{% endmacro %}
+
+
+
+{# ================================================================= #}
+
+{% block content %}
+
+{% if domain_header %}
+<div class="domain-header">
+  <span>{{ domain_header }}</span>
+</div>
+{% endif %}
+
+{% for quarter_scope, quarter_dict in notes_tree.items()|sort(reverse=true, attribute='0') %}
+{% if quarter_dict|length > 1 or quarter_dict["notes"] %}
+  <h1>quarter: {{ quarter_scope }}</h1>
+{% endif %}
+
+  {% for quarter_note in quarter_dict["notes"] %}
+    {{ render_n2(quarter_note, quarter_scope) }}
+  {% endfor %}
+
+  {% for week_scope, week_dict in quarter_dict.items()|sort(reverse=true, attribute='0') if not week_scope == "notes" %}
+  {% if week_dict|length > 1 or week_dict["notes"] %}
+    <h2>week: {{ week_scope }}</h2>
+  {% endif %}
+
+    {% for week_note in week_dict["notes"] %}
+      {{ render_n2(week_note, week_scope) }}
+    {% endfor %}
+
+    {% for day_scope, day_dict in week_dict.items()|sort(reverse=true, attribute='0') if not day_scope == "notes" %}
+    {% if day_dict["notes"] %}
+      <h3>day: {{ day_scope }}</h3>
+    {% endif %}
+
+      {% for day_note in day_dict["notes"] %}
+        {{ render_n2(day_note, day_scope) }}
+      {% endfor %}
+
+    {% endfor %}{# day #}
+
+  {% if week_dict|length > 1 or week_dict["notes"] %}
+    <hr>
+  {% endif %}
+  {% endfor %}{# week #}
+{% endfor %}{# quarter #}
+
+{% endblock %}

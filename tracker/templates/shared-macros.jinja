@@ -23,14 +23,14 @@
   display: flex;
 }
 
-.tabs {
+.{{item_type}}-tabs {
   width: 100%;
   position: relative;
 }
-.tabs > input {
+.{{item_type}}-tabs > input {
   display: none;
 }
-.tabs > label {
+.{{item_type}}-tabs > label {
   height: 24px;
   line-height: 24px;
   font-size: var(--tab-label-font-size);
@@ -41,7 +41,7 @@
   text-align: center;
 }
 {% for tab_name in tab_names %}
-.tabs > label.show-{{tab_name}} {
+.{{item_type}}-tabs > label.show-{{tab_name}} {
   width: 48px;
   right: calc(48px * {{ loop.index - 1 }});
 }
@@ -50,15 +50,13 @@
 {% for tab_name in tab_names %}
 /* highlight tab labels when selected */
 .{{item_type}}-{{tab_name}} {
-  background-color: var(--tab-selected-bg-color);
-  padding: 0.5em;
+  margin-top: -8px;
+  padding-bottom: 8px;
   font-size: 12px;
-
   display: none;
 }
 input.show-{{tab_name}}:checked ~ label.show-{{tab_name}} {
   background-color: var(--tab-selected-bg-color);
-  border-top: 2px solid var(--tab-label-fg-color);
   border-radius: 6px;
 }
 input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
@@ -94,9 +92,9 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
   </div>
 </label>
 
-  <div class="tabs">
-  {% for tab_name, tab_content in tabs %}
-    <input type="checkbox" id="toggle-{{tab_name}}-{{unique_id}}" class="show-{{tab_name}}">
+  <div class="{{item_type}}-tabs">
+  {% for tab_name, tab_content, checkbox_attrib in tabs %}
+    <input type="checkbox" id="toggle-{{tab_name}}-{{unique_id}}" class="show-{{tab_name}}" {{ checkbox_attrib }}>
 
     <label for="toggle-{{tab_name}}-{{unique_id}}" class="show-{{tab_name}}">
       <span>{{ tab_name }}</span>
@@ -107,6 +105,6 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
     </div>
 
   {% endfor %}
-  </div>{# tabs #}
+  </div>{# {{item_type}}-tabs #}
 </div>
 {% endmacro %}

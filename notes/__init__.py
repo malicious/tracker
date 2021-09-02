@@ -90,7 +90,7 @@ def _register_rest_endpoints(app: Flask):
 
         return note.to_json(include_domains=True)
 
-    app.register_blueprint(notes_rest_bp, url_prefix='/v2')
+    app.register_blueprint(notes_rest_bp, url_prefix='/v1')
 
 
 def load_models(current_db_path: str):

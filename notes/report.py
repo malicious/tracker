@@ -291,6 +291,11 @@ def _generate_jinja_kwargs(scope, domain):
 
     kwargs["desc_to_html"] = desc_to_html
 
+    def render_n1_desc(n: Note):
+        return desc_to_html(n.short_desc)
+
+    kwargs["note_desc_as_html"] = render_n1_desc
+
     def pretty_print_note(note: Note):
         as_json = {
             "note": note.to_json(include_domains=False),
