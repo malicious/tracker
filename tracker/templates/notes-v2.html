@@ -124,7 +124,7 @@
 
   {% for week_scope, week_dict in quarter_dict.items()|sort(reverse=true, attribute='0') if not week_scope == "notes" %}
   {% if week_dict|length > 1 or week_dict["notes"] %}
-    <h2>week: {{ week_scope }}</h2>
+    <h2>{{ as_week_header(week_scope) }}</h2>
   {% endif %}
 
     {% for week_note in week_dict["notes"] %}

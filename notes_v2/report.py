@@ -1,5 +1,6 @@
 import hashlib
 import json
+from datetime import datetime
 from typing import Dict, List
 
 from flask import render_template
@@ -226,6 +227,9 @@ def _render_n2_time(n: Note, scope):
 
 
 def edit_notes(domains: List[str], scope_ids: List[str]):
+    def as_week_header(scope):
+        return "週: " + datetime.strptime(scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
+
     def render_n2_desc(n: Note, scope):
         output_str = ""
 
@@ -244,6 +248,7 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         return json.dumps(n.as_json(include_domains=True), indent=2)
 
     return render_template('notes-v2.html',
+                           as_week_header=as_week_header,
                            domain_header=' & '.join(domains),
                            render_n2_desc=render_n2_desc,
                            render_n2_json=render_n2_json,
