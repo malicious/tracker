@@ -238,6 +238,23 @@ def _render_n2_time(n: Note, scope: TimeScope) -> str:
     return display_time
 
 
+cache_dict = {}
+
+
+def clear_html_cache():
+    """
+    TODO: cache_dict is not actually shared where we want it to be
+
+    Flask's development server (werkzeug) can reload the app without
+    actually starting a new process, which leaves the n2/report cache
+    with stale data. Remember to explicitly clear it on init.
+
+    - TODO: Make this somehow-shared, so CLI state changes server state
+    - TODO: This probably also does weird things for unit testing
+    """
+    cache_dict.clear()
+
+
 def edit_notes(domains: List[str], scope_ids: List[str]):
     def as_week_header(scope):
         return "週: " + datetime.strptime(scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
@@ -259,12 +276,23 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
     def render_n2_json(n: Note) -> str:
         return json.dumps(n.as_json(include_domains=True), indent=2)
 
+    def memoized_render_notes(jinja_render_fn):
+        cache_key = (tuple(domains), tuple(scope_ids),)
+        if cache_key not in cache_dict:
+            notes_tree = notes_json_tree(domains, scope_ids)
+            cache_dict[cache_key] = jinja_render_fn(notes_tree)
+        else:
+            print(f"DEBUG: Found cached output for {cache_key}")
+
+        return cache_dict[cache_key]
+
+
     return render_template('notes-v2.html',
                            as_week_header=as_week_header,
+                           cached_render=memoized_render_notes,
                            domain_header=' & '.join(domains),
                            render_n2_desc=render_n2_desc,
-                           render_n2_json=render_n2_json,
-                           notes_tree=notes_json_tree(domains, scope_ids))
+                           render_n2_json=render_n2_json)
 
 
 def edit_notes_simple(*args):
