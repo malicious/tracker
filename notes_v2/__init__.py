@@ -38,6 +38,7 @@ def init_app(app):
     @with_appcontext
     def n2_update(csv_file):
         add.all_from_csv(db_session, csv_file, expect_duplicates=True)
+        print("WARN: Jinja caching still in effect, please restart the flask server to apply changes")
 
     app.cli.add_command(n2_update)
 
@@ -46,6 +47,7 @@ def init_app(app):
     @with_appcontext
     def n2_export(write_note_id):
         add.all_to_csv(write_note_id=write_note_id)
+        print("WARN: Jinja caching still in effect, please restart the flask server to apply changes")
 
     app.cli.add_command(n2_export)
 
