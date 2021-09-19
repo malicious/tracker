@@ -32,8 +32,8 @@ class NoteStapler:
                 .filter(or_(*domains_filter_sql))
 
         self.scope_tree = {}
-        self.week_promotion_threshold = 10
-        self.quarter_promotion_threshold = 10
+        self.week_promotion_threshold = 14
+        self.quarter_promotion_threshold = 8
 
     def _construct_scope_tree(self, scope: TimeScope) -> Dict:
         # TODO: Could probably collapse these cases into something cute and recursive
@@ -208,11 +208,12 @@ def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], i
     return " & ".join(domains_as_html)
 
 
-def _render_n2_time(n: Note, scope):
+def _render_n2_time(n: Note, scope: TimeScope) -> str:
     display_time = TimeScope(n.time_scope_id).minimize_vs(scope)
+
     # If we're showing a sub-day scope, draw the time, instead
-    if TimeScope(scope).is_day() and n.sort_time:
-        # For same-day notes, just show %H:%m
+    if scope.is_day() and n.sort_time:
+        # For same-day notes, just show %H:%M
         if scope == TimeScope.from_datetime(n.sort_time):
             display_time = n.sort_time.strftime('%H:%M')
         # For different day, show the day _also_
@@ -222,6 +223,11 @@ def _render_n2_time(n: Note, scope):
             } {
                 n.sort_time.strftime('%H:%M')
             }'''
+    # Anything in a week scope is usually "reduced"; append %H:%M also
+    elif scope.is_week() and n.sort_time:
+        display_time = "{} {}".format(
+            TimeScope.from_datetime(n.sort_time).minimize_vs(scope),
+            n.sort_time.strftime('%H:%M'))
 
     return display_time
 
@@ -230,11 +236,11 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
     def as_week_header(scope):
         return "週: " + datetime.strptime(scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
 
-    def render_n2_desc(n: Note, scope):
+    def render_n2_desc(n: Note, scope_id):
         output_str = ""
 
         # Generate a <span> that holds some kind of sort_time
-        output_str += f'<span class="time">{_render_n2_time(n, scope)}</span>\n'
+        output_str += f'<span class="time">{_render_n2_time(n, TimeScope(scope_id))}</span>\n'
 
         # Print the description
         output_str += f'<span class="desc">{n.desc}</span>\n'
