@@ -1,7 +1,8 @@
 import os
+from datetime import datetime
 
 import click
-from flask import Blueprint, request
+from flask import Blueprint, redirect, request, url_for
 from flask.cli import with_appcontext
 from flask.json import JSONEncoder
 from markupsafe import escape
@@ -78,6 +79,11 @@ def _register_endpoints(app):
     def edit_notes():
         page_scopes = [escape(arg) for arg in request.args.getlist('scope')]
         page_domains = [escape(arg) for arg in request.args.getlist('domain')]
+
+        if page_scopes == ['week']:
+            current_week=datetime.now().strftime("%G-ww%V")
+            return redirect(url_for(".edit_notes", scope=[current_week], domain=page_domains))
+
         return report.edit_notes(page_domains, page_scopes)
 
     app.register_blueprint(notes_v2_bp, url_prefix='')
