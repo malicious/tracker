@@ -195,6 +195,12 @@ def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], i
 
     def should_display_domain(d: str) -> bool:
         # Don't render any domains that are an exact match for the page
+        #
+        # Note that for multi-domain pages, this _intentionally_ prints
+        # all domains, even if the note matches exactly. This is
+        # because domains are OR'd together, and it's not intuitive to
+        # have none of the domains printed.
+        #
         if len(page_domains) == 1 and d == page_domains[0]:
             return False
 
