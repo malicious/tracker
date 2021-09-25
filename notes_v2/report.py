@@ -279,6 +279,10 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
     def memoized_render_notes(jinja_render_fn):
         cache_key = (tuple(domains), tuple(scope_ids),)
         if cache_key not in cache_dict:
+            # set max cache size, to be polite
+            if len(cache_dict) > 1000:
+                clear_html_cache()
+
             notes_tree = notes_json_tree(domains, scope_ids)
             cache_dict[cache_key] = jinja_render_fn(notes_tree)
         else:
