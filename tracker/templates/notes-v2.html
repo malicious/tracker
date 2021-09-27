@@ -116,7 +116,6 @@
 
 {% for day_scope, day_dict in week_dict.items()|sort(reverse=true, attribute='0') if not day_scope == "notes" %}
   {% if day_dict["notes"] %}
-    <h3>day: {{ day_scope }}</h3>
     {{ render_day_svg(day_scope, day_dict["notes"]) | safe }}
   {% endif %}
 
