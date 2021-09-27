@@ -15,13 +15,6 @@ def init_app(app: Flask):
     if not app.config['TESTING']:
         load_v2_models(os.path.abspath(os.path.join(app.instance_path, 'tasks-v2.db')))
 
-        @app.teardown_request
-        def remove_session(ex=None):
-            global db_session
-            if db_session:
-                db_session.remove()
-                db_session = None
-
     _register_endpoints(app)
     _register_rest_endpoints(app)
 

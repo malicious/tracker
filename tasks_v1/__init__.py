@@ -38,13 +38,6 @@ def init_app(app: Flask, legacy_mode=False, readonly_mode=True):
             _try_migrate(_generate_instance_path, preserve_target_db=True)
             load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
 
-            @app.teardown_request
-            def remove_session(ex=None):
-                global db_session
-                if db_session:
-                    db_session.remove()
-                    db_session = None
-
         _register_endpoints(app)
         _register_cli(app)
     elif readonly_mode:
