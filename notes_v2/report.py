@@ -1,6 +1,6 @@
 import hashlib
 import json
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import Dict, List
 
 from flask import render_template
@@ -259,6 +259,37 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
     def as_week_header(scope):
         return "週: " + datetime.strptime(scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
 
+    def render_day_svg(day_scope, notes, svg_width=800) -> str:
+        """
+        Valid timezones range from -12 to +14 or so (historical data gets worse),
+        so set an expected range of +/-12 hours, rather than building in proper
+        timezone support.
+        """
+        start_time = datetime.strptime(day_scope, '%G-ww%V.%u') + timedelta(hours=-12)
+        width_factor = svg_width / (48*60*60)
+
+        def x_pos(t):
+            return (t - start_time).total_seconds() * width_factor
+
+        # Pre-populate the list of notes, so we can be assured this is working
+        rendered_notes = [
+            '',
+            f'<circle cx="{svg_width*1/4}" cy="50" r="8" stroke="red" />',
+            f'<circle cx="{svg_width*3/4}" cy="50" r="8" stroke="red" />',
+            '',
+        ]
+        for note in notes:
+            if not note.sort_time:
+                continue
+
+            y_pos = 50
+            rendered_notes.append(f'<circle cx="{x_pos(note.sort_time)}" cy="{y_pos}" r="2" stroke="black" />')
+
+        svg = '''<svg width="800" height="100">{}</svg>'''.format(
+            '\n'.join(rendered_notes)
+        )
+        return svg
+
     def render_n2_desc(n: Note, scope_id):
         output_str = ""
 
@@ -296,7 +327,8 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
                            cached_render=memoized_render_notes,
                            domain_header=' & '.join(domains),
                            render_n2_desc=render_n2_desc,
-                           render_n2_json=render_n2_json)
+                           render_n2_json=render_n2_json,
+                           render_day_svg=render_day_svg)
 
 
 def edit_notes_simple(*args):
