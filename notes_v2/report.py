@@ -279,9 +279,9 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         rendered_notes = [
             '',
             f'<line x1="{svg_width*1/4}" y1="15" x2="{svg_width*1/4}" y2="85" stroke="black" />',
-            f'<text x="{svg_width/2}" y="{85}" text-anchor="middle" opacity="0.5" style="font-size: 12px">ww38.4</text>',
+            f'<text x="{svg_width/2}" y="{85}" text-anchor="middle" opacity="0.5" style="font-size: 12px">{day_scope}</text>',
             f'<line x1="{svg_width*3/4}" y1="15" x2="{svg_width*3/4}" y2="85" stroke="black" />',
-            f'<text x="{svg_width}" y="{85}" text-anchor="end" opacity="0.5" style="font-size: 12px">ww38.5</text>',
+            f'<text x="{svg_width}" y="{85}" text-anchor="end" opacity="0.5" style="font-size: 12px">{(start_time + timedelta(hours=36)).strftime("%G-ww%V.%u")}</text>',
             '',
         ]
 
@@ -318,7 +318,7 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             )
             rendered_notes.append(svg_element)
 
-        svg = '''<svg width="800" height="100">{}</svg>'''.format(
+        svg = '''<svg width="800" height="100" style="padding-left: var(--default-left-right-margin);">{}</svg>'''.format(
             '\n'.join(rendered_notes)
         )
         return svg
