@@ -1,5 +1,6 @@
 import hashlib
 import json
+from datetime import datetime, timedelta
 from typing import Dict, List
 
 from flask import render_template
@@ -31,8 +32,8 @@ class NoteStapler:
                 .filter(or_(*domains_filter_sql))
 
         self.scope_tree = {}
-        self.week_promotion_threshold = 10
-        self.quarter_promotion_threshold = 10
+        self.week_promotion_threshold = 14
+        self.quarter_promotion_threshold = 8
 
     def _construct_scope_tree(self, scope: TimeScope) -> Dict:
         # TODO: Could probably collapse these cases into something cute and recursive
@@ -194,6 +195,12 @@ def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], i
 
     def should_display_domain(d: str) -> bool:
         # Don't render any domains that are an exact match for the page
+        #
+        # Note that for multi-domain pages, this _intentionally_ prints
+        # all domains, even if the note matches exactly. This is
+        # because domains are OR'd together, and it's not intuitive to
+        # have none of the domains printed.
+        #
         if len(page_domains) == 1 and d == page_domains[0]:
             return False
 
@@ -207,11 +214,12 @@ def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], i
     return " & ".join(domains_as_html)
 
 
-def _render_n2_time(n: Note, scope):
+def _render_n2_time(n: Note, scope: TimeScope) -> str:
     display_time = TimeScope(n.time_scope_id).minimize_vs(scope)
+
     # If we're showing a sub-day scope, draw the time, instead
-    if TimeScope(scope).is_day() and n.sort_time:
-        # For same-day notes, just show %H:%m
+    if scope.is_day() and n.sort_time:
+        # For same-day notes, just show %H:%M
         if scope == TimeScope.from_datetime(n.sort_time):
             display_time = n.sort_time.strftime('%H:%M')
         # For different day, show the day _also_
@@ -221,16 +229,105 @@ def _render_n2_time(n: Note, scope):
             } {
                 n.sort_time.strftime('%H:%M')
             }'''
+    # Anything in a week scope is usually "reduced"; append %H:%M also
+    elif scope.is_week() and n.sort_time:
+        display_time = "{} {}".format(
+            TimeScope.from_datetime(n.sort_time).minimize_vs(scope),
+            n.sort_time.strftime('%H:%M'))
 
     return display_time
 
 
+cache_dict = {}
+
+
+def clear_html_cache():
+    """
+    TODO: cache_dict is not actually shared where we want it to be
+
+    Flask's development server (werkzeug) can reload the app without
+    actually starting a new process, which leaves the n2/report cache
+    with stale data. Remember to explicitly clear it on init.
+
+    - TODO: Make this somehow-shared, so CLI state changes server state
+    - TODO: This probably also does weird things for unit testing
+    """
+    cache_dict.clear()
+
+
 def edit_notes(domains: List[str], scope_ids: List[str]):
-    def render_n2_desc(n: Note, scope):
+    def as_week_header(scope):
+        return "週: " + datetime.strptime(scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
+
+    def render_day_svg(day_scope, notes, svg_width=800) -> str:
+        """
+        Valid timezones range from -12 to +14 or so (historical data gets worse),
+        so set an expected range of +/-12 hours, rather than building in proper
+        timezone support.
+        """
+        start_time = datetime.strptime(day_scope, '%G-ww%V.%u') + timedelta(hours=-12)
+        width_factor = svg_width / (48*60*60)
+
+        def stroke_color(d):
+            domain_hash = hashlib.sha256(d.encode('utf-8')).hexdigest()
+            domain_hash_int = int(domain_hash[0:4], 16)
+
+            color_h = ((domain_hash_int + 4) % 8) * (256.0/8)
+            return f"stroke: hsl({color_h}, 70%, 50%);"
+
+        # Pre-populate the list of notes, so we can be assured this is working
+        rendered_notes = [
+            '',
+            f'<line x1="{svg_width*1/4}" y1="15" x2="{svg_width*1/4}" y2="85" stroke="black" />',
+            f'<text x="{svg_width/2}" y="{85}" text-anchor="middle" opacity="0.5" style="font-size: 12px">ww38.4</text>',
+            f'<line x1="{svg_width*3/4}" y1="15" x2="{svg_width*3/4}" y2="85" stroke="black" />',
+            f'<text x="{svg_width}" y="{85}" text-anchor="end" opacity="0.5" style="font-size: 12px">ww38.5</text>',
+            '',
+        ]
+
+        for hour in range(1, 48):
+            svg = f'<line x1="{svg_width*hour/48:.3f}" y1="40" x2="{svg_width*hour/48:.3f}" y2="60" stroke="black" opacity="0.1" />'
+            rendered_notes.append(svg)
+
+        def x_pos(t):
+            return (t - start_time).total_seconds() * width_factor
+
+        def y_pos(t):
+            """Scales the "seconds" of sort_time to the y-axis, from 20-80
+
+            Add 30 seconds so the :00 time lines up with the middle of the chart
+            """
+            start_spot = 20
+            seconds_only = ((note.sort_time - start_time).total_seconds() + 30) % 60
+
+            return start_spot + seconds_only
+
+        for note in notes:
+            if not note.sort_time:
+                continue
+
+            dot_color = "stroke: black"
+            if note.domain_ids:
+                dot_color = stroke_color(note.domain_ids[0])
+
+            svg_element = '''<circle cx="{:.3f}" cy="{:.3f}" r="{}" style="fill: none; {}" />'''.format(
+                x_pos(note.sort_time),
+                y_pos(note.sort_time),
+                5,
+                dot_color,
+            )
+            rendered_notes.append(svg_element)
+
+        svg = '''<svg width="800" height="100">{}</svg>'''.format(
+            '\n'.join(rendered_notes)
+        )
+        return svg
+
+    def render_n2_desc(n: Note, scope_id):
         output_str = ""
 
         # Generate a <span> that holds some kind of sort_time
-        output_str += f'<span class="time">{_render_n2_time(n, scope)}</span>\n'
+        output_str += f'<span class="time">{_render_n2_time(n, TimeScope(scope_id))}</span>\n'
 
         # Print the description
         output_str += f'<span class="desc">{n.desc}</span>\n'
@@ -243,11 +340,28 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
     def render_n2_json(n: Note) -> str:
         return json.dumps(n.as_json(include_domains=True), indent=2)
 
+    def memoized_render_notes(jinja_render_fn):
+        cache_key = (tuple(domains), tuple(scope_ids),)
+        if cache_key not in cache_dict:
+            # set max cache size, to be polite
+            if len(cache_dict) > 1000:
+                clear_html_cache()
+
+            notes_tree = notes_json_tree(domains, scope_ids)
+            cache_dict[cache_key] = jinja_render_fn(notes_tree)
+        else:
+            print(f"DEBUG: Found cached output for {cache_key}")
+
+        return cache_dict[cache_key]
+
+
     return render_template('notes-v2.html',
+                           as_week_header=as_week_header,
+                           cached_render=memoized_render_notes,
                            domain_header=' & '.join(domains),
                            render_n2_desc=render_n2_desc,
                            render_n2_json=render_n2_json,
-                           notes_tree=notes_json_tree(domains, scope_ids))
+                           render_day_svg=render_day_svg)
 
 
 def edit_notes_simple(*args):

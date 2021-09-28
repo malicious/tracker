@@ -1,7 +1,8 @@
 import os
+from datetime import datetime
 
 import click
-from flask import Blueprint, request
+from flask import Blueprint, redirect, request, url_for
 from flask.cli import with_appcontext
 from flask.json import JSONEncoder
 from markupsafe import escape
@@ -10,6 +11,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 from notes_v2 import add, report
 from notes_v2.models import Base, Note
+from notes_v2.report import clear_html_cache
 # noinspection PyUnresolvedReferences
 from . import models
 
@@ -17,8 +19,18 @@ db_session = None
 
 
 def init_app(app):
+    clear_html_cache()
+
     if not app.config['TESTING']:
         load_models(os.path.abspath(os.path.join(app.instance_path, 'notes-v2.db')))
+
+        @app.teardown_request
+        def remove_session(ex=None):
+            global db_session
+            if db_session:
+                db_session.remove()
+                db_session = None
+
     _register_endpoints(app)
     _register_rest_endpoints(app)
 
@@ -35,6 +47,7 @@ def init_app(app):
     @with_appcontext
     def n2_update(csv_file):
         add.all_from_csv(db_session, csv_file, expect_duplicates=True)
+        print("WARN: Jinja caching still in effect, please restart the flask server to apply changes")
 
     app.cli.add_command(n2_update)
 
@@ -43,6 +56,7 @@ def init_app(app):
     @with_appcontext
     def n2_export(write_note_id):
         add.all_to_csv(write_note_id=write_note_id)
+        print("WARN: Jinja caching still in effect, please restart the flask server to apply changes")
 
     app.cli.add_command(n2_export)
 
@@ -73,6 +87,11 @@ def _register_endpoints(app):
     def edit_notes():
         page_scopes = [escape(arg) for arg in request.args.getlist('scope')]
         page_domains = [escape(arg) for arg in request.args.getlist('domain')]
+
+        if page_scopes == ['week']:
+            current_week=datetime.now().strftime("%G-ww%V")
+            return redirect(url_for(".edit_notes", scope=[current_week], domain=page_domains))
+
         return report.edit_notes(page_domains, page_scopes)
 
     app.register_blueprint(notes_v2_bp, url_prefix='')
