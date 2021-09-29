@@ -318,7 +318,7 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             )
             rendered_notes.append(svg_element)
 
-        svg = '''<svg width="800" height="100" style="padding-left: var(--default-left-right-margin);">{}</svg>'''.format(
+        svg = '''<svg width="800" height="100">{}</svg>'''.format(
             '\n'.join(rendered_notes)
         )
         return svg
