@@ -78,6 +78,8 @@ def render_day_svg(day_scope, notes, svg_width=800) -> str:
         )
         rendered_notes.append(svg_element)
 
-    svg = '''<svg width="800" height="100">{}</svg>'''.format(
+    svg = '''<svg width="{}" height="100">{}</svg>'''.format(
+        svg_width,
         '\n'.join(rendered_notes)
     )
+    return svg
