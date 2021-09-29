@@ -9,7 +9,7 @@ from sqlalchemy import or_
 
 from notes_v2.models import Note, NoteDomain
 from notes_v2.report.gather import notes_json_tree
-from notes_v2.report.render import domain_to_css_color, render_day_svg
+from notes_v2.report.render import domain_to_css_color, render_day_svg, render_week_svg
 from notes_v2.time_scope import TimeScope
 # noinspection PyUnresolvedReferences
 from . import gather, render
@@ -125,7 +125,8 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
                            domain_header=' & '.join(domains),
                            render_n2_desc=render_n2_desc,
                            render_n2_json=render_n2_json,
-                           render_day_svg=render_day_svg)
+                           render_day_svg=render_day_svg,
+                           render_week_svg=render_week_svg)
 
 
 def edit_notes_simple(*args):
