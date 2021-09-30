@@ -129,10 +129,13 @@ def render_week_svg(week_scope, notes_dict, svg_width=800, row_height=50) -> str
         return row * row_height + 0.5 * row_height
 
     # Read actual notes
-    if "notes" in notes_dict:
-        del notes_dict["notes"]
+    svg_has_notes = False
 
     for day_scope, day_dict in notes_dict.items():
+        # Skip this category, because operating on notes_dict prevents the render pass later
+        if day_scope == "notes":
+            continue
+
         row = int(day_scope[-1])
         day_label = f'<text x="{svg_width/2}" y="{row * row_height + 42}" text-anchor="middle" opacity="0.5" style="font-size: 8px">{day_scope}</text>'
         rendered_notes.append(day_label)
@@ -140,6 +143,8 @@ def render_week_svg(week_scope, notes_dict, svg_width=800, row_height=50) -> str
         for note in day_dict["notes"]:
             if not note.sort_time:
                 continue
+
+            svg_has_notes = True
 
             dot_color = "stroke: black"
             if note.domain_ids:
@@ -152,6 +157,9 @@ def render_week_svg(week_scope, notes_dict, svg_width=800, row_height=50) -> str
                 dot_color
             )
             rendered_notes.append(svg_element)
+
+    if not svg_has_notes:
+        return ''
 
     return '''<svg width="{}" height="{}">{}</svg>'''.format(
         svg_width,
