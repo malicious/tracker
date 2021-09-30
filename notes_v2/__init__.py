@@ -78,7 +78,7 @@ def _register_endpoints(app):
     @notes_v2_bp.route("/notes")
     def edit_notes():
         page_scopes = [escape(arg) for arg in request.args.getlist('scope')]
-        page_domains = [escape(arg) for arg in request.args.getlist('domain')]
+        page_domains = [arg for arg in request.args.getlist('domain')]
 
         if page_scopes == ['week']:
             current_week=datetime.now().strftime("%G-ww%V")
