@@ -1,5 +1,5 @@
 import os
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import click
 from flask import Blueprint, redirect, request, url_for
@@ -12,6 +12,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 from notes_v2 import add, report
 from notes_v2.models import Base, Note
 from notes_v2.report import clear_html_cache
+from notes_v2.time_scope import TimeScope
 # noinspection PyUnresolvedReferences
 from . import models
 
@@ -80,9 +81,22 @@ def _register_endpoints(app):
         page_scopes = [escape(arg) for arg in request.args.getlist('scope')]
         page_domains = [arg for arg in request.args.getlist('domain')]
 
+        def generate_week_scope(offset: int, dt=None):
+            if not dt:
+                dt = datetime.now()
+
+            return TimeScope.from_datetime(dt + timedelta(days=offset * 7)).get_parent()
+
+        # Special arg to show two weeks at a time
         if page_scopes == ['week']:
-            current_week=datetime.now().strftime("%G-ww%V")
-            return redirect(url_for(".edit_notes", scope=[current_week], domain=page_domains))
+            now = datetime.now()
+            day_of_week = int(now.strftime("%u"))
+            if day_of_week < 4:
+                nearby_scopes = [generate_week_scope(-1, now), generate_week_scope(0, now)]
+            else:
+                nearby_scopes = [generate_week_scope(0, now), generate_week_scope(1, now)]
+
+            return redirect(url_for(".edit_notes", scope=nearby_scopes, domain=page_domains))
 
         return report.edit_notes(page_domains, page_scopes)
 
