@@ -76,6 +76,9 @@ def _register_endpoints(app: Flask):
         if scope_id == 'week':
             return redirect(url_for(".edit_tasks_in_scope", scope_id=datetime.now().strftime("%G-ww%V")))
 
+        elif scope_id == 'day':
+            return redirect(url_for(".edit_tasks_in_scope", scope_id=datetime.now().strftime("%G-ww%V.%u")))
+
         page_scope = None
         try:
             parsed_scope = TimeScope(scope_id)
