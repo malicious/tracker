@@ -90,7 +90,7 @@
   {% set tabs = [
                   ('資訊',
                    "<div>{}</div>".format(note.detailed_desc|escape),
-                   'checked' if note.detailed_desc|length < 200 else ''
+                   'checked' if note.detailed_desc|length > 0 else ''
                   ),
                   ('json', "<div>{}</div>".format(render_n2_json(note)|escape), ''),
                 ] %}
