@@ -186,3 +186,19 @@ def domain_stats(session):
         }
 
     return response_json
+
+
+def domains(session):
+    """
+    Build and return human-readable page that lists domains + their info
+    """
+    domain_rows = []
+
+    for nd in session.query(NoteDomain.domain_id).distinct():
+        domain_row = "<div>{}</div>".format(
+            nd.domain_id
+        )
+        domain_rows.append(domain_row)
+
+    return "\n".join(domain_rows)
+

@@ -130,4 +130,8 @@ def _register_rest_endpoints(app):
     def get_domain_stats():
         return report.domain_stats(db_session)
 
+    @notes_v2_rest_bp.route("/domains")
+    def get_domains():
+        return report.domains(db_session)
+
     app.register_blueprint(notes_v2_rest_bp, url_prefix='/v2')
