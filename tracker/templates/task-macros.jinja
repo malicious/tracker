@@ -209,6 +209,10 @@ function toTimeScopeId(d) {
     d.setMonth(0, 1 + ((4 - d.getDay()) + 7) % 7);
   }
   var weekOfYear = 1 + Math.ceil((thursdayOfWeek - d) / 604800000);
+  if (weekOfYear < 10) {
+    // add leading "0" in the most manual way possible
+    weekOfYear = `0${weekOfYear}`
+  }
 
   return `${d.getFullYear()}-ww${weekOfYear}.${dayOfWeek}`
 }
