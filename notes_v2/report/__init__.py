@@ -195,7 +195,17 @@ def domains(session):
     domain_rows = []
 
     for nd in session.query(NoteDomain.domain_id).distinct():
-        domain_row = "<div>{}</div>".format(
+        latest_note = Note.query \
+            .join(NoteDomain, NoteDomain.note_id == Note.note_id) \
+            .filter(NoteDomain.domain_id == nd.domain_id) \
+            .order_by(Note.time_scope_id.desc()) \
+            .limit(1) \
+            .one() \
+            .time_scope_id
+
+        domain_row = "<div><span style=\"{}\">{}</span>{}</div>".format(
+            "padding-right: 24px;",
+            latest_note,
             nd.domain_id
         )
         domain_rows.append(domain_row)
