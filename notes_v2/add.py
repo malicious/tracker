@@ -113,6 +113,10 @@ def all_from_csv(session, csv_file, expect_duplicates: bool):
         try:
             one_from_csv(session, csv_entry, expect_duplicates)
         except (KeyError, IntegrityError):
+            if "todo" in csv_entry["domains"]:
+                print(f"WARN: Couldn\'t import CSV row, ignoring cause it has domain \"todo\"")
+                continue
+
             print('-' * 72)
             print(f"WARN: Couldn\'t import CSV row")
             print(json.dumps(csv_entry, indent=2))

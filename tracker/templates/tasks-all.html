@@ -196,7 +196,41 @@ input.show-edit:checked ~ .task-edit {
 <script>
   {{ shared_macros.note_edit_js|safe }}
   {{ task_macros.task_edit_js|safe }}
+
+  function populate_add_panel() {
+    // Populate the add_panel when it's shown
+    const task_add_panel = document.querySelector(".task-add-panel");
+    const add_checkbox = task_add_panel.querySelector("input.show-add");
+
+    console.log(add_checkbox);
+    add_checkbox.addEventListener('change', (e) => {
+      tl_row = e.target.parentNode.querySelector(".linkage-row");
+
+      /* generate target cell contents */
+      generation_time = new Date();
+      time_scope_str = toTimeScopeId(new Date(generation_time));
+      created_at_str = generation_time.toISOString()
+        .split('T').join(' ') // remove the ISO8601 'T'
+        .split('Z')[0]; // and remove anything past the 'Z'
+
+      /* fill in target cells */
+      time_scope_id = tl_row.querySelector('input[name="tl-new-blank-time_scope_id"]');
+      if (time_scope_id && !time_scope_id.value) {
+        console.log("Filling in time_scope_id: ", time_scope_str)
+        time_scope_id.value = time_scope_str;
+      }
+
+      created_at = tl_row.querySelector('input[name="tl-new-blank-created_at"]');
+      if (created_at && !created_at.value) {
+        console.log("Filling in created_at: ", created_at_str)
+        created_at.value = created_at_str;
+      }
+    });
+  }
+  document.addEventListener("DOMContentLoaded", populate_add_panel);
+
 </script>
+
 {% endblock %}
 
 
@@ -261,7 +295,7 @@ input.show-edit:checked ~ .task-edit {
 
   <div class="linkage-block">
     {{ task_macros.linkage_header_row() }}
-    {{ task_macros.linkage_row_new('new', '', '') }}
+    {{ task_macros.linkage_row_new('new-blank', '', '') }}
     {{ task_macros.linkage_footer_row('create task') }}
   </div>
 </form>

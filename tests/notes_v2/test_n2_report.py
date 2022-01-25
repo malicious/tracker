@@ -5,7 +5,7 @@ import jsondiff
 
 from notes_v2.add import all_from_csv
 from notes_v2.models import Note
-from notes_v2.report import NoteStapler
+from notes_v2.report.gather import NoteStapler
 from notes_v2.time_scope import TimeScope
 
 
