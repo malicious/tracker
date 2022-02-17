@@ -203,9 +203,13 @@ def domains(session):
             .one() \
             .time_scope_id
 
-        domain_row = "<div><span style=\"{}\">{}</span>{}</div>".format(
-            "padding-right: 24px;",
-            latest_note,
+        count = NoteDomain.query \
+            .filter_by(domain_id=nd.domain_id) \
+            .count()
+
+        domain_row = "<div>{}{}{}</div>".format(
+            f"<span style=\"padding-right: 24px;\">{latest_note}</span>",
+            f"<span style=\"padding-right: 24px;\">{count}</span>",
             nd.domain_id
         )
         domain_rows.append(domain_row)
