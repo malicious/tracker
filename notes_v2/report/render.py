@@ -4,7 +4,6 @@ from datetime import datetime, timedelta
 from typing import Dict, List
 
 from flask import render_template
-from markupsafe import escape
 from sqlalchemy import or_
 
 from notes_v2.models import Note, NoteDomain

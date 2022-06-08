@@ -19,6 +19,8 @@ def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], i
     def domain_to_html_link(domain: str) -> str:
         escaped_domain = domain.replace('+', '%2B')
         escaped_domain = escape(escaped_domain)
+        escaped_domain = escaped_domain.replace(' ', '+')
+        escaped_domain = escaped_domain.replace('&', '%26')
 
         return f'''<a href="/notes?domain={escaped_domain}{
             ''.join([f'&scope={scope_id}' for scope_id in scope_ids])
