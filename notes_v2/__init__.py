@@ -43,11 +43,12 @@ def init_app(app):
 
     app.cli.add_command(n2_add)
 
-    @click.command('n2/update', help='Update notes from a partially-imported CSV file')
-    @click.argument('csv_file', type=click.File('r'))
+    @click.command('n2/update', help='Update notes from partially-imported CSV file(s)')
+    @click.argument('csv_files', type=click.File('r'), nargs=-1)
     @with_appcontext
-    def n2_update(csv_file):
-        add.all_from_csv(db_session, csv_file, expect_duplicates=True)
+    def n2_update(csv_files):
+        for csv_file in csv_files:
+            add.all_from_csv(db_session, csv_file, expect_duplicates=True)
         print("WARN: Jinja caching still in effect, please restart the flask server to apply changes")
 
     app.cli.add_command(n2_update)

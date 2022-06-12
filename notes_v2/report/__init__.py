@@ -17,7 +17,12 @@ from . import gather, render
 
 def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], ignore_type_domains: bool = True):
     def domain_to_html_link(domain: str) -> str:
-        return f'''<a href="/notes?domain={escape(domain)}{
+        escaped_domain = domain.replace('+', '%2B')
+        escaped_domain = escape(escaped_domain)
+        escaped_domain = escaped_domain.replace(' ', '+')
+        escaped_domain = escaped_domain.replace('&', '%26')
+
+        return f'''<a href="/notes?domain={escaped_domain}{
             ''.join([f'&scope={scope_id}' for scope_id in scope_ids])
         }" style="{domain_to_css_color(domain)}">{domain}</a>'''
 
@@ -203,9 +208,13 @@ def domains(session):
             .one() \
             .time_scope_id
 
-        domain_row = "<div><span style=\"{}\">{}</span>{}</div>".format(
-            "padding-right: 24px;",
-            latest_note,
+        count = NoteDomain.query \
+            .filter_by(domain_id=nd.domain_id) \
+            .count()
+
+        domain_row = "<div>{}{}{}</div>".format(
+            f"<span style=\"padding-right: 24px;\">{latest_note}</span>",
+            f"<span style=\"padding-right: 24px;\">{count}</span>",
             nd.domain_id
         )
         domain_rows.append(domain_row)
