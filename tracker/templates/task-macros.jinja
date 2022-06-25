@@ -63,10 +63,12 @@
 {% macro linkage_footer_row(button_name='save task') %}
   <div class="linkage-footer-row">
     <div>
-      <button class="new" disabled>add row</button>
+      <button class="new" disabled>+</button>
     </div>
     <div></div>
-    <div></div>
+    <div>
+      <button class="done" disabled>mark done</button>
+    </div>
     <div style="text-align: right;">
       <button>{{ button_name }}</button>
     </div>
@@ -99,7 +101,7 @@
 
 
 
-{% macro linkage_row_new(row_id, time_scope_str, created_at_str) %}
+{% macro linkage_row_new(row_id, time_scope_str, created_at_str, resolution_str) %}
 <div class="linkage-row not-saved">
   <div>
     {# TODO: actual formatting #}
@@ -110,7 +112,7 @@
     <input name="tl-{{row_id}}-time_elapsed" placeholder="None">
   </div>
   <div>
-    <input name="tl-{{row_id}}-resolution"   placeholder="None">
+    <input name="tl-{{row_id}}-resolution"    value="{{resolution_str}}" placeholder="None">
   </div>
   <div>
     <textarea name="tl-{{row_id}}-detailed_resolution" placeholder="None"></textarea>
@@ -217,10 +219,7 @@ function toTimeScopeId(d) {
   return `${d.getFullYear()}-ww${weekOfYear}.${dayOfWeek}`
 }
 
-function addTLRow(e) {
-  e.preventDefault();
-  console.log(`addTLRow: got button click on button ${e.target}`);
-
+function constructBlankTLRow(tl_preceding, resolution_str) {
   {# https://stackoverflow.com/a/33146982/2631462 #}
   // generate a "unique" linkage ID based on stringified time
   generation_time = new Date();
@@ -235,25 +234,45 @@ function addTLRow(e) {
   // add a new "template" row, right above `div.linkage-footer-row`
   new_row = document.createElement('template');
   new_row.innerHTML = `
-{{ linkage_row_new('${new_row_id}', '${time_scope_str}', '${created_at_str}') }}
+{{ linkage_row_new('${new_row_id}', '${time_scope_str}', '${created_at_str}', '${resolution_str}') }}
 `;
 
   // add delete listener
   new_row.content.querySelector('button.delete').addEventListener("click", deleteTLRow, false);
 
-  // mark "roll" resolution in previous row, if it's empty
-  var tl_footer_row = e.target.parentNode.parentNode;
+  if (tl_preceding != null) {
+    // mark "roll" resolution in previous row, if it's empty
+    var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]')
+    if (resolution_preceding != null && !resolution_preceding.value) {
+      resolution_preceding.value = `roll => ${time_scope_str}`;
+      resolution_preceding.classList.add("not-saved");
+    }
 
-  var tl_preceding = tl_footer_row.previousElementSibling;
-  var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]')
-  if (resolution_preceding != null && !resolution_preceding.value) {
-    resolution_preceding.value = `roll => ${time_scope_str}`;
-    resolution_preceding.classList.add("not-saved");
+    // TODO: This is assuming a lot about the DOM layout for this table
+    var tl_block = tl_preceding.parentNode;
+    tl_block.insertBefore(new_row.content, tl_preceding.nextElementSibling);
+    refreshBlockDeleteButtons(tl_block);
   }
 
-  var tl_block = tl_footer_row.parentNode;
-  tl_block.insertBefore(new_row.content, tl_footer_row);
-  refreshBlockDeleteButtons(tl_block);
+  return new_row;
+}
+
+function addTLRow(e) {
+  e.preventDefault();
+  console.log(`addTLRow: got button click on button ${e.target}`);
+
+  var tl_footer_row = e.target.parentNode.parentNode;
+  var tl_preceding = tl_footer_row.previousElementSibling;
+  new_row = constructBlankTLRow(tl_preceding, '');
+}
+
+function addDoneRow(e) {
+  e.preventDefault();
+  console.log(`addDoneRow: got button click on button ${e.target}`);
+
+  var tl_footer_row = e.target.parentNode.parentNode;
+  var tl_preceding = tl_footer_row.previousElementSibling;
+  new_row = constructBlankTLRow(tl_preceding, 'done');
 }
 
 function enableNewTLButtons() {
@@ -264,6 +283,14 @@ function enableNewTLButtons() {
   for (var i = 0, len = new_tl_buttons.length; i < len; i++) {
     new_tl_buttons[i].disabled = false;
     new_tl_buttons[i].addEventListener("click", addTLRow, false);
+  }
+
+  const mark_done_buttons = document.querySelectorAll(".linkage-footer-row button.done");
+  console.log(`re-enabling ${mark_done_buttons.length} "mark done" buttons`);
+
+  for (var i = 0, len = mark_done_buttons.length; i < len; i++) {
+    mark_done_buttons[i].disabled = false;
+    mark_done_buttons[i].addEventListener("click", addDoneRow, false);
   }
 };
 
