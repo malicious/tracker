@@ -10,7 +10,7 @@ packages = [
 ]
 
 requirements = [
-    'flask',
+    'flask>=2.1',
     'python-dateutil',
     'sqlalchemy',
 ]

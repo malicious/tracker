@@ -120,12 +120,12 @@ def _register_rest_endpoints(app: Flask):
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>/edit", methods=['post'])
     def edit_task(task_id):
-        if not request.args and not request.form and not request.json:
+        if not request.args and not request.form and not request.is_json:
             # Assume this was a raw/direct browser request
             # TODO: serve a "single note" template
             abort(400)
 
-        if request.json:
+        if request.is_json:
             print(request.json) # sometimes request.data, need to check with unicode
             return {
                 "date": datetime.now(),
@@ -137,10 +137,10 @@ def _register_rest_endpoints(app: Flask):
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>/<linkage_scope>/edit", methods=['post'])
     def edit_linkage(task_id, linkage_scope):
-        if not request.args and not request.form and not request.json:
+        if not request.args and not request.form and not request.is_json:
             abort(400)
 
-        if request.json:
+        if request.is_json:
             print(request.json)
             return {
                 "date": datetime.now(),
