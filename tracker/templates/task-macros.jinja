@@ -228,6 +228,10 @@ function constructBlankTLRow(tl_preceding, resolution_str) {
     .split('T').join(' ') // remove the ISO8601 'T'
     .split('Z')[0]; // and remove anything past the 'Z'
 
+  // override with a Pacific Time shift
+  time_scope_str = toTimeScopeId(new Date(
+      generation_time.toLocaleString('en-US', {timeZone: "America/Los_Angeles"})))
+
   new_row_id = btoa(+new Date).slice(-10, -2);
   console.log(`new row ID: ${new_row_id}`);
 
@@ -242,17 +246,17 @@ function constructBlankTLRow(tl_preceding, resolution_str) {
 
   if (tl_preceding != null) {
     // mark "roll" resolution in previous row, if it's empty
-    var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]')
+    var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]');
     if (resolution_preceding != null && !resolution_preceding.value) {
       resolution_preceding.value = `roll => ${time_scope_str}`;
       resolution_preceding.classList.add("not-saved");
-    }
+    } // if resolution_preceding is blank
 
     // TODO: This is assuming a lot about the DOM layout for this table
     var tl_block = tl_preceding.parentNode;
     tl_block.insertBefore(new_row.content, tl_preceding.nextElementSibling);
     refreshBlockDeleteButtons(tl_block);
-  }
+  } // if tl_preceding exists
 
   return new_row;
 }
@@ -266,12 +270,27 @@ function addTLRow(e) {
   new_row = constructBlankTLRow(tl_preceding, '');
 }
 
-function addDoneRow(e) {
+function markDoneOrAddRow(e) {
   e.preventDefault();
   console.log(`addDoneRow: got button click on button ${e.target}`);
 
   var tl_footer_row = e.target.parentNode.parentNode;
   var tl_preceding = tl_footer_row.previousElementSibling;
+
+  // Check if current date is identical to the time_scope_id in `tl_preceding`,
+  // and whether its `resolution` is empty.
+  var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]');
+  if (resolution_preceding != null && !resolution_preceding.value) {
+    var time_scope_preceding = tl_preceding.querySelector('input[name*="-time_scope_id"]');
+    var today_ts = toTimeScopeId(new Date(
+      new Date().toLocaleString('en-US', {timeZone: "America/Los_Angeles"})));
+
+    if (time_scope_preceding != null && time_scope_preceding.value == today_ts) {
+      resolution_preceding.value = "done"
+      return;
+    } // if time_scope_preceding is today
+  } // if resolution_preceding is blank
+
   new_row = constructBlankTLRow(tl_preceding, 'done');
 }
 
@@ -290,7 +309,7 @@ function enableNewTLButtons() {
 
   for (var i = 0, len = mark_done_buttons.length; i < len; i++) {
     mark_done_buttons[i].disabled = false;
-    mark_done_buttons[i].addEventListener("click", addDoneRow, false);
+    mark_done_buttons[i].addEventListener("click", markDoneOrAddRow, false);
   }
 };
 
