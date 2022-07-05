@@ -228,9 +228,9 @@ function constructBlankTLRow(tl_preceding, resolution_str) {
     .split('T').join(' ') // remove the ISO8601 'T'
     .split('Z')[0]; // and remove anything past the 'Z'
 
-  // override with a Pacific Time shift
+  // TODO: overriding with a Pacific Time shift, be less hard-coded
   time_scope_str = toTimeScopeId(new Date(
-      generation_time.toLocaleString('en-US', {timeZone: "America/Los_Angeles"})))
+      generation_time.toLocaleString('en-US', {timeZone: "America/Los_Angeles"})));
 
   new_row_id = btoa(+new Date).slice(-10, -2);
   console.log(`new row ID: ${new_row_id}`);
@@ -282,6 +282,7 @@ function markDoneOrAddRow(e) {
   var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]');
   if (resolution_preceding != null && !resolution_preceding.value) {
     var time_scope_preceding = tl_preceding.querySelector('input[name*="-time_scope_id"]');
+    // TODO: assuming a Pacific Time shift, be less hard-coded
     var today_ts = toTimeScopeId(new Date(
       new Date().toLocaleString('en-US', {timeZone: "America/Los_Angeles"})));
 
