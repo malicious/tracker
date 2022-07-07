@@ -248,14 +248,22 @@ function constructBlankTLRow(tl_preceding, resolution_str) {
     // mark "roll" resolution in previous row, if it's empty
     var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]');
     if (resolution_preceding != null && !resolution_preceding.value) {
-      resolution_preceding.value = `roll => ${time_scope_str}`;
       resolution_preceding.classList.add("not-saved");
+      resolution_preceding.value = `roll => ${time_scope_str}`;
+      
+      time_scope_preceding = tl_preceding.querySelector('input[name*="-time_scope_id"]');
+      if (time_scope_preceding.value.substring(0,5) == time_scope_str.substring(0,5)) {
+        // if first 5 characters (of a string like "2022-ww27.3") match, skip the year prefix
+        resolution_preceding.value = `roll => ${time_scope_str.substring(5)}`;
+      }
+
     } // if resolution_preceding is blank
 
     // TODO: This is assuming a lot about the DOM layout for this table
     var tl_block = tl_preceding.parentNode;
     tl_block.insertBefore(new_row.content, tl_preceding.nextElementSibling);
     refreshBlockDeleteButtons(tl_block);
+
   } // if tl_preceding exists
 
   return new_row;
