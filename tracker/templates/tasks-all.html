@@ -270,11 +270,15 @@ input.show-edit:checked ~ .task-edit {
       <div>{{ t.as_json() }}</div>
     </div>
 
-    {% if false and t.linkages|length > 1 and not resolution_to_print %}
+  {% if t.linkages|length == 1 and t.linkages[0].detailed_resolution %}
+    {# if there's only one linkage, but with detailed info, show it #}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
-    {% else %}
+  {% elif t.linkages|length > 1 and not resolution_to_print %}
+    {# if there's multiple linkages, and the task is unresolved, show all of them #}
+    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit" checked>
+  {% else %}
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
-    {% endif %}
+  {% endif %}
     <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
       <span>edit</span>
     </label>
