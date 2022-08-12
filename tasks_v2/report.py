@@ -176,7 +176,7 @@ def compute_ignoring_scope(todays_date):
         else:
             # TODO: past-tasks are the only ones that get their scope shrunken
             rendered_scope = render_scope(latest_open.time_scope, todays_date)
-            return rendered_scope, t.linkages[-1].resolution, False
+            return rendered_scope, None, False
 
     return _compute
 
