@@ -46,10 +46,10 @@ class TimeScope(str):
 
         elif self.is_week():
             # NB weeks can technically belong to two quarters,
-            # but in practice we never actually use that second quarter.
-            start_date = datetime.strptime(f'{self}.1', '%G-ww%V.%u').date()
+            # in which case we want to use the second quarter.
+            start_date = datetime.strptime(f'{self}.7', '%G-ww%V.%u').date()
             start_quarter = (start_date.month - 1) // 3 + 1
-            return TimeScope(f'{self[:4]}—Q{start_quarter}')
+            return TimeScope(f'{start_date.year}—Q{start_quarter}')
 
         elif self.is_day():
             return TimeScope(self[:9])
