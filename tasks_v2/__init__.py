@@ -111,7 +111,7 @@ def _register_rest_endpoints(app: Flask):
     def create_task():
         t = update.create_task(db_session, request.form)
         # TODO: do something more creative than redirect back to referrer
-        # NB This isn't exactly how the anchors (CSS ID's) are generated
+        # TODO: This isn't exactly how the anchors (CSS ID's) are generated, pass the scope in or something
         return redirect(f"{request.referrer}#task-{t.task_id}-{t.linkages[0].time_scope_id}")
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>")

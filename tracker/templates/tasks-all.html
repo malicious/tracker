@@ -343,7 +343,7 @@ input.show-edit:checked ~ .task-edit {
     <div class="category-header">### {{ task.category }}</div>
     {% endif %}
 
-    {{ render_task(task, scope) }}
+    {{ render_task(task, task.linkages[0]) }}
     {% set ns.prev_task = task %}
   {% endfor %}
   </div>{# category-container #}
