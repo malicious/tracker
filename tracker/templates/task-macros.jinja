@@ -10,15 +10,15 @@
   </div>
   <div>
     <label>category</label>
-    <input class="category" name="task-category" placeholder="None" value="{{t.category if t.category}}" oninput="highlightOnInput(event)">
+    <input class="category" name="task-category" placeholder="None" value="{{t.category if t.category}}" oninput="highlightOnHeaderInput(event)">
   </div>
   <div>
     <label>desc</label>
-    <textarea class="desc" name="task-desc" oninput="highlightAndTitleOnDescInput(event)">{{t.desc}}</textarea>
+    <textarea class="desc" name="task-desc" oninput="highlightOnHeaderInput(event)">{{t.desc}}</textarea>
   </div>
   <div>
     <label>time_estimate</label>
-    <input class="time_estimate" name="task-time_estimate" placeholder="None" value="{{t.time_estimate if t.time_estimate}}" oninput="highlightOnInput(event)">
+    <input class="time_estimate" name="task-time_estimate" placeholder="None" value="{{t.time_estimate if t.time_estimate}}" oninput="highlightOnHeaderInput(event)">
   </div>
 </div>
 
@@ -30,15 +30,15 @@
 <div class="task-edit-task-only">
   <div>
     <label>category</label>
-    <input class="category" name="task-category" placeholder="None" oninput="highlightOnInput(event)">
+    <input class="category" name="task-category" placeholder="None" oninput="highlightOnHeaderInput(event)">
   </div>
   <div class="not-saved">
     <label>desc</label>
-    <textarea class="desc" name="task-desc"></textarea>
+    <textarea class="desc" name="task-desc" oninput="highlightOnHeaderInput(event)"></textarea>
   </div>
   <div>
     <label>time_estimate</label>
-    <input class="time_estimate" name="task-time_estimate" placeholder="None" oninput="highlightOnInput(event)">
+    <input class="time_estimate" name="task-time_estimate" placeholder="None" oninput="highlightOnHeaderInput(event)">
   </div>
 </div>
 
@@ -84,13 +84,13 @@
     <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}" readonly="readonly">
   </div>
   <div>
-    <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}">
+    <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}" oninput="highlightOnInput(event)">
   </div>
   <div>
-    <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution | escape if tl.resolution}}">
+    <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution | escape if tl.resolution}}" oninput="highlightOnInput(event)">
   </div>
   <div>
-    <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
+    <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None" oninput="highlightOnInput(event)">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
   </div>
   <div>
     <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
@@ -109,13 +109,13 @@
     <input name="tl-{{row_id}}-created_at"    value="{{created_at_str}}" placeholder="[enable javascript]">
   </div>
   <div>
-    <input name="tl-{{row_id}}-time_elapsed" placeholder="None">
+    <input name="tl-{{row_id}}-time_elapsed" placeholder="None" oninput="highlightOnInput(event)">
   </div>
   <div>
-    <input name="tl-{{row_id}}-resolution"    value="{{resolution_str}}" placeholder="None">
+    <input name="tl-{{row_id}}-resolution" value="{{resolution_str}}" placeholder="None" oninput="highlightOnInput(event)">
   </div>
   <div>
-    <textarea name="tl-{{row_id}}-detailed_resolution" placeholder="None"></textarea>
+    <textarea name="tl-{{row_id}}-detailed_resolution" placeholder="None" oninput="highlightOnInput(event)"></textarea>
   </div>
   <div>
     <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
@@ -189,8 +189,9 @@
 .linkage-row button {
   width: 100%;
 }
-input.not-saved,
-.not-saved div, .not-saved input, .not-saved textarea {
+input.not-saved, textarea.not-saved,
+.not-saved div, .not-saved input, .not-saved textarea,
+input.not-saved:hover, textarea.not-saved:hover {
   background-color: var(--not-saved-bg-color);
 }
 {% endset %}{# task_edit_css #}
@@ -364,19 +365,26 @@ function enableDeleteTLButtons() {
   }
 }
 
+function highlightOnHeaderInput(e) {
+  e.target.classList.add("not-saved");
+
+  var task_only_block = e.target.parentNode.parentNode;
+  var task_block = task_only_block.parentNode.parentNode;
+  var desc_field = task_block.querySelector('.task-edit-task-only textarea');
+  if (desc_field != null && desc_field.value) {
+    document.title = desc_field.value;
+  }
+}
+
 function highlightOnInput(e) {
   e.target.classList.add("not-saved");
-}
 
-function highlightAndTitleOnDescInput(e) {
-  console.log(`updating title to ${e.target.value}`);
-  document.title = e.target.value;
-
-  var desc_row = e.target.parentNode;
-  desc_row.classList.add("not-saved");
-}
-
-function highlightAndTitleOnRowInput(e) {
+  var tl_row = e.target.parentNode.parentNode;
+  var task_block = tl_row.parentNode.parentNode.parentNode;
+  var desc_field = task_block.querySelector('.task-edit-task-only textarea');
+  if (desc_field != null && desc_field.value) {
+    document.title = desc_field.value;
+  }
 }
 
 document.addEventListener("DOMContentLoaded", enableNewTLButtons);
