@@ -296,7 +296,8 @@ function markDoneOrAddRow(e) {
       new Date().toLocaleString('en-US', {timeZone: "America/Los_Angeles"})));
 
     if (time_scope_preceding != null && time_scope_preceding.value == today_ts) {
-      resolution_preceding.value = "done"
+      resolution_preceding.classList.add("not-saved");
+      resolution_preceding.value = "done";
       return;
     } // if time_scope_preceding is today
   } // if resolution_preceding is blank
