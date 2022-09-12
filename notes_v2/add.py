@@ -108,13 +108,20 @@ def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Optional[Note]:
     return target_note
 
 
+# only print this out once per import
+times_printed_todo_warning = 0
+
 def all_from_csv(session, csv_file, expect_duplicates: bool):
     for csv_entry in csv.DictReader(csv_file):
         try:
             one_from_csv(session, csv_entry, expect_duplicates)
         except (KeyError, IntegrityError):
             if "todo" in csv_entry["domains"]:
-                print(f"WARN: Couldn\'t import CSV row, ignoring cause it has domain \"todo\"")
+                global times_printed_todo_warning
+                times_printed_todo_warning += 1
+                if times_printed_todo_warning <= 1:
+                    print(f"WARN: Couldn\'t import CSV row, ignoring cause it has domain \"todo\"")
+
                 continue
 
             print('-' * 72)

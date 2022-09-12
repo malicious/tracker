@@ -1,4 +1,3 @@
-import json
 import re
 from datetime import datetime, timedelta
 from dateutil import parser
@@ -60,9 +59,6 @@ def _update_linkage_only(tl, tl_ts, form_data):
                     setattr(tl, field, new_value)
                 del new_value
             elif getattr(tl, field) != form_data[f'tl-{tl_ts}-{field}']:
-                print(f"DEBUG: updating {tl}.{field} to \"{form_data[f'tl-{tl_ts}-{field}']}\"")
-                if getattr(tl, field):
-                    print(f"       was: {getattr(tl, field)}")
                 setattr(tl, field, form_data[f'tl-{tl_ts}-{field}'])
 
         # Finally, delete from the map, because we expect that map to be cleared
@@ -81,8 +77,6 @@ def create_task(session, form_data):
 
 
 def update_task(session, task_id, form_data):
-    #print(json.dumps(form_data.to_dict(flat=False), indent=2))
-
     task: Task = Task.query \
         .filter_by(task_id=task_id) \
         .one()
@@ -91,7 +85,6 @@ def update_task(session, task_id, form_data):
 
     session.add(task)
     session.flush()
-
 
     # Update the entire set of linkages, and ensure they match the ones stored in Task
     existing_tls = list(task.linkages)

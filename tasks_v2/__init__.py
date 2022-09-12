@@ -70,7 +70,8 @@ def _register_endpoints(app: Flask):
     @tasks_v2_bp.route("/tasks")
     def edit_tasks():
         show_resolved = request.args.get('show_resolved')
-        return report.edit_tasks_all(show_resolved=show_resolved)
+        hide_future = request.args.get('hide_future')
+        return report.edit_tasks_all(show_resolved=show_resolved, hide_future=hide_future)
 
     @tasks_v2_bp.route("/tasks/<scope_id>")
     def edit_tasks_in_scope(scope_id):
@@ -111,7 +112,7 @@ def _register_rest_endpoints(app: Flask):
     def create_task():
         t = update.create_task(db_session, request.form)
         # TODO: do something more creative than redirect back to referrer
-        # NB This isn't exactly how the anchors (CSS ID's) are generated
+        # TODO: This isn't exactly how the anchors (CSS ID's) are generated, pass the scope in or something
         return redirect(f"{request.referrer}#task-{t.task_id}-{t.linkages[0].time_scope_id}")
 
     @tasks_v2_rest_bp.route("/task/<int:task_id>")

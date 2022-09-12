@@ -15,17 +15,17 @@ from notes_v2.time_scope import TimeScope
 from . import gather, render
 
 
+def _domain_to_html_link(domain: str, scope_ids: List[str] = []) -> str:
+    escaped_domain = domain.replace('+', '%2B')
+    escaped_domain = escape(escaped_domain)
+    escaped_domain = escaped_domain.replace(' ', '+')
+    escaped_domain = escaped_domain.replace('&', '%26')
+
+    return f'''<a href="/notes?domain={escaped_domain}{
+        ''.join([f'&scope={scope_id}' for scope_id in scope_ids])
+    }" style="{domain_to_css_color(domain)}">{domain}</a>'''
+
 def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], ignore_type_domains: bool = True):
-    def domain_to_html_link(domain: str) -> str:
-        escaped_domain = domain.replace('+', '%2B')
-        escaped_domain = escape(escaped_domain)
-        escaped_domain = escaped_domain.replace(' ', '+')
-        escaped_domain = escaped_domain.replace('&', '%26')
-
-        return f'''<a href="/notes?domain={escaped_domain}{
-            ''.join([f'&scope={scope_id}' for scope_id in scope_ids])
-        }" style="{domain_to_css_color(domain)}">{domain}</a>'''
-
     def should_display_domain(d: str) -> bool:
         # Don't render any domains that are an exact match for the page
         #
@@ -43,7 +43,7 @@ def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], i
 
         return True
 
-    domains_as_html = [domain_to_html_link(d) for d in n.domain_ids if should_display_domain(d)]
+    domains_as_html = [_domain_to_html_link(d, scope_ids) for d in n.domain_ids if should_display_domain(d)]
     return " & ".join(domains_as_html)
 
 
@@ -215,7 +215,7 @@ def domains(session):
         domain_row = "<div>{}{}{}</div>".format(
             f"<span style=\"padding-right: 24px;\">{latest_note}</span>",
             f"<span style=\"padding-right: 24px;\">{count}</span>",
-            nd.domain_id
+            _domain_to_html_link(nd.domain_id)
         )
         domain_rows.append(domain_row)
 

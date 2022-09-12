@@ -176,12 +176,15 @@ def compute_ignoring_scope(todays_date):
         else:
             # TODO: past-tasks are the only ones that get their scope shrunken
             rendered_scope = render_scope(latest_open.time_scope, todays_date)
-            return rendered_scope, t.linkages[-1].resolution, False
+            return rendered_scope, None, False
 
     return _compute
 
 
-def edit_tasks_all(show_resolved: bool):
+# NB the arguments are kinda weird and inconsistent because they're default-false
+# TODO: use a consistent "now" datetime, weird things might happen if a day change happens
+#
+def edit_tasks_all(show_resolved: bool, hide_future: bool):
     render_kwargs = {}
 
     if show_resolved:
@@ -190,6 +193,21 @@ def edit_tasks_all(show_resolved: bool):
             today_scope_id: Task.query \
                 .order_by(Task.category) \
                 .all(),
+        }
+    elif hide_future:
+        today_scope_id = datetime.now().strftime("%G-ww%V.%u")
+        recent_tasks_cutoff = datetime.utcnow() - timedelta(hours=12)
+        future_tasks_cutoff = datetime.utcnow() + timedelta(days=94)
+
+        tasks_query = Task.query \
+            .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+            .filter(or_(TaskLinkage.resolution == None, \
+                        TaskLinkage.created_at > recent_tasks_cutoff)) \
+            .filter(TaskLinkage.time_scope < future_tasks_cutoff) \
+            .order_by(Task.category)
+
+        render_kwargs['tasks_by_scope'] = {
+            today_scope_id: tasks_query.all(),
         }
     else:
         today_scope_id = datetime.now().strftime("%G-ww%V.%u")

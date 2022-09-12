@@ -10,15 +10,15 @@
   </div>
   <div>
     <label>category</label>
-    <input class="category" name="task-category" placeholder="None" value="{{t.category if t.category}}">
+    <input class="category" name="task-category" placeholder="None" value="{{t.category if t.category}}" oninput="highlightOnHeaderInput(event)">
   </div>
   <div>
     <label>desc</label>
-    <textarea class="desc" name="task-desc">{{t.desc}}</textarea>
+    <textarea class="desc" name="task-desc" oninput="highlightOnHeaderInput(event)">{{t.desc}}</textarea>
   </div>
   <div>
     <label>time_estimate</label>
-    <input class="time_estimate" name="task-time_estimate" placeholder="None" value="{{t.time_estimate if t.time_estimate}}">
+    <input class="time_estimate" name="task-time_estimate" placeholder="None" value="{{t.time_estimate if t.time_estimate}}" oninput="highlightOnHeaderInput(event)">
   </div>
 </div>
 
@@ -30,15 +30,15 @@
 <div class="task-edit-task-only">
   <div>
     <label>category</label>
-    <input class="category" name="task-category" placeholder="None">
+    <input class="category" name="task-category" placeholder="None" oninput="highlightOnHeaderInput(event)">
   </div>
   <div class="not-saved">
     <label>desc</label>
-    <textarea class="desc" name="task-desc"></textarea>
+    <textarea class="desc" name="task-desc" oninput="highlightOnHeaderInput(event)"></textarea>
   </div>
   <div>
     <label>time_estimate</label>
-    <input class="time_estimate" name="task-time_estimate" placeholder="None">
+    <input class="time_estimate" name="task-time_estimate" placeholder="None" oninput="highlightOnHeaderInput(event)">
   </div>
 </div>
 
@@ -63,10 +63,12 @@
 {% macro linkage_footer_row(button_name='save task') %}
   <div class="linkage-footer-row">
     <div>
-      <button class="new" disabled>add row</button>
+      <button class="new" disabled>+</button>
     </div>
     <div></div>
-    <div></div>
+    <div>
+      <button class="done" disabled>mark done</button>
+    </div>
     <div style="text-align: right;">
       <button>{{ button_name }}</button>
     </div>
@@ -82,13 +84,13 @@
     <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}" readonly="readonly">
   </div>
   <div>
-    <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}">
+    <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}" oninput="highlightOnInput(event)">
   </div>
   <div>
-    <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution | escape if tl.resolution}}">
+    <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution | escape if tl.resolution}}" oninput="highlightOnInput(event)">
   </div>
   <div>
-    <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
+    <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None" oninput="highlightOnInput(event)">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
   </div>
   <div>
     <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
@@ -99,7 +101,7 @@
 
 
 
-{% macro linkage_row_new(row_id, time_scope_str, created_at_str) %}
+{% macro linkage_row_new(row_id, time_scope_str, created_at_str, resolution_str) %}
 <div class="linkage-row not-saved">
   <div>
     {# TODO: actual formatting #}
@@ -107,13 +109,13 @@
     <input name="tl-{{row_id}}-created_at"    value="{{created_at_str}}" placeholder="[enable javascript]">
   </div>
   <div>
-    <input name="tl-{{row_id}}-time_elapsed" placeholder="None">
+    <input name="tl-{{row_id}}-time_elapsed" placeholder="None" oninput="highlightOnInput(event)">
   </div>
   <div>
-    <input name="tl-{{row_id}}-resolution"   placeholder="None">
+    <input name="tl-{{row_id}}-resolution" value="{{resolution_str}}" placeholder="None" oninput="highlightOnInput(event)">
   </div>
   <div>
-    <textarea name="tl-{{row_id}}-detailed_resolution" placeholder="None"></textarea>
+    <textarea name="tl-{{row_id}}-detailed_resolution" placeholder="None" oninput="highlightOnInput(event)"></textarea>
   </div>
   <div>
     <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
@@ -187,8 +189,9 @@
 .linkage-row button {
   width: 100%;
 }
-input.not-saved,
-.not-saved div, .not-saved input, .not-saved textarea {
+input.not-saved, textarea.not-saved,
+.not-saved div, .not-saved input, .not-saved textarea,
+input.not-saved:hover, textarea.not-saved:hover {
   background-color: var(--not-saved-bg-color);
 }
 {% endset %}{# task_edit_css #}
@@ -217,10 +220,7 @@ function toTimeScopeId(d) {
   return `${d.getFullYear()}-ww${weekOfYear}.${dayOfWeek}`
 }
 
-function addTLRow(e) {
-  e.preventDefault();
-  console.log(`addTLRow: got button click on button ${e.target}`);
-
+function constructBlankTLRow(tl_preceding, resolution_str) {
   {# https://stackoverflow.com/a/33146982/2631462 #}
   // generate a "unique" linkage ID based on stringified time
   generation_time = new Date();
@@ -229,31 +229,80 @@ function addTLRow(e) {
     .split('T').join(' ') // remove the ISO8601 'T'
     .split('Z')[0]; // and remove anything past the 'Z'
 
+  // TODO: overriding with a Pacific Time shift, be less hard-coded
+  time_scope_str = toTimeScopeId(new Date(
+      generation_time.toLocaleString('en-US', {timeZone: "America/Los_Angeles"})));
+
   new_row_id = btoa(+new Date).slice(-10, -2);
   console.log(`new row ID: ${new_row_id}`);
 
   // add a new "template" row, right above `div.linkage-footer-row`
   new_row = document.createElement('template');
   new_row.innerHTML = `
-{{ linkage_row_new('${new_row_id}', '${time_scope_str}', '${created_at_str}') }}
+{{ linkage_row_new('${new_row_id}', '${time_scope_str}', '${created_at_str}', '${resolution_str}') }}
 `;
 
   // add delete listener
   new_row.content.querySelector('button.delete').addEventListener("click", deleteTLRow, false);
 
-  // mark "roll" resolution in previous row, if it's empty
+  if (tl_preceding != null) {
+    // mark "roll" resolution in previous row, if it's empty
+    var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]');
+    if (resolution_preceding != null && !resolution_preceding.value) {
+      resolution_preceding.classList.add("not-saved");
+      resolution_preceding.value = `roll => ${time_scope_str}`;
+      
+      time_scope_preceding = tl_preceding.querySelector('input[name*="-time_scope_id"]');
+      if (time_scope_preceding.value.substring(0,5) == time_scope_str.substring(0,5)) {
+        // if first 5 characters (of a string like "2022-ww27.3") match, skip the year prefix
+        resolution_preceding.value = `roll => ${time_scope_str.substring(5)}`;
+      }
+
+    } // if resolution_preceding is blank
+
+    // TODO: This is assuming a lot about the DOM layout for this table
+    var tl_block = tl_preceding.parentNode;
+    tl_block.insertBefore(new_row.content, tl_preceding.nextElementSibling);
+    refreshBlockDeleteButtons(tl_block);
+
+  } // if tl_preceding exists
+
+  return new_row;
+}
+
+function addTLRow(e) {
+  e.preventDefault();
+  console.log(`addTLRow: got button click on button ${e.target}`);
+
   var tl_footer_row = e.target.parentNode.parentNode;
-
   var tl_preceding = tl_footer_row.previousElementSibling;
-  var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]')
-  if (resolution_preceding != null && !resolution_preceding.value) {
-    resolution_preceding.value = `roll => ${time_scope_str}`;
-    resolution_preceding.classList.add("not-saved");
-  }
+  new_row = constructBlankTLRow(tl_preceding, '');
+}
 
-  var tl_block = tl_footer_row.parentNode;
-  tl_block.insertBefore(new_row.content, tl_footer_row);
-  refreshBlockDeleteButtons(tl_block);
+function markDoneOrAddRow(e) {
+  e.preventDefault();
+  console.log(`addDoneRow: got button click on button ${e.target}`);
+
+  var tl_footer_row = e.target.parentNode.parentNode;
+  var tl_preceding = tl_footer_row.previousElementSibling;
+
+  // Check if current date is identical to the time_scope_id in `tl_preceding`,
+  // and whether its `resolution` is empty.
+  var resolution_preceding = tl_preceding.querySelector('input[name*="-resolution"]');
+  if (resolution_preceding != null && !resolution_preceding.value) {
+    var time_scope_preceding = tl_preceding.querySelector('input[name*="-time_scope_id"]');
+    // TODO: assuming a Pacific Time shift, be less hard-coded
+    var today_ts = toTimeScopeId(new Date(
+      new Date().toLocaleString('en-US', {timeZone: "America/Los_Angeles"})));
+
+    if (time_scope_preceding != null && time_scope_preceding.value == today_ts) {
+      resolution_preceding.classList.add("not-saved");
+      resolution_preceding.value = "done";
+      return;
+    } // if time_scope_preceding is today
+  } // if resolution_preceding is blank
+
+  new_row = constructBlankTLRow(tl_preceding, 'done');
 }
 
 function enableNewTLButtons() {
@@ -264,6 +313,14 @@ function enableNewTLButtons() {
   for (var i = 0, len = new_tl_buttons.length; i < len; i++) {
     new_tl_buttons[i].disabled = false;
     new_tl_buttons[i].addEventListener("click", addTLRow, false);
+  }
+
+  const mark_done_buttons = document.querySelectorAll(".linkage-footer-row button.done");
+  console.log(`re-enabling ${mark_done_buttons.length} "mark done" buttons`);
+
+  for (var i = 0, len = mark_done_buttons.length; i < len; i++) {
+    mark_done_buttons[i].disabled = false;
+    mark_done_buttons[i].addEventListener("click", markDoneOrAddRow, false);
   }
 };
 
@@ -306,6 +363,28 @@ function enableDeleteTLButtons() {
   const all_tasks = document.querySelectorAll(".linkage-block");
   for (var i = 0, len = all_tasks.length; i < len; i++) {
     refreshBlockDeleteButtons(all_tasks[i])
+  }
+}
+
+function highlightOnHeaderInput(e) {
+  e.target.classList.add("not-saved");
+
+  var task_only_block = e.target.parentNode.parentNode;
+  var task_block = task_only_block.parentNode.parentNode;
+  var desc_field = task_block.querySelector('.task-edit-task-only textarea');
+  if (desc_field != null && desc_field.value) {
+    document.title = desc_field.value;
+  }
+}
+
+function highlightOnInput(e) {
+  e.target.classList.add("not-saved");
+
+  var tl_row = e.target.parentNode.parentNode;
+  var task_block = tl_row.parentNode.parentNode.parentNode;
+  var desc_field = task_block.querySelector('.task-edit-task-only textarea');
+  if (desc_field != null && desc_field.value) {
+    document.title = desc_field.value;
   }
 }
 
