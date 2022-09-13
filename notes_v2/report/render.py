@@ -36,21 +36,11 @@ def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
     ]
 
     for hour in range(1, 48):
-        svg = f'<line x1="{svg_width * hour / 48:.3f}" y1="40" x2="{svg_width * hour / 48:.3f}" y2="60" stroke="black" opacity="0.1" />'
+        svg = '<line ' \
+            f'x1="{svg_width*hour/48:.3f}" y1="40" ' \
+            f'x2="{svg_width*hour/48:.3f}" y2="60" ' \
+            f'stroke="black" opacity="0.1" />'
         rendered_notes.append(svg)
-
-    def x_pos(t):
-        return (t - start_time).total_seconds() * width_factor
-
-    def y_pos(t):
-        """Scales the "seconds" of sort_time to the y-axis, from 20-80
-
-        Add 30 seconds so the :00 time lines up with the middle of the chart
-        """
-        start_spot = 20
-        seconds_only = ((note.sort_time - start_time).total_seconds() + 30) % 60
-
-        return start_spot + seconds_only
 
     for note in day_notes:
         if not note.sort_time:
@@ -60,9 +50,10 @@ def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
         if note.domain_ids:
             dot_color = _stroke_color(note.domain_ids[0])
 
+        hour_offset = (note.sort_time - start_time).total_seconds() % 3600
         svg_element = '''<circle cx="{:.3f}" cy="{:.3f}" r="{}" style="fill: none; {}" />'''.format(
-            x_pos(note.sort_time),
-            y_pos(note.sort_time),
+            ((note.sort_time - start_time).total_seconds() - hour_offset + 1800) * width_factor,
+            hour_offset / 3600 * 100,
             5,
             dot_color,
         )
