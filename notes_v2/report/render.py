@@ -32,7 +32,7 @@ def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
         f'<line x1="{svg_width * 1 / 4}" y1="15" x2="{svg_width * 1 / 4}" y2="85" stroke="black" />',
         f'<text x="{svg_width / 2}" y="{85}" text-anchor="middle" opacity="0.5" style="font-size: 12px">{day_scope}</text>',
         f'<line x1="{svg_width * 3 / 4}" y1="15" x2="{svg_width * 3 / 4}" y2="85" stroke="black" />',
-        f'<text x="{svg_width}" y="{85}" text-anchor="end" opacity="0.5" style="font-size: 12px">{(start_time + timedelta(hours=36)).strftime("%G-ww%V.%u")}</text>',
+        f'<text x="{svg_width}" y="{85}" text-anchor="end" opacity="0.5" style="font-size: 12px">{(start_time + timedelta(hours=36)).strftime("ww%V.%u")}</text>',
     ]
 
     for hour in range(1, 48):
@@ -128,7 +128,7 @@ def render_week_svg(week_scope, notes_dict, svg_width=800, row_height=50) -> str
             continue
 
         row = int(day_scope[-1])
-        day_label = f'<text x="{svg_width / 2}" y="{row * row_height + 42}" text-anchor="middle" opacity="0.5" style="font-size: 8px">{day_scope}</text>'
+        day_label = f'<text x="{svg_width / 2}" y="{row * row_height + 42}" text-anchor="middle" opacity="0.5" style="font-size: 8px">{day_scope[5:]}</text>'
         rendered_notes.append(day_label)
 
         for note in day_dict["notes"]:
