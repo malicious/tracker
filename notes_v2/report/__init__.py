@@ -73,7 +73,7 @@ def _render_n2_time(n: Note, scope: TimeScope) -> str:
 cache_dict = {}
 
 
-def clear_html_cache():
+def cache(key, generate_fn):
     """
     TODO: cache_dict is not actually shared where we want it to be
 
@@ -84,7 +84,16 @@ def clear_html_cache():
     - TODO: Make this somehow-shared, so CLI state changes server state
     - TODO: This probably also does weird things for unit testing
     """
-    cache_dict.clear()
+    if key not in cache_dict:
+        # set max cache size, to be polite
+        if len(cache_dict) > 1000:
+            cache_dict.clear()
+
+        cache_dict[key] = generate_fn()
+    else:
+        print(f"DEBUG: Found cached output for {key}")
+
+    return cache_dict[key]
 
 
 def edit_notes(domains: List[str], scope_ids: List[str]):
@@ -109,18 +118,23 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         return json.dumps(n.as_json(include_domains=True), indent=2)
 
     def memoized_render_notes(jinja_render_fn):
-        cache_key = (tuple(domains), tuple(scope_ids),)
-        if cache_key not in cache_dict:
-            # set max cache size, to be polite
-            if len(cache_dict) > 1000:
-                clear_html_cache()
-
+        def generate_fn():
             notes_tree = notes_json_tree(domains, scope_ids)
-            cache_dict[cache_key] = jinja_render_fn(notes_tree)
-        else:
-            print(f"DEBUG: Found cached output for {cache_key}")
+            return jinja_render_fn(notes_tree)
 
-        return cache_dict[cache_key]
+        return cache(
+            key = (tuple(domains), tuple(scope_ids),),
+            generate_fn = generate_fn)
+
+    def memoized_render_day_svg(day_scope, day_dict):
+        return cache(
+            ("day_svg-cache-entry", day_scope, tuple(domains),),
+            lambda: render_day_svg(day_scope, day_dict))
+
+    def memoized_render_week_svg(week_scope, week_dict):
+        return cache(
+            ("week_svg-cache-entry", week_scope, tuple(domains),),
+            lambda: render_week_svg(week_scope, week_dict))
 
     return render_template('notes-v2.html',
                            as_week_header=as_week_header,
@@ -128,8 +142,8 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
                            domain_header=' & '.join(domains),
                            render_n2_desc=render_n2_desc,
                            render_n2_json=render_n2_json,
-                           render_day_svg=render_day_svg,
-                           render_week_svg=render_week_svg)
+                           render_day_svg=memoized_render_day_svg,
+                           render_week_svg=memoized_render_week_svg)
 
 
 def edit_notes_simple(*args):

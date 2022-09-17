@@ -11,7 +11,6 @@ from sqlalchemy.orm import scoped_session, sessionmaker
 
 from notes_v2 import add, report
 from notes_v2.models import Base, Note
-from notes_v2.report import clear_html_cache
 from notes_v2.time_scope import TimeScope
 # noinspection PyUnresolvedReferences
 from . import models
@@ -20,8 +19,6 @@ db_session = None
 
 
 def init_app(app):
-    clear_html_cache()
-
     if not app.config['TESTING']:
         load_models(os.path.abspath(os.path.join(app.instance_path, 'notes-v2.db')))
         app.teardown_request(unload_models)
