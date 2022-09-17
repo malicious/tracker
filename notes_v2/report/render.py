@@ -65,86 +65,83 @@ def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
     )
 
 
-def render_week_svg(week_scope, notes_dict, svg_width=800, row_height=50) -> str:
-    def draw_line(hour, row):
-        return '<line x1="{:.3f}" y1="{}" x2="{:.3f}" y2="{}" stroke="black" opacity="0.3" />'.format(
-            svg_width * hour / 24,
-            row * row_height + 15,  # TODO: this basically assumes height = 50
-            svg_width * hour / 24,
-            row * row_height + 35,
-        )
+def render_week_svg(week_scope, notes_dict) -> str:
+    """
+    Render data vertically, like a weekly calendar.
+    """
+    hours_before = 12
+    hours_after = 12
+    col_width = 100
+    col_width_and_right_margin = 104
+    row_height = 20
 
-    # Pre-populate some lines, for the week of 8 days
     rendered_notes = []
 
-    # First row is only 12 hours
-    for hour in range(12, 25):
-        rendered_notes.append(draw_line(hour, 0))
-    # Normal, non-chopped days
-    for row in range(1, 8):
-        for hour in range(1, 25):
-            svg = draw_line(hour, row)
-            rendered_notes.append(svg)
-    # Last row is only 12 hours
-    for hour in range(1, 13):
-        rendered_notes.append(draw_line(hour, 8))
+    def draw_hour(column, row):
+        """
+        This "weekly" svg is usually split into 9 columns and 24 rows.
 
-    # day boundary lines
-    for row in range(1, 8):
-        rendered_notes.append('<line x1="{}" y1="{}" x2="{}" y2="{}" stroke="black" />'.format(
-            0,
-            row * row_height + 10,
-            0,
-            row * row_height + 50
-        ))
+        For ease, this is expected to be 90px x 20px.
+        """
+        hour_line = '<line x1="{:.3f}" y1="{}" ' \
+            'x2="{:.3f}" y2="{}" ' \
+            'stroke="black" opacity="0.3" />'.format(
+                column * col_width_and_right_margin + col_width/2 - 10,
+                row * row_height,
+                column * col_width_and_right_margin + col_width/2 + 10,
+                row * row_height
+            )
 
-    # Rendering notes
-    start_time = datetime.strptime(week_scope + '.1', '%G-ww%V.%u') - timedelta(days=1)
-    width_factor = svg_width / (24 * 60 * 60)
+        rendered_notes.append(hour_line)
 
-    def x_pos(t):
-        seconds_since_midnight = (t - start_time).total_seconds() % (24 * 60 * 60)
-        return seconds_since_midnight * width_factor
+    # render the pre-monday, if needed
+    for row in range(24-hours_before,24):
+        draw_hour(column=0, row=row)
 
-    def y_pos(t):
-        row = int((t - start_time).total_seconds() / (24 * 60 * 60))
-        return row * row_height + 0.5 * row_height
+    # and now the "normal" days
+    for column in range(1,8):
+        for row in range (0,24):
+            draw_hour(column, row)
 
-    # Read actual notes
-    svg_has_notes = False
+        day_label = f'<text x="{column * col_width_and_right_margin + col_width/2}" y="{24 * row_height - 8}" ' \
+            f'text-anchor="middle" opacity="0.5" style="font-size: 10px">{week_scope[5:] + "." + str(column)}</text>'
+        rendered_notes.append(day_label)
 
+    # and the after-sunday
+    for row in range(0,hours_after):
+        draw_hour(column=8, row=row)
+
+    # and the actual tasks
     for day_scope, day_dict in notes_dict.items():
         # Skip this category, because operating on notes_dict prevents the render pass later
         if day_scope == "notes":
             continue
 
-        row = int(day_scope[-1])
-        day_label = f'<text x="{svg_width / 2}" y="{row * row_height + 42}" text-anchor="middle" opacity="0.5" style="font-size: 8px">{day_scope[5:]}</text>'
-        rendered_notes.append(day_label)
+        column = int(day_scope[-1])
+        day_scope_time = datetime.strptime(day_scope, '%G-ww%V.%u')
 
-        for note in day_dict["notes"]:
+        for note in day_dict['notes']:
             if not note.sort_time:
                 continue
-
-            svg_has_notes = True
 
             dot_color = "stroke: black"
             if note.domain_ids:
                 dot_color = _stroke_color(note.domain_ids[0])
 
+            # calculate the sub-hour offset for the dot, scaled to include some margins on the hour-block
+            dot_radius = 5
+            dot_x_offset = ((note.sort_time - day_scope_time).total_seconds() % (60*60)) / (60*60)
+            dot_x_offset = dot_radius + dot_x_offset * (col_width - 2 * dot_radius)
+
             svg_element = '<circle cx="{:.3f}" cy="{:.3f}" r="{}" style="fill: none; {}" />'.format(
-                x_pos(note.sort_time),
-                y_pos(note.sort_time),
-                5,
+                column * col_width_and_right_margin + dot_x_offset,
+                int((note.sort_time - day_scope_time).total_seconds() / (60*60)) * row_height + row_height / 2,
+                dot_radius,
                 dot_color
             )
             rendered_notes.append(svg_element)
 
-    if not svg_has_notes:
-        return ''
-
-    return '''<svg width="{}" height="{}">{}</svg>'''.format(
-        svg_width,
-        9 * row_height,
-        '\n'.join(rendered_notes)
-    )
+    return '''<svg width="{}" height="{}">\n  {}\n</svg>'''.format(
+        9 * col_width_and_right_margin,
+        24 * row_height,
+        '\n  '.join(rendered_notes))
