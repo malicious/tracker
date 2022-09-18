@@ -1,6 +1,7 @@
 import csv
 import json
 import sys
+from os import path
 from typing import List, Dict, Optional
 
 from dateutil import parser
@@ -108,20 +109,18 @@ def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Optional[Note]:
 
 
 # only print this out once per import
-times_printed_todo_warning = 0
+times_todo_ignored = 0
 
 
 def all_from_csv(session, csv_file, expect_duplicates: bool):
+    global times_todo_ignored
+
     for csv_entry in csv.DictReader(csv_file):
         try:
             one_from_csv(session, csv_entry, expect_duplicates)
         except (KeyError, IntegrityError):
             if "todo" in csv_entry["domains"]:
-                global times_printed_todo_warning
-                times_printed_todo_warning += 1
-                if times_printed_todo_warning <= 1:
-                    print(f"WARN: Couldn\'t import CSV row, ignoring cause it has domain \"todo\"")
-
+                times_todo_ignored += 1
                 continue
 
             print('-' * 72)
@@ -129,6 +128,12 @@ def all_from_csv(session, csv_file, expect_duplicates: bool):
             print(json.dumps(csv_entry, indent=2))
             print()
             continue
+
+    if times_todo_ignored > 1:
+        print(f"WARN: Ignored malformed CSV rows with domain \"todo\" ({times_todo_ignored} times in {path.basename(csv_file.name)})")
+        # Reset the count back to 0, because this function is called once for each CSV file
+        # (and we can provide several CSV files for n2/update)
+        times_todo_ignored = 0
 
     session.commit()
 
