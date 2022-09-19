@@ -1,6 +1,8 @@
 import hashlib
 from datetime import datetime, timedelta
 
+from notes_v2.time_scope import TimeScope
+
 
 def domain_to_css_color(domain: str) -> str:
     domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
@@ -112,34 +114,45 @@ def render_week_svg(week_scope, notes_dict) -> str:
         draw_hour(column=8, row=row)
 
     # and the actual tasks
+    def render_note_dot(note):
+        """
+        TODO: This is hard-coded to expect that the SVG chart starts on previous Sunday.
+        """
+        if not note.sort_time:
+            return
+        if not TimeScope(note.time_scope_id).is_day():
+            return
+
+        column = note.sort_time.isoweekday()
+        if column == 1 and note.time_scope_id[-1] == "7":
+            column = 8
+        if column == 7 and note.time_scope_id[-1] == "1":
+            column = 0
+        day_scope_time = datetime(note.sort_time.year, note.sort_time.month, note.sort_time.day)
+
+        dot_color = "stroke: black"
+        if note.domain_ids:
+            dot_color = _stroke_color(note.domain_ids[0])
+
+        # calculate the sub-hour offset for the dot, scaled to include some margins on the hour-block
+        dot_radius = 5
+        dot_x_offset = ((note.sort_time - day_scope_time).total_seconds() % (60*60)) / (60*60)
+        dot_x_offset = dot_radius + dot_x_offset * (col_width - 2 * dot_radius)
+
+        svg_element = '<circle cx="{:.3f}" cy="{:.3f}" r="{}" {} />'.format(
+            column * col_width_and_right_margin + dot_x_offset,
+            int((note.sort_time - day_scope_time).total_seconds() / (60*60)) * row_height + row_height / 2,
+            dot_radius,
+            f'style="fill: none; {dot_color}" tracker-note-id="{note.note_id}"')
+        rendered_notes.append(svg_element)
+
     for day_scope, day_dict in notes_dict.items():
-        # Skip this category, because operating on notes_dict prevents the render pass later
         if day_scope == "notes":
-            continue
-
-        column = int(day_scope[-1])
-        day_scope_time = datetime.strptime(day_scope, '%G-ww%V.%u')
-
-        for note in day_dict['notes']:
-            if not note.sort_time:
-                continue
-
-            dot_color = "stroke: black"
-            if note.domain_ids:
-                dot_color = _stroke_color(note.domain_ids[0])
-
-            # calculate the sub-hour offset for the dot, scaled to include some margins on the hour-block
-            dot_radius = 5
-            dot_x_offset = ((note.sort_time - day_scope_time).total_seconds() % (60*60)) / (60*60)
-            dot_x_offset = dot_radius + dot_x_offset * (col_width - 2 * dot_radius)
-
-            svg_element = '<circle cx="{:.3f}" cy="{:.3f}" r="{}" style="fill: none; {}" />'.format(
-                column * col_width_and_right_margin + dot_x_offset,
-                int((note.sort_time - day_scope_time).total_seconds() / (60*60)) * row_height + row_height / 2,
-                dot_radius,
-                dot_color
-            )
-            rendered_notes.append(svg_element)
+            for note in day_dict:
+                render_note_dot(note)
+        else:
+            for note in day_dict['notes']:
+                render_note_dot(note)
 
     return '''<svg width="{}" height="{}">\n  {}\n</svg>'''.format(
         9 * col_width_and_right_margin,
