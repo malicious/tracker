@@ -1,4 +1,5 @@
 import json
+from collections import namedtuple
 from datetime import datetime
 from typing import List
 
@@ -24,7 +25,7 @@ def _domain_to_html_link(domain: str, scope_ids: List[str] = []) -> str:
     }" style="{domain_to_css_color(domain)}">{domain}</a>'''
 
 
-def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], ignore_type_domains: bool = True):
+def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], ignore_noisy_domains: bool = False):
     def should_display_domain(d: str) -> bool:
         # Don't render any domains that are an exact match for the page
         #
@@ -36,9 +37,9 @@ def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], i
         if len(page_domains) == 1 and d == page_domains[0]:
             return False
 
-        # Ignore domains that start with `type: `, maybe
-        if ignore_type_domains and d[:6] == "type: ":
-            return False
+        if ignore_noisy_domains:
+            if d[:6] == "type: ":
+                return False
 
         return True
 
@@ -210,25 +211,35 @@ def domains(session):
     """
     Build and return human-readable page that lists domains + their info
     """
-    domain_rows = []
+    DomainInfo = namedtuple("DomainInfo", "domain_id time_scope_id count")
+    domain_infos = []
 
+    # Get the latest note for each domain_id we have
     for nd in session.query(NoteDomain.domain_id).distinct():
         latest_note = Note.query \
             .join(NoteDomain, NoteDomain.note_id == Note.note_id) \
             .filter(NoteDomain.domain_id == nd.domain_id) \
             .order_by(Note.time_scope_id.desc()) \
             .limit(1) \
-            .one() \
-            .time_scope_id
+            .one()
 
         count = NoteDomain.query \
             .filter_by(domain_id=nd.domain_id) \
             .count()
 
+        domain_infos.append(DomainInfo(
+            domain_id = nd.domain_id,
+            time_scope_id = latest_note.time_scope_id,
+            count = count))
+
+    domain_infos.sort(key=lambda x: x.time_scope_id, reverse=True)
+    domain_rows = []
+
+    for di in domain_infos:
         domain_row = "<div>{}{}{}</div>".format(
-            f"<span style=\"padding-right: 24px;\">{latest_note}</span>",
-            f"<span style=\"padding-right: 24px;\">{count}</span>",
-            _domain_to_html_link(nd.domain_id)
+            f"<span style=\"padding-right: 24px;\">{di.time_scope_id}</span>",
+            f"<span style=\"padding-right: 24px;\">{di.count}</span>",
+            _domain_to_html_link(di.domain_id)
         )
         domain_rows.append(domain_row)
 
