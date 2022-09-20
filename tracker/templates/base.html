@@ -38,7 +38,8 @@ a:visited {
   line-height: 24px;
   height: 24px;
   display: table;
-  padding-top: 24px;
+  padding-top: 12px;
+  padding-bottom: 6px;
 
   /* sample (reference) width calculations */
   padding-left: var(--default-left-right-margin);
@@ -62,8 +63,11 @@ a:visited {
   z-index: 100;
   background-color: var(--default-bg-color);
 }
-.scope-spacer-上, .scope-spacer-下 {
-  height: 12px;
+.scope-spacer-上 {
+  height: 24px;
+}
+.scope-spacer-下 {
+  height: 6px;
 }
 </style>
 {% endblock %}

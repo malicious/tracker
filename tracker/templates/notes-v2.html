@@ -69,14 +69,16 @@
   line-height: 24px;
 }
 
+.week-svg {
+  padding-left: min(var(--default-left-right-margin), calc((100% - 4px - 9 * 104px)));
+  padding-right: calc(var(--default-left-right-margin) - 4px);
+}
 .day-svg {
   padding-left: min(var(--default-left-right-margin),calc((100% - 800px)/2));
   padding-right: var(--default-left-right-margin);
   margin-top: 36px;
-  border-top: 4px solid black;
+  border-top: 3px solid black;
   padding-top: 8px;
-  disabled-border-bottom: 2px solid lightgray;
-  background-color: #f2f2f2;
   margin-bottom: 32px;
 }
 </style>
@@ -125,7 +127,9 @@
 {% macro render_week(week_scope, week_dict) %}
 {% if week_dict|length > 1 or week_dict["notes"] %}
   <h2>{{ as_week_header(week_scope) }}</h2>
-  {{ render_week_svg(week_scope, week_dict) | safe }}
+  <div class="week-svg">
+    {{ render_week_svg(week_scope, week_dict) | safe }}
+  </div>
 {% endif %}
 
 {% for week_note in week_dict["notes"] %}
