@@ -29,14 +29,9 @@ def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
     start_time = datetime.strptime(day_scope, '%G-ww%V.%u') + timedelta(hours=-12)
     width_factor = svg_width / (48 * 60 * 60)
 
-    # Pre-populate the list of notes, so we can be assured this is working
-    rendered_notes = [
-        f'<line x1="{svg_width * 1 / 4}" y1="15" x2="{svg_width * 1 / 4}" y2="85" stroke="black" />',
-        f'<text x="{svg_width / 2}" y="{85}" text-anchor="middle" opacity="0.5" style="font-size: 12px">{day_scope}</text>',
-        f'<line x1="{svg_width * 3 / 4}" y1="15" x2="{svg_width * 3 / 4}" y2="85" stroke="black" />',
-        f'<text x="{svg_width}" y="{85}" text-anchor="end" opacity="0.5" style="font-size: 12px">{(start_time + timedelta(hours=36)).strftime("ww%V.%u")}</text>',
-    ]
+    rendered_notes = []
 
+    # draw the hour lines + notes on top
     for hour in range(1, 48):
         svg = '<line ' \
             f'x1="{svg_width*hour/48:.3f}" y1="40" ' \
@@ -60,6 +55,14 @@ def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
             dot_color,
         )
         rendered_notes.append(svg_element)
+
+    # finally, the overall text labels
+    rendered_notes.extend([
+        f'<line x1="{svg_width*1/4}" y1="15" x2="{svg_width*1/4}" y2="85" stroke="black" />',
+        f'<text x="{svg_width/2}" y="{85}" text-anchor="middle" opacity="0.5" style="font-size: 12px">{day_scope}</text>',
+        f'<line x1="{svg_width*3/4}" y1="15" x2="{svg_width*3/4}" y2="85" stroke="black" />',
+        f'<text x="{svg_width}" y="{85}" text-anchor="end" opacity="0.5" style="font-size: 12px">{(start_time + timedelta(hours=36)).strftime("ww%V.%u")}</text>',
+    ])
 
     return '''<svg width="{}" height="100">{}</svg>'''.format(
         svg_width,
