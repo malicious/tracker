@@ -1,6 +1,6 @@
 import json
 from collections import namedtuple
-from datetime import datetime
+from datetime import datetime, timedelta
 from typing import List
 
 from flask import render_template
@@ -137,14 +137,51 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             ("week_svg-cache-entry", week_scope, tuple(domains),),
             lambda: render_week_svg(week_scope, week_dict))
 
+    kwargs = {
+        'render_day_svg': memoized_render_day_svg,
+        'render_week_svg': memoized_render_week_svg,
+    }
+
+    # If this is limited to one scope, link to prev/next scopes as well.
+    if len(scope_ids) == 1:
+        def _scope_to_html_link(scope_id: str) -> str:
+            return '<a href="/notes?scope={}{}">{}</a>'.format(
+                scope_id,
+                ''.join([f'&domain={d}' for d in domains]),
+                scope_id)
+
+        if TimeScope(scope_ids[0]).is_day():
+            next_dt = datetime.strptime(scope_ids[0], '%G-ww%V.%u') + timedelta(days=1)
+            kwargs['next_scope'] = _scope_to_html_link(TimeScope.from_datetime(next_dt))
+            prev_dt = datetime.strptime(scope_ids[0], '%G-ww%V.%u') + timedelta(days=-1)
+            kwargs['prev_scope'] = _scope_to_html_link(TimeScope.from_datetime(prev_dt))
+
+        elif TimeScope(scope_ids[0]).is_week():
+            next_dt = datetime.strptime(scope_ids[0] + '.1', '%G-ww%V.%u') + timedelta(days=7)
+            kwargs['next_scope'] = _scope_to_html_link(next_dt.strftime('%G-ww%V'))
+            prev_dt = datetime.strptime(scope_ids[0] + '.1', '%G-ww%V.%u') + timedelta(days=-7)
+            kwargs['prev_scope'] = _scope_to_html_link(prev_dt.strftime('%G-ww%V'))
+
+        elif TimeScope(scope_ids[0]).is_quarter():
+            year = int(scope_ids[0][:4])
+            quarter = int(scope_ids[0][-1])
+            next_quarter = f"{year}—Q{quarter+1}"
+            prev_quarter = f"{year}—Q{quarter-1}"
+            if quarter == 1:
+                prev_quarter = f"{year-1}—Q4"
+            if quarter == 4:
+                next_quarter = f"{year+1}—Q1"
+
+            kwargs['next_scope'] = _scope_to_html_link(next_quarter)
+            kwargs['prev_scope'] = _scope_to_html_link(prev_quarter)
+
     return render_template('notes-v2.html',
                            as_week_header=as_week_header,
                            cached_render=memoized_render_notes,
                            domain_header=' & '.join(domains),
                            render_n2_desc=render_n2_desc,
                            render_n2_json=render_n2_json,
-                           render_day_svg=memoized_render_day_svg,
-                           render_week_svg=memoized_render_week_svg)
+                           **kwargs)
 
 
 def edit_notes_simple(*args):
