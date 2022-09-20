@@ -90,12 +90,19 @@ def render_week_svg(week_scope, notes_dict) -> str:
         """
         hour_line = '<line x1="{:.3f}" y1="{}" ' \
             'x2="{:.3f}" y2="{}" ' \
-            'stroke="black" opacity="0.3" />'.format(
+            'stroke="black" opacity="0.1" />'.format(
                 column * col_width_and_right_margin + col_width/2 - 10,
                 row * row_height,
                 column * col_width_and_right_margin + col_width/2 + 10,
-                row * row_height
-            )
+                row * row_height)
+
+        # Draw the every-6-hours lines special
+        if row % 6 == 0:
+            hour_line = '<line x1="{:.3f}" y1="{}" x2="{:.3f}" y2="{}" stroke="black" opacity="0.4" />'.format(
+                column * col_width_and_right_margin + col_width/2 - 15,
+                row * row_height,
+                column * col_width_and_right_margin + col_width/2 + 15,
+                row * row_height)
 
         rendered_notes.append(hour_line)
 
@@ -105,7 +112,7 @@ def render_week_svg(week_scope, notes_dict) -> str:
 
     # and now the "normal" days
     for column in range(1,8):
-        for row in range (0,24):
+        for row in range(1,24):
             draw_hour(column, row)
 
         day_label = f'<text x="{column * col_width_and_right_margin + col_width/2}" y="{24 * row_height - 8}" ' \
@@ -113,7 +120,7 @@ def render_week_svg(week_scope, notes_dict) -> str:
         rendered_notes.append(day_label)
 
     # and the after-sunday
-    for row in range(0,hours_after):
+    for row in range(1,hours_after+1):
         draw_hour(column=8, row=row)
 
     # and the actual tasks
