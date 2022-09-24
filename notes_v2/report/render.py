@@ -5,6 +5,15 @@ from notes_v2.time_scope import TimeScope
 
 
 def domain_to_css_color(domain: str) -> str:
+    """
+    Map the domain string to a visually-distinct CSS color.
+
+    Current implementation hashes the domain string, then takes the first 4
+    characters as a base-16 number, which is then mapped to one of 8 final HSL
+    colors.
+
+    TODO: We could probably do with more than equally-spaced "hue" values
+    """
     domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
     domain_hash_int = int(domain_hash[0:4], 16)
 

@@ -53,6 +53,15 @@ def init_app(app):
 
     app.cli.add_command(n2_export)
 
+    @click.command('n2/color', help='Check render colors for different domains')
+    @click.argument('domains', nargs=-1)
+    @with_appcontext
+    def n2_domain_colors(domains):
+        for domain in domains:
+            print(f'"{domain}" => {report.render.domain_to_css_color(domain)}')
+
+    app.cli.add_command(n2_domain_colors)
+
 
 def load_models(current_db_path: str):
     engine = sqlalchemy.create_engine('sqlite:///' + current_db_path)
