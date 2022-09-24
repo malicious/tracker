@@ -24,14 +24,17 @@ def test_scope_parents():
 
 def test_scope_children():
     ts3 = TimeScope("2021—Q3")
-
     ts2s = ts3.child_scopes
-    assert len(ts2s) == 14  # 14 for this specific quarter
-    assert ts2s[0] == "2021-ww26"
+    assert len(ts2s) == 13
+    assert ts2s[0] == "2021-ww27"
 
+
+def test_scope_children2():
+    ts3 = TimeScope("2021—Q3")
+    ts2s = ts3.child_scopes
     ts1s = ts2s[0].child_scopes
     assert len(ts1s) == 7
-    assert ts1s[0] == "2021-ww26.1"
+    assert ts1s[0] == "2021-ww27.1"
 
 
 def test_stapler_basic():

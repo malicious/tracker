@@ -140,7 +140,6 @@ class NoteStapler:
             raise ValueError(f"TimeScope has unknown type: {repr(scope)}")
 
     def add_everything(self) -> None:
-        # TODO: Remove scopes with empty NOTES_KEY
         notes = self.filtered_query.all()
         for n in notes:
             note_list = self._construct_scope_tree(TimeScope(n.time_scope_id))[NOTES_KEY]
@@ -168,11 +167,15 @@ class NoteStapler:
 
                 if week_count <= self.week_promotion_threshold:
                     self._collapse_scope_tree(week)
+                if week_count == 0:
+                    raise RuntimeError(f"ERROR: somehow, we created an empty week-scope {week}")
 
                 quarter_count += week_count
 
             if quarter_count <= self.quarter_promotion_threshold:
                 self._collapse_scope_tree(quarter)
+            if quarter_count == 0:
+                raise RuntimeError(f"ERROR: somehow, we created an empty quarter-scope {quarter}")
 
 
 def notes_json_tree(domains: List[str], scope_ids: List[str]):

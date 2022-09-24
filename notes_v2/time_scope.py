@@ -1,5 +1,6 @@
 import re
 from datetime import date, datetime, timedelta
+from typing import Dict, List, Optional
 
 
 class TimeScope(str):
@@ -40,14 +41,18 @@ class TimeScope(str):
         m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d)\.(\d)", self)
         return m is not None
 
-    def get_parent(self):
+    # TODO: Function spec should be Optional[TimeScope]
+    def get_parent(self) -> Optional[str]:
         if self.is_quarter():
             return None
 
         elif self.is_week():
-            # NB weeks can technically belong to two quarters,
-            # in which case we want to use the second quarter.
-            start_date = datetime.strptime(f'{self}.7', '%G-ww%V.%u').date()
+            # NB weeks can technically belong to two quarters; use the _earlier_
+            # quarter, due to `notes-v2.html` rendering (specifically, later
+            # dates appear first, so an extra "early" quarter isn't noticeable
+            # until you've scrolled through the whole list).
+            #
+            start_date = datetime.strptime(f'{self}.1', '%G-ww%V.%u').date()
             start_quarter = (start_date.month - 1) // 3 + 1
             return TimeScope(f'{start_date.year}—Q{start_quarter}')
 
@@ -58,23 +63,34 @@ class TimeScope(str):
 
     parent = property(get_parent)
 
-    def get_child_scopes(self):
+    def get_child_scopes(self) -> List[str]:
         if self.is_quarter():
-            # Find the start_ and end_dates for the quarter
+            start_year = int(self[:4])
             start_month = int(self[-1]) * 3 - 2
-            start_date = datetime(int(self[:4]), start_month, 1)
+
+            # Find the start and end dates for the quarter
+            start_date = datetime(start_year, start_month, 1)
             if start_month == 10:
-                end_date = datetime(int(self[:4]) + 1, 1, 1)
+                end_date = datetime(start_year+1, 1, 1)
             else:
-                end_date = datetime(int(self[:4]), start_month + 3, 1)
+                # end_date is one-past-the-end, so the first of the month is expected
+                end_date = datetime(start_year, start_month+3, 1)
 
             # Iterate over all weeks
             all_weeks = []
+            child_date = start_date
+            while child_date < end_date:
+                child_scope = TimeScope(child_date.strftime(f'%G-ww%V'))
+                # TODO: We should have a less… expensive way of eliminating overlap,
+                #       but this method allows us to consolidate the duplicate-checking
+                #       into a single function (TimeScope.get_parent)
+                if child_scope.get_parent() != self:
+                    print(f"WARN: generated child scope {child_scope} that isn't 1:1 with expected parent {self}")
+                    child_date = child_date + timedelta(days=7)
+                    continue
 
-            current_date = start_date
-            while current_date < end_date:
-                all_weeks.append(TimeScope(current_date.strftime(f'%G-ww%V')))
-                current_date = current_date + timedelta(days=7)
+                all_weeks.append(child_scope)
+                child_date = child_date + timedelta(days=7)
 
             return all_weeks
 
