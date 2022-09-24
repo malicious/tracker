@@ -1,3 +1,4 @@
+import hashlib
 import os
 from datetime import datetime, timedelta
 
@@ -58,7 +59,8 @@ def init_app(app):
     @with_appcontext
     def n2_domain_colors(domains):
         for domain in domains:
-            print(f'"{domain}" => {report.render.domain_to_css_color(domain)}')
+            domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
+            print(f'"{domain}" => {int(domain_hash[0:4], 16)} => {report.render.domain_to_css_color(domain)}')
 
     app.cli.add_command(n2_domain_colors)
 

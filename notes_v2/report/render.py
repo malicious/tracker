@@ -17,7 +17,7 @@ def domain_to_css_color(domain: str) -> str:
     domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
     domain_hash_int = int(domain_hash[0:4], 16)
 
-    color_h = ((domain_hash_int + 4) % 8) * (256.0 / 8)
+    color_h = (domain_hash_int % 12) * (256.0 / 12)
     return f"color: hsl({color_h}, 70%, 50%);"
 
 
@@ -25,7 +25,7 @@ def _stroke_color(d):
     domain_hash = hashlib.sha256(d.encode('utf-8')).hexdigest()
     domain_hash_int = int(domain_hash[0:4], 16)
 
-    color_h = ((domain_hash_int + 4) % 8) * (256.0 / 8)
+    color_h = (domain_hash_int % 12) * (256.0 / 12)
     return f"stroke: hsl({color_h}, 70%, 50%);"
 
 
