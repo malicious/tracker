@@ -175,10 +175,13 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             kwargs['next_scope'] = _scope_to_html_link(next_quarter)
             kwargs['prev_scope'] = _scope_to_html_link(prev_quarter)
 
+    domains_as_html = [_domain_to_html_link(d, scope_ids) for d in domains]
+    kwargs['domain_header'] = " & ".join(domains)
+    kwargs['domain_header_html'] = " & ".join(domains_as_html)
+
     return render_template('notes-v2.html',
                            as_week_header=as_week_header,
                            cached_render=memoized_render_notes,
-                           domain_header=' & '.join(domains),
                            render_n2_desc=render_n2_desc,
                            render_n2_json=render_n2_json,
                            **kwargs)
