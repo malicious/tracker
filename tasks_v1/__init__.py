@@ -37,6 +37,7 @@ def init_app(app: Flask, legacy_mode=False, readonly_mode=True):
         if not app.config['TESTING']:
             _try_migrate(_generate_instance_path, preserve_target_db=True)
             load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
+            app.teardown_request(unload_v1_models)
 
         _register_endpoints(app)
         _register_cli(app)
@@ -44,6 +45,7 @@ def init_app(app: Flask, legacy_mode=False, readonly_mode=True):
         if not app.config['TESTING']:
             _try_migrate(_generate_instance_path, preserve_target_db=True)
             load_v1_models(_generate_instance_path(CURRENT_DB_NAME))
+            app.teardown_request(unload_v1_models)
 
         _register_endpoints(app)
     else:
@@ -100,6 +102,10 @@ def load_v1_models(current_db_path: str):
                                              bind=engine))
 
     Base.query = db_session.query_property()
+
+
+def unload_v1_models(e):
+    db_session.remove()
 
 
 def _register_endpoints(app: Flask):

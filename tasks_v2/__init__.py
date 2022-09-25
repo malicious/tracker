@@ -21,6 +21,7 @@ db_session = None
 def init_app(app: Flask):
     if not app.config['TESTING']:
         load_v2_models(os.path.abspath(os.path.join(app.instance_path, 'tasks-v2.db')))
+        app.teardown_request(unload_v2_models)
 
     _register_endpoints(app)
     _register_rest_endpoints(app)
@@ -53,15 +54,16 @@ def load_v2_models(current_db_path: str):
 
     # Create a Session object and bind it to the declarative_base
     global db_session
-    if db_session:
-        print("WARN: db_session already exists, creating a new one anyway")
-        db_session = None
-
     db_session = scoped_session(sessionmaker(autocommit=False,
                                              autoflush=False,
                                              bind=engine))
 
     Base.query = db_session.query_property()
+
+
+def unload_v2_models(e):
+    global db_session
+    db_session.remove()
 
 
 def _register_endpoints(app: Flask):

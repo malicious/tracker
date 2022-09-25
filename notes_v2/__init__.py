@@ -24,6 +24,7 @@ def init_app(app):
 
     if not app.config['TESTING']:
         load_models(os.path.abspath(os.path.join(app.instance_path, 'notes-v2.db')))
+        app.teardown_request(unload_models)
 
     _register_endpoints(app)
     _register_rest_endpoints(app)
@@ -68,6 +69,11 @@ def load_models(current_db_path: str):
                                              bind=engine))
 
     Base.query = db_session.query_property()
+
+
+def unload_models(maybe_exception):
+    global db_session
+    db_session.remove()
 
 
 def _register_endpoints(app):
