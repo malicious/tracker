@@ -68,9 +68,11 @@ def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
     # finally, the overall text labels
     rendered_notes.extend([
         f'<line x1="{svg_width*1/4}" y1="15" x2="{svg_width*1/4}" y2="85" stroke="black" />',
-        f'<text x="{svg_width/2}" y="{85}" text-anchor="middle" opacity="0.5" style="font-size: 12px">{day_scope}</text>',
+        f'<text x="{svg_width/2}" y="{85}" text-anchor="middle" opacity="0.5" style="font-size: 12px">'
+            f'{(start_time + timedelta(hours=12)).strftime("%G-ww%V.%u-%b-%d")}</text>',
         f'<line x1="{svg_width*3/4}" y1="15" x2="{svg_width*3/4}" y2="85" stroke="black" />',
-        f'<text x="{svg_width}" y="{85}" text-anchor="end" opacity="0.5" style="font-size: 12px">{(start_time + timedelta(hours=36)).strftime("ww%V.%u")}</text>',
+        f'<text x="{svg_width}" y="{85}" text-anchor="end" opacity="0.5" style="font-size: 12px">'
+            f'{(start_time + timedelta(hours=36)).strftime("ww%V.%u")}</text>',
     ])
 
     return '''<svg width="{}" height="100">{}</svg>'''.format(
