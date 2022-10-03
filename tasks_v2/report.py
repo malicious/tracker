@@ -85,6 +85,33 @@ def generate_tasks_by_scope(scope_id: str):
 
         return tasks_by_scope
 
+    # quarter-like scope (`YYYY—QN`, that's an emdash in the middle)
+    m = re.fullmatch(r"(\d\d\d\d)—Q([1-4])", scope_id)
+    if m:
+        start_year = int(scope_id[:4])
+        start_month = int(scope_id[-1]) * 3 - 2
+
+        quarter_start_date = datetime(start_year, start_month, 1)
+        if start_month == 10:
+            quarter_end_date = datetime(start_year+1, 1, 1)
+        else:
+            quarter_end_date = datetime(start_year, start_month+3, 1)
+
+        tasks_by_scope = {}
+
+        current_day_start = quarter_start_date
+        while current_day_start < quarter_end_date:
+            tasks = Task.query \
+                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .filter(TaskLinkage.time_scope == current_day_start.date()) \
+                .order_by(TaskLinkage.time_scope, Task.category) \
+                .all()
+
+            tasks_by_scope[current_day_start.strftime("%G-ww%V.%u")] = tasks
+            current_day_start = current_day_start + timedelta(days=1)
+
+        return tasks_by_scope
+
     # otherwise, no idea
     raise ValueError(f"No idea how to handle {repr(scope_id)}")
 
