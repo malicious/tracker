@@ -123,6 +123,13 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             notes_tree = notes_json_tree(domains, scope_ids)
             return jinja_render_fn(notes_tree)
 
+        # Do not cache the current day.
+        if datetime.utcnow().strftime('%G-ww%V.%u') in scope_ids:
+            return generate_fn()
+        # Do not cache the current week.
+        if datetime.utcnow().strftime('%G-ww%V') in scope_ids:
+            return generate_fn()
+        # TODO: Do not cache the current quarter.
         return cache(
             key = (tuple(domains), tuple(scope_ids),),
             generate_fn = generate_fn)
