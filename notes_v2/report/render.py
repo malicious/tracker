@@ -18,7 +18,7 @@ def domain_to_css_color(domain: str) -> str:
     domain_hash_int = int(domain_hash[0:4], 16)
 
     color_h = (domain_hash_int % 12) * (256.0 / 12)
-    return f"color: hsl({color_h}, 70%, 50%);"
+    return f"color: hsl({color_h:.2f}, 80%, 40%);"
 
 
 def _stroke_color(d):
@@ -26,7 +26,7 @@ def _stroke_color(d):
     domain_hash_int = int(domain_hash[0:4], 16)
 
     color_h = (domain_hash_int % 12) * (256.0 / 12)
-    return f"stroke: hsl({color_h}, 70%, 50%);"
+    return f"stroke: hsl({color_h:.2f}, 80%, 40%); stroke-width: 4px;"
 
 
 def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
@@ -40,7 +40,7 @@ def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
 
     rendered_notes = []
 
-    # draw the hour lines + notes on top
+    # draw the hour lines on top
     for hour in range(1, 48):
         svg = '<line ' \
             f'x1="{svg_width*hour/48:.3f}" y1="40" ' \
@@ -48,6 +48,7 @@ def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
             f'stroke="black" opacity="0.1" />'
         rendered_notes.append(svg)
 
+    # and the actual note circles
     for note in day_notes:
         if not note.sort_time:
             continue
