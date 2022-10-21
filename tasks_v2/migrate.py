@@ -113,7 +113,7 @@ def _tack_on_peer(session, baseline_t2: Task_v2, t1: Task_v1):
     final_linkage = prior_linkage if prior_linkage else created_at_linkage
     if final_linkage.resolution and final_linkage.resolution != t1.resolution:
         print(f"WARN: peer resolution will be lost: \"{t1.resolution[:40]}\"")
-        print(f"      existing resolution is      : \"{final_linkage.resolution[:40]}\"" )
+        print(f"      existing resolution is      : \"{final_linkage.resolution[:40]}\"")
         print(f"      copied from legacy {t1}/{created_at_linkage.time_scope_id}")
     else:
         final_linkage.resolution = t1.resolution
@@ -193,7 +193,7 @@ def _tack_on_child(session, parent_t2: Task_v2, child_t1: Task_v1):
         created_at_linkage.created_at = min(created_at_linkage.created_at, child_t1.created_at)
     if created_at_linkage.detailed_resolution:
         print(f"WARN: child desc will be lost : {repr(child_t1.desc[:40])}")
-        print(f"      existing desc/resolution: {repr(created_at_linkage.detailed_resolution[:40])}" )
+        print(f"      existing desc/resolution: {repr(created_at_linkage.detailed_resolution[:40])}")
         print(f"      copied from legacy {child_t1}/{created_at_linkage.time_scope_id}")
     else:
         created_at_linkage.detailed_resolution = child_t1.desc
@@ -202,7 +202,7 @@ def _tack_on_child(session, parent_t2: Task_v2, child_t1: Task_v1):
     final_linkage = prior_linkage if prior_linkage else created_at_linkage
     if final_linkage.resolution and final_linkage.resolution != child_t1.resolution:
         print(f"WARN: child resolution will be lost: \"{child_t1.resolution[:40]}\"")
-        print(f"      existing resolution is       : \"{final_linkage.resolution[:40]}\"" )
+        print(f"      existing resolution is       : \"{final_linkage.resolution[:40]}\"")
     else:
         final_linkage.resolution = f"{child_t1.resolution} (for child {child_t1})"
     if final_linkage.time_elapsed is not None and child_t1.time_actual:

@@ -1,6 +1,5 @@
 import re
 from datetime import datetime, timedelta
-from dateutil import parser
 from typing import Optional
 
 from flask import render_template, url_for
@@ -147,6 +146,7 @@ def compute_ignoring_scope(todays_date):
 
     Returns a function that returns a tuple of (scope to print, resolution to print, is future task)
     """
+
     def minimize_vs_today(printed_scope_id) -> str:
         todays_scope_id = todays_date.strftime("%G-ww%V.%u")
         if todays_scope_id == printed_scope_id:

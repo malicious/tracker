@@ -1,5 +1,5 @@
-from datetime import datetime
 import os
+from datetime import datetime
 
 import click
 import sqlalchemy
@@ -8,12 +8,12 @@ from flask.cli import with_appcontext
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-# noinspection PyUnresolvedReferences
-from . import migrate, models, report, update
-from .models import Base, Task
 from tasks_v1 import db_session as tasks_v1_session
 from tasks_v1.models import Task as Task_v1
 from tasks_v1.time_scope import TimeScope
+# noinspection PyUnresolvedReferences
+from . import migrate, models, report, update
+from .models import Base, Task
 
 db_session = None
 
@@ -127,7 +127,7 @@ def _register_rest_endpoints(app: Flask):
             abort(400)
 
         if request.is_json:
-            print(request.json) # sometimes request.data, need to check with unicode
+            print(request.json)  # sometimes request.data, need to check with unicode
             return {
                 "date": datetime.now(),
                 "ok": "this was an async request with JS enabled, here's your vaunted output",

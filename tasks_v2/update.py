@@ -1,11 +1,7 @@
-import re
-from datetime import datetime, timedelta
+from datetime import datetime
+
 from dateutil import parser
-from typing import Optional
 
-from flask import render_template, url_for
-
-from tasks_v1.time_scope import TimeScope, TimeScopeUtils
 from tasks_v2.models import Task, TaskLinkage
 
 
