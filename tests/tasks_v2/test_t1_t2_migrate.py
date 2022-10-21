@@ -20,7 +20,7 @@ def _make_task(task_v1_session, scope_count=1) -> Task_v1:
     tts1 = TaskTimeScope(task_id=task.task_id, time_scope_id=task.first_scope)
     task_v1_session.add(tts1)
 
-    for n in range(scope_count-1):
+    for n in range(scope_count - 1):
         scope_id = f"{2000 + n}-ww44.4"
         tts = TaskTimeScope(task_id=task.task_id, time_scope_id=scope_id)
         task_v1_session.add(tts)
@@ -219,4 +219,3 @@ def test_2g_total_overlap(task_v1_session, task_v2_session):
 
 def test_2g_conflict(task_v1_session, task_v2_session):
     t1a = None
-

@@ -3,9 +3,7 @@ import json
 from typing import Optional
 
 from dateutil import parser
-from sqlalchemy import exists
 from sqlalchemy.exc import StatementError
-from sqlalchemy.orm.exc import MultipleResultsFound
 
 from notes.models import Note, NoteDomain
 
@@ -24,18 +22,19 @@ def _special_tokenize(domain_str):
             break
 
         # If this ampersand is part of a pair, split the first chunk into token parser
-        if domain_str[current_index:current_index+2] == '&&':
-            token += domain_str[token_index:current_index+1]
-            token_index = current_index+2
+        if domain_str[current_index:current_index + 2] == '&&':
+            token += domain_str[token_index:current_index + 1]
+            token_index = current_index + 2
             continue
         # Otherwise, it just gets to be its own token
         else:
             token += domain_str[token_index:current_index]
             split_domains.append(token)
             token = ""
-            token_index = current_index+1
+            token_index = current_index + 1
 
     return split_domains
+
 
 def _add_domains_for(note_id, domain_str: str, session, do_commit: bool = True):
     """
@@ -58,7 +57,7 @@ def _add_domains_for(note_id, domain_str: str, session, do_commit: bool = True):
             NoteDomain.query \
                 .filter_by(note_id=note_id, domain_id=domain_id) \
                 .exists()
-            ).scalar()
+        ).scalar()
         if not link_exists:
             new_link = NoteDomain(note_id=note_id, domain_id=domain_id)
             session.add(new_link)
@@ -86,7 +85,7 @@ def _add_note(session, domains: str, **kwargs) -> Optional[Note]:
     inexact_match_exists = session.query( \
         _generate_note_query(kwargs, ['time_scope_id', 'short_desc']) \
             .exists()
-        ).scalar()
+    ).scalar()
     if not inexact_match_exists:
         # Fast part: if nothing exists, just create a new note
         n = Note(**kwargs)

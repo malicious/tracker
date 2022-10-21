@@ -26,7 +26,7 @@ def test_scope_children():
     ts3 = TimeScope("2021—Q3")
 
     ts2s = ts3.child_scopes
-    assert len(ts2s) == 14 # 14 for this specific quarter
+    assert len(ts2s) == 14  # 14 for this specific quarter
     assert ts2s[0] == "2021-ww26"
 
     ts1s = ts2s[0].child_scopes

@@ -1,7 +1,7 @@
 import json
 import re
 from datetime import datetime
-from typing import Iterator, Dict, Optional
+from typing import Iterator, Optional
 
 from flask import render_template
 from sqlalchemy.orm import Query
@@ -50,7 +50,7 @@ def to_details_html(task: Task):
     return as_text
 
 
-def _to_summary_html(t: Task, ref_scope: Optional[TimeScope], print_task_id = False) -> str:
+def _to_summary_html(t: Task, ref_scope: Optional[TimeScope], print_task_id=False) -> str:
     def _link_replacer(mdown: str):
         return re.sub(r'\[(.+?)\]\((.+?)\)',
                       r"""[\1](<a href="\2">\2</a>)""",

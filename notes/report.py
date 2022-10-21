@@ -2,7 +2,6 @@ import hashlib
 import json
 import re
 from collections import defaultdict
-from typing import Dict, Iterator
 
 from flask import render_template, url_for
 from markupsafe import escape
@@ -240,7 +239,7 @@ def _domain_to_color(domain: str) -> str:
     domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
     domain_hash_int = int(domain_hash[0:4], 16)
 
-    color_h = ((domain_hash_int + 4) % 8) * (256.0/8)
+    color_h = ((domain_hash_int + 4) % 8) * (256.0 / 8)
     return f"color: hsl({color_h}, 70%, 50%);"
 
 
@@ -375,7 +374,8 @@ def _generate_jinja_kwargs(scope, domain):
     if scope:
         prev_scope = TimeScopeUtils.prev_scope(scope)
         if domain:
-            kwargs["prev_scope"] = f'<a href="{url_for(".report_notes_all", scope=prev_scope, domain=domain)}">{prev_scope}</a>'
+            kwargs["prev_scope"] = \
+                f'<a href="{url_for(".report_notes_all", scope=prev_scope, domain=domain)}">{prev_scope}</a>'
         else:
             kwargs["prev_scope"] = f'<a href="{url_for(".report_notes_all", scope=prev_scope)}">{prev_scope}</a>'
 
