@@ -1,6 +1,5 @@
 import re
 from datetime import date, datetime, timedelta
-from typing import Dict, List
 
 
 class TimeScope(str):
@@ -21,6 +20,7 @@ class TimeScope(str):
     Variable naming convention: flat strings are usually named `scope_id`,
     while objects of type TimeScope are usually named `scope`.
     """
+
     def __new__(cls, scope_str: str):
         # If we skipped the year prefix on the scope, assume it's this year
         if scope_str[0:2] == "ww":
@@ -64,9 +64,9 @@ class TimeScope(str):
             start_month = int(self[-1]) * 3 - 2
             start_date = datetime(int(self[:4]), start_month, 1)
             if start_month == 10:
-                end_date = datetime(int(self[:4])+1, 1, 1)
+                end_date = datetime(int(self[:4]) + 1, 1, 1)
             else:
-                end_date = datetime(int(self[:4]), start_month+3, 1)
+                end_date = datetime(int(self[:4]), start_month + 3, 1)
 
             # Iterate over all weeks
             all_weeks = []
@@ -79,7 +79,7 @@ class TimeScope(str):
             return all_weeks
 
         elif self.is_week():
-            return [f'{self}.{day}' for day in range(1,8)]
+            return [f'{self}.{day}' for day in range(1, 8)]
 
         elif self.is_day():
             return []

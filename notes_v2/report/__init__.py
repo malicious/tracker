@@ -1,11 +1,9 @@
-import hashlib
 import json
-from datetime import datetime, timedelta
-from typing import Dict, List
+from datetime import datetime
+from typing import List
 
 from flask import render_template
 from markupsafe import escape
-from sqlalchemy import or_
 
 from notes_v2.models import Note, NoteDomain
 from notes_v2.report.gather import notes_json_tree
@@ -24,6 +22,7 @@ def _domain_to_html_link(domain: str, scope_ids: List[str] = []) -> str:
     return f'''<a href="/notes?domain={escaped_domain}{
         ''.join([f'&scope={scope_id}' for scope_id in scope_ids])
     }" style="{domain_to_css_color(domain)}">{domain}</a>'''
+
 
 def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], ignore_type_domains: bool = True):
     def should_display_domain(d: str) -> bool:
@@ -123,7 +122,6 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
 
         return cache_dict[cache_key]
 
-
     return render_template('notes-v2.html',
                            as_week_header=as_week_header,
                            cached_render=memoized_render_notes,
@@ -140,6 +138,7 @@ def edit_notes_simple(*args):
 
     Still tries to exercise the same codepaths as a normal endpoint, though.
     """
+
     def render_n2_desc(n: Note):
         return n.desc
 
@@ -220,4 +219,3 @@ def domains(session):
         domain_rows.append(domain_row)
 
     return "\n".join(domain_rows)
-

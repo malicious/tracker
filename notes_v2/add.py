@@ -8,7 +8,6 @@ from sqlalchemy.exc import IntegrityError
 
 from notes_v2.models import Note, NoteDomain
 
-
 _valid_csv_fields = ['created_at', 'sort_time', 'time_scope_id', 'domains', 'source', 'desc', 'detailed_desc']
 
 
@@ -52,8 +51,8 @@ def _add_domains(session, note_id, encoded_domain_ids: str, expect_duplicates: b
         if expect_duplicates:
             nd_exists = session.query(
                 NoteDomain.query
-                    .filter_by(note_id=note_id, domain_id=domain_id)
-                    .exists()
+                .filter_by(note_id=note_id, domain_id=domain_id)
+                .exists()
             ).scalar()
             if nd_exists:
                 continue
@@ -65,7 +64,7 @@ def _add_domains(session, note_id, encoded_domain_ids: str, expect_duplicates: b
 def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Optional[Note]:
     # Filter CSV file to only have valid columns
     present_fields = [field for field in _valid_csv_fields if field in csv_entry.keys()]
-    csv_entry = { field: csv_entry[field] for field in present_fields if csv_entry[field] }
+    csv_entry = {field: csv_entry[field] for field in present_fields if csv_entry[field]}
     if not csv_entry:
         return None
 
@@ -79,7 +78,7 @@ def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Optional[Note]:
         inexact_match_exists = session.query(
             Note.query.filter_by(time_scope_id=csv_entry['time_scope_id'],
                                  desc=csv_entry['desc'])
-                .exists()
+            .exists()
         ).scalar()
         if inexact_match_exists:
             matchmaker_dict = dict(csv_entry)
@@ -110,6 +109,7 @@ def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Optional[Note]:
 
 # only print this out once per import
 times_printed_todo_warning = 0
+
 
 def all_from_csv(session, csv_file, expect_duplicates: bool):
     for csv_entry in csv.DictReader(csv_file):

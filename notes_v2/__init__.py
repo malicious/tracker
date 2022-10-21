@@ -2,11 +2,11 @@ import os
 from datetime import datetime, timedelta
 
 import click
+import sqlalchemy
 from flask import Blueprint, redirect, request, url_for
 from flask.cli import with_appcontext
 from flask.json import JSONEncoder
 from markupsafe import escape
-import sqlalchemy
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from notes_v2 import add, report
