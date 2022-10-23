@@ -80,8 +80,8 @@
 {% macro linkage_row(tl) %}
 <div class="linkage-row">
   <div>
-    <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}" readonly="readonly">
-    <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}" readonly="readonly">
+    <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}">
+    <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}">
   </div>
   <div>
     <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}" oninput="highlightOnInput(event)">
