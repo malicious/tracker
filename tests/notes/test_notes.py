@@ -57,8 +57,9 @@ def test_report_emdash(note_session):
 
     dict = _report_notes_for(scope=TimeScope("2020—Q4"), domain=None)
     assert dict
+    # quarter scope will exist, but empty child_scopes are pruned
     assert "2020—Q4" in dict
-    assert '2020-ww48' in dict["2020—Q4"]["child_scopes"]
+    assert "child_scopes" not in dict["2020—Q4"]
 
 
 def test_blank_domains_import(note_session):
@@ -81,8 +82,9 @@ def test_blank_domains_reporting(note_session):
 
     dict = _report_notes_for(scope=TimeScope("2020—Q4"), domain=None)
     assert dict
+    # quarter scope will exist, but empty child_scopes are pruned
     assert "2020—Q4" in dict
-    assert '2020-ww48' in dict["2020—Q4"]["child_scopes"]
+    assert "child_scopes" not in dict["2020—Q4"]
 
 
 def test_notes_endpoint(test_client):
