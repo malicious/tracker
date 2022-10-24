@@ -128,7 +128,9 @@
 {% if week_dict|length > 1 or week_dict["notes"] %}
   <h2>{{ as_week_header(week_scope) }}</h2>
   <div class="week-svg">
+  {% if week_dict|length > 5 %}
     {{ render_week_svg(week_scope, week_dict) | safe }}
+  {% endif %}
   </div>
 {% endif %}
 
