@@ -5,17 +5,17 @@ from notes_v2.models import Note, NoteDomain
 
 
 def test_tokenize_simple():
-    assert _special_tokenize('') == []
-    assert _special_tokenize('&') == []
-    assert _special_tokenize('&&') == ['&']
+    assert _special_tokenize('') == set()
+    assert _special_tokenize('&') == set()
+    assert _special_tokenize('&&') == set(['&'])
 
-    assert _special_tokenize('a & b') == ['a', 'b']
-    assert _special_tokenize('a && b') == ['a & b']
+    assert _special_tokenize('a & b') == set(['a', 'b'])
+    assert _special_tokenize('a && b') == set(['a & b'])
 
 
 def test_tokenize_annoying():
-    assert _special_tokenize('R&&R & R') == sorted(['R&R', 'R'])
-    assert _special_tokenize('&&&& & && & &') == sorted(['&&', '&'])
+    assert _special_tokenize('R&&R & R') == set(['R&R', 'R'])
+    assert _special_tokenize('&&&& & && & &') == set(['&&', '&'])
 
 
 def test_from_csv_minimal(note_v2_session):

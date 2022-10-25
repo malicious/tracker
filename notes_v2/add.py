@@ -44,7 +44,7 @@ def _special_tokenize(encoded_domain_ids: str, strip_and_sort: bool = True) -> L
         split_domain_ids = [d.strip() for d in split_domain_ids]
         split_domain_ids = sorted([d for d in split_domain_ids if d])
 
-    return split_domain_ids
+    return set(split_domain_ids)
 
 
 def _add_domains(session, note_id, encoded_domain_ids: str, expect_duplicates: bool = False):
