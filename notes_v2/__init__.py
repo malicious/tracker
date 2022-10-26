@@ -61,6 +61,31 @@ def init_app(app):
         for domain in domains:
             domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
             print(f'"{domain}" => {int(domain_hash[0:4], 16)} => {report.render.domain_to_css_color(domain)}')
+            print()
+            print("If this is a contact name, check one of the following hashes:")
+            if domain[0:3] == "人: ":
+                domain_no_prefix = domain[3:]
+                domain_no_prefix_hash = hashlib.sha256(domain_no_prefix.encode("utf-8")).hexdigest()
+                print(f'"{domain_no_prefix}" => "人: [{domain_no_prefix_hash[0:11]}]"')
+
+                dnp_to_initial_caps = domain_no_prefix.title()
+                if dnp_to_initial_caps != domain_no_prefix:
+                    dnp_to_initial_caps_hash = hashlib.sha256(dnp_to_initial_caps.encode("utf-8")).hexdigest()
+                    print(f'"{dnp_to_initial_caps}" => "人: [{dnp_to_initial_caps_hash[0:11]}]"')
+
+                dnp_to_lower = domain_no_prefix.lower()
+                if dnp_to_lower != domain_no_prefix:
+                    dnp_to_lower_hash = hashlib.sha256(dnp_to_lower.encode("utf-8")).hexdigest()
+                    print(f'"{dnp_to_lower}" => "人: [{dnp_to_lower_hash[0:11]}]"')
+
+            else:
+                domain_to_initial_caps = domain.title()
+                domain_to_initial_caps_hash = hashlib.sha256(domain_to_initial_caps.encode("utf-8")).hexdigest()
+                print(f'"{domain_to_initial_caps}" => "人: [{domain_to_initial_caps_hash[0:11]}]"')
+
+                domain_to_lower = domain.lower()
+                domain_to_lower_hash = hashlib.sha256(domain_to_lower.encode("utf-8")).hexdigest()
+                print(f'"{domain_to_lower}" => "人: [{domain_to_lower_hash[0:11]}]"')
 
     app.cli.add_command(n2_domain_colors)
 
