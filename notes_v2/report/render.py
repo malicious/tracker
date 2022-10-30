@@ -29,22 +29,28 @@ def _stroke_color(d):
     return f"stroke: hsl({color_h:.2f}, 80%, 40%); stroke-width: 4px;"
 
 
-def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
+def render_day_svg(day_scope, day_notes, svg_width=768) -> str:
     """
     Valid timezones range from -12 to +14 or so (historical data gets worse),
     so set an expected range of +/-12 hours, rather than building in proper
     timezone support.
+
+    Heights and their gutters:
+
+    - height is 96 because it's close to 100, and a multiple of 6 (hours are split into six segments)
+    - hour lines are between 0.40 and 0.60 of this
     """
     start_time = datetime.strptime(day_scope, '%G-ww%V.%u') + timedelta(hours=-12)
     width_factor = svg_width / (48 * 60 * 60)
+    height_factor = 96
 
     rendered_notes = []
 
     # draw the hour lines on top
     for hour in range(1, 48):
         svg = '<line ' \
-            f'x1="{svg_width*hour/48:.3f}" y1="40" ' \
-            f'x2="{svg_width*hour/48:.3f}" y2="60" ' \
+            f'x1="{svg_width * hour / 48:.3f}" y1="{0.4 * height_factor:.3f}" ' \
+            f'x2="{svg_width * hour / 48:.3f}" y2="{0.6 * height_factor:.3f}" ' \
             f'stroke="black" opacity="0.1" />'
         rendered_notes.append(svg)
 
@@ -60,24 +66,31 @@ def render_day_svg(day_scope, day_notes, svg_width=800) -> str:
         hour_offset = (note.sort_time - start_time).total_seconds() % 3600
         svg_element = '''<circle cx="{:.3f}" cy="{:.3f}" r="{}" style="fill: none; {}" />'''.format(
             ((note.sort_time - start_time).total_seconds() - hour_offset + 1800) * width_factor,
-            hour_offset / 3600 * 100,
+            hour_offset / 3600 * height_factor,
             5,
             dot_color,
         )
         rendered_notes.append(svg_element)
 
-    # finally, the overall text labels
+    # finally, the overall day boundaries + text label(s)
     rendered_notes.extend([
-        f'<line x1="{svg_width*1/4}" y1="15" x2="{svg_width*1/4}" y2="85" stroke="black" />',
-        f'<text x="{svg_width/2}" y="{85}" text-anchor="middle" opacity="0.5" style="font-size: 12px">'
+        f'<line '
+            f'x1="{svg_width * 1 / 4}" y1="{0.15 * height_factor:.3f}" '
+            f'x2="{svg_width * 1 / 4}" y2="{0.85 * height_factor:.3f}" stroke="black" />',
+        f'<text x="{svg_width / 2}" y="{0.85 * height_factor:.3f}" '
+            f'text-anchor="middle" opacity="0.5" style="font-size: 12px">'
             f'{(start_time + timedelta(hours=12)).strftime("%G-ww%V.%u-%b-%d")}</text>',
-        f'<line x1="{svg_width*3/4}" y1="15" x2="{svg_width*3/4}" y2="85" stroke="black" />',
-        f'<text x="{svg_width}" y="{85}" text-anchor="end" opacity="0.5" style="font-size: 12px">'
+        f'<line '
+            f'x1="{svg_width * 3 / 4}" y1="{0.15 * height_factor:.3f}" '
+            f'x2="{svg_width * 3 / 4}" y2="{0.85 * height_factor:.3f}" stroke="black" />',
+        f'<text x="{svg_width}" y="{0.85 * height_factor:.3f}" '
+            f'text-anchor="end" opacity="0.5" style="font-size: 12px">'
             f'{(start_time + timedelta(hours=36)).strftime("ww%V.%u")}</text>',
     ])
 
-    return '''<svg width="{}" height="100">{}</svg>'''.format(
+    return '''<svg width="{}" height="{}">{}</svg>'''.format(
         svg_width,
+        height_factor,
         '\n'.join(rendered_notes)
     )
 
@@ -88,8 +101,8 @@ def render_week_svg(week_scope, notes_dict) -> str:
     """
     hours_before = 12
     hours_after = 12
-    col_width = 100
-    col_width_and_right_margin = 104
+    col_width = 108
+    col_width_and_right_margin = col_width + 4
     row_height = 20
 
     rendered_notes = []
