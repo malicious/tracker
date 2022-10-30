@@ -98,8 +98,24 @@ def cache(key, generate_fn):
 
 
 def edit_notes(domains: List[str], scope_ids: List[str]):
-    def as_week_header(scope):
-        return "週: " + datetime.strptime(scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
+    render_kwargs = {}
+
+    def as_week_header(week_scope):
+        week_scope_desc = datetime.strptime(week_scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
+        return '週: <a href="/notes?scope={}{}">{}</a>'.format(
+            week_scope,
+            ''.join([f'&domain={d}' for d in domains]),
+            week_scope_desc)
+
+    render_kwargs['as_week_header'] = as_week_header
+
+    def as_quarter_header(quarter_scope):
+        return 'quarter: <a href="/notes?scope={}{}">{}</a>'.format(
+            quarter_scope,
+            ''.join([f'&domain={d}' for d in domains]),
+            quarter_scope)
+
+    render_kwargs['as_quarter_header'] = as_quarter_header
 
     def render_n2_desc(n: Note, scope_id):
         output_str = ""
@@ -139,15 +155,14 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             ("day_svg-cache-entry", day_scope, tuple(domains),),
             lambda: render_day_svg(day_scope, day_dict))
 
+    render_kwargs['render_day_svg'] = memoized_render_day_svg
+
     def memoized_render_week_svg(week_scope, week_dict):
         return cache(
             ("week_svg-cache-entry", week_scope, tuple(domains),),
             lambda: render_week_svg(week_scope, week_dict))
 
-    kwargs = {
-        'render_day_svg': memoized_render_day_svg,
-        'render_week_svg': memoized_render_week_svg,
-    }
+    render_kwargs['render_week_svg'] = memoized_render_week_svg
 
     # If this is limited to one scope, link to prev/next scopes as well.
     if len(scope_ids) == 1:
@@ -159,15 +174,15 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
 
         if TimeScope(scope_ids[0]).is_day():
             next_dt = datetime.strptime(scope_ids[0], '%G-ww%V.%u') + timedelta(days=1)
-            kwargs['next_scope'] = _scope_to_html_link(TimeScope.from_datetime(next_dt))
+            render_kwargs['next_scope'] = _scope_to_html_link(TimeScope.from_datetime(next_dt))
             prev_dt = datetime.strptime(scope_ids[0], '%G-ww%V.%u') + timedelta(days=-1)
-            kwargs['prev_scope'] = _scope_to_html_link(TimeScope.from_datetime(prev_dt))
+            render_kwargs['prev_scope'] = _scope_to_html_link(TimeScope.from_datetime(prev_dt))
 
         elif TimeScope(scope_ids[0]).is_week():
             next_dt = datetime.strptime(scope_ids[0] + '.1', '%G-ww%V.%u') + timedelta(days=7)
-            kwargs['next_scope'] = _scope_to_html_link(next_dt.strftime('%G-ww%V'))
+            render_kwargs['next_scope'] = _scope_to_html_link(next_dt.strftime('%G-ww%V'))
             prev_dt = datetime.strptime(scope_ids[0] + '.1', '%G-ww%V.%u') + timedelta(days=-7)
-            kwargs['prev_scope'] = _scope_to_html_link(prev_dt.strftime('%G-ww%V'))
+            render_kwargs['prev_scope'] = _scope_to_html_link(prev_dt.strftime('%G-ww%V'))
 
         elif TimeScope(scope_ids[0]).is_quarter():
             year = int(scope_ids[0][:4])
@@ -179,19 +194,18 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             if quarter == 4:
                 next_quarter = f"{year+1}—Q1"
 
-            kwargs['next_scope'] = _scope_to_html_link(next_quarter)
-            kwargs['prev_scope'] = _scope_to_html_link(prev_quarter)
+            render_kwargs['next_scope'] = _scope_to_html_link(next_quarter)
+            render_kwargs['prev_scope'] = _scope_to_html_link(prev_quarter)
 
     domains_as_html = [_domain_to_html_link(d, scope_ids) for d in domains]
-    kwargs['domain_header'] = " & ".join(domains)
-    kwargs['domain_header_html'] = " & ".join(domains_as_html)
+    render_kwargs['domain_header'] = " & ".join(domains)
+    render_kwargs['domain_header_html'] = " & ".join(domains_as_html)
 
     return render_template('notes-v2.html',
-                           as_week_header=as_week_header,
                            cached_render=memoized_render_notes,
                            render_n2_desc=render_n2_desc,
                            render_n2_json=render_n2_json,
-                           **kwargs)
+                           **render_kwargs)
 
 
 def edit_notes_simple(*args):

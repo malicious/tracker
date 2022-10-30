@@ -126,7 +126,7 @@
 
 {% macro render_week(week_scope, week_dict) %}
 {% if week_dict|length > 1 or week_dict["notes"] %}
-  <h2>{{ as_week_header(week_scope) }}</h2>
+  <h2>{{ as_week_header(week_scope) | safe }}</h2>
   <div class="week-svg">
   {% if week_dict|length > 5 %}
     {{ render_week_svg(week_scope, week_dict) | safe }}
@@ -157,7 +157,7 @@
 
 {% macro render_quarter(quarter_scope, quarter_dict) %}
 {% if quarter_dict|length > 1 or quarter_dict["notes"] %}
-  <h1>quarter: {{ quarter_scope }}</h1>
+  <h1>{{ as_quarter_header(quarter_scope) | safe }}</h1>
 {% endif %}
 
 {% for quarter_note in quarter_dict["notes"] %}
