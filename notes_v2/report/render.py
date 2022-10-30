@@ -88,9 +88,10 @@ def render_day_svg(day_scope, day_notes, svg_width=768) -> str:
             f'{(start_time + timedelta(hours=36)).strftime("ww%V.%u")}</text>',
     ])
 
-    return '''<svg width="{}" height="{}">{}</svg>'''.format(
+    return '''<svg width="{}" height="{}" id="{}">{}</svg>'''.format(
         svg_width,
         height_factor,
+        day_scope,
         '\n'.join(rendered_notes)
     )
 

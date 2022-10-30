@@ -102,17 +102,19 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
 
     def as_week_header(week_scope):
         week_scope_desc = datetime.strptime(week_scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
-        return '週: <a href="/notes?scope={}{}">{}</a>'.format(
+        return '週: <a href="/notes?scope={}{}" id="{}">{}</a>'.format(
             week_scope,
             ''.join([f'&domain={d}' for d in domains]),
+            week_scope,
             week_scope_desc)
 
     render_kwargs['as_week_header'] = as_week_header
 
     def as_quarter_header(quarter_scope):
-        return 'quarter: <a href="/notes?scope={}{}">{}</a>'.format(
+        return 'quarter: <a href="/notes?scope={}{}" id="{}">{}</a>'.format(
             quarter_scope,
             ''.join([f'&domain={d}' for d in domains]),
+            quarter_scope,
             quarter_scope)
 
     render_kwargs['as_quarter_header'] = as_quarter_header
