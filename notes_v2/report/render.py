@@ -29,7 +29,7 @@ def _stroke_color(d):
     return f"stroke: hsl({color_h:.2f}, 80%, 40%); stroke-width: 4px;"
 
 
-def render_day_svg(day_scope, day_notes, svg_width=768) -> str:
+def render_day_svg(day_scope, day_notes, svg_width=960) -> str:
     """
     Valid timezones range from -12 to +14 or so (historical data gets worse),
     so set an expected range of +/-12 hours, rather than building in proper
