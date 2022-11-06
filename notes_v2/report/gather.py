@@ -27,7 +27,7 @@ class NoteStapler:
                 .filter(or_(*domains_filter_sql))
 
         self.scope_tree = {}
-        self.week_promotion_threshold = 14
+        self.week_promotion_threshold = 4
         self.quarter_promotion_threshold = 8
 
     def _construct_scope_tree(self, scope: TimeScope) -> Dict:
