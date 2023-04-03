@@ -92,6 +92,13 @@ class TimeScope(str):
                 all_weeks.append(child_scope)
                 child_date = child_date + timedelta(days=7)
 
+            # TODO: 2023-ww13 doesn't get generated with the above every-7-days algorithm.
+            #       Explicitly check the Monday of the last week.
+            final_week_scope = TimeScope(end_date.strftime(f'%G-ww%V.1')).get_parent()
+            if final_week_scope.get_parent() == self:
+                if all_weeks[-1] != final_week_scope:
+                    all_weeks.append(final_week_scope)
+
             return all_weeks
 
         elif self.is_week():
