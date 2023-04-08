@@ -383,8 +383,15 @@ function highlightOnInput(e) {
   var tl_row = e.target.parentNode.parentNode;
   var task_block = tl_row.parentNode.parentNode.parentNode;
   var desc_field = task_block.querySelector('.task-edit-task-only textarea');
-  if (desc_field != null && desc_field.value) {
-    document.title = desc_field.value;
+
+  var task_id = task_block.querySelector('.task-edit-task-only span');
+  if (task_id != null && task_id.innerText) {
+    title_str = `t#${task_id.innerText}`;
+    if (desc_field != null && desc_field.value) {
+      title_str = title_str + `: ${desc_field.value}`;
+    }
+
+    document.title = title_str
   }
 }
 
