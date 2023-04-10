@@ -261,6 +261,8 @@ def edit_tasks_in_scope(page_scope: TimeScope):
     render_kwargs = {}
 
     render_kwargs['tasks_by_scope'] = generate_tasks_by_scope(page_scope)
+    # TODO: Replace with something that properly checks the endpoint here
+    render_kwargs['page_title'] = f'/tasks/{page_scope}'
 
     render_kwargs['to_summary_html'] = to_summary_html
 

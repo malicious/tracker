@@ -10,7 +10,9 @@
 
 {{ super() }}
 
-{% if domain_header %}
+{% if page_title %}
+<title>{{ page_title }}</title>
+{% elif domain_header %}
 <title>{{ domain_header }}</title>
 {% endif %}
 

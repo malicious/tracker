@@ -100,6 +100,11 @@ def cache(key, generate_fn):
 def edit_notes(domains: List[str], scope_ids: List[str]):
     render_kwargs = {}
 
+    title_words = [f'domain={d}' for d in domains]
+    title_words.extend([f'scope={ts}' for ts in scope_ids])
+    # TODO: Timing app truncates the last character or two
+    render_kwargs['page_title'] = escape('/notes?' + '&'.join(title_words))
+
     def as_week_header(week_scope):
         week_scope_desc = datetime.strptime(week_scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
         return '週: <a href="/notes?scope={}{}" id="{}">{}</a>'.format(
