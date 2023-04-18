@@ -82,9 +82,11 @@
   <div>
     <input
       name="tl-{{tl.time_scope_id}}-time_scope_id"
+      oninput="highlightOnInput(event)"
       value="{{tl.time_scope_id}}">
     <input
       name="tl-{{tl.time_scope_id}}-created_at"
+      oninput="highlightOnInput(event)"
       value="{{tl.created_at if tl.created_at}}">
   </div>
   <div>
