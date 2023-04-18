@@ -80,17 +80,33 @@
 {% macro linkage_row(tl) %}
 <div class="linkage-row">
   <div>
-    <input name="tl-{{tl.time_scope_id}}-time_scope_id" value="{{tl.time_scope_id}}">
-    <input name="tl-{{tl.time_scope_id}}-created_at" value="{{tl.created_at if tl.created_at}}">
+    <input
+      name="tl-{{tl.time_scope_id}}-time_scope_id"
+      value="{{tl.time_scope_id}}">
+    <input
+      name="tl-{{tl.time_scope_id}}-created_at"
+      value="{{tl.created_at if tl.created_at}}">
   </div>
   <div>
-    <input name="tl-{{tl.time_scope_id}}-time_elapsed" placeholder="None" value="{{tl.time_elapsed if tl.time_elapsed}}" oninput="highlightOnInput(event)">
+    <input
+      name="tl-{{tl.time_scope_id}}-time_elapsed"
+      oninput="highlightOnInput(event)"
+      placeholder="None"
+      value="{{tl.time_elapsed if tl.time_elapsed}}">
   </div>
   <div>
-    <input name="tl-{{tl.time_scope_id}}-resolution"   placeholder="None" value="{{tl.resolution | escape if tl.resolution}}" oninput="highlightOnInput(event)">
+    <input
+      name="tl-{{tl.time_scope_id}}-resolution"
+      oninput="highlightOnInput(event)"
+      placeholder="None"
+      value="{{tl.resolution | escape if tl.resolution}}">
   </div>
   <div>
-    <textarea name="tl-{{tl.time_scope_id}}-detailed_resolution" placeholder="None" oninput="highlightOnInput(event)">{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
+    <textarea
+      name="tl-{{tl.time_scope_id}}-detailed_resolution"
+      oninput="highlightOnInput(event)"
+      placeholder="None"
+    >{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
   </div>
   <div>
     <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
