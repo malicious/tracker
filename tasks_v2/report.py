@@ -231,7 +231,7 @@ def edit_tasks_all(show_resolved: bool, hide_future: bool):
             .filter(or_(TaskLinkage.resolution == None, \
                         TaskLinkage.created_at > recent_tasks_cutoff)) \
             .filter(TaskLinkage.time_scope < future_tasks_cutoff) \
-            .order_by(Task.category)
+            .order_by(Task.category, TaskLinkage.time_scope.desc())
 
         render_kwargs['tasks_by_scope'] = {
             today_scope_id: tasks_query.all(),
