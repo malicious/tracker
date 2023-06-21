@@ -6,7 +6,7 @@ import click
 import sqlalchemy
 from flask import Blueprint, redirect, request, url_for
 from flask.cli import with_appcontext
-from flask.json import JSONEncoder
+from json import JSONEncoder
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
 

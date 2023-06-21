@@ -7,7 +7,8 @@ app := tracker.app
 .PHONY: serve
 serve:
 	source $(activate_script) \
-		&& FLASK_APP=$(app) FLASK_ENV=development flask run --port 7529
+		&& flask --app $(app) --debug run \
+		   --port 7529 --reload --with-threads
 
 
 
@@ -21,10 +22,7 @@ install: $(activate_script)
 
 %/bin/activate:
 	-brew install pyenv
-	-pyenv install 3.7.5
-	pyenv local 3.7.5 \
+	-pyenv install 3.11.3
+	pyenv local 3.11.3 \
 		&& eval "`pyenv init -`" \
 		&& python -m venv $*
-	echo "" >> $@
-	echo "export FLASK_APP=$(app)" >> $@
-	echo "export FLASK_ENV=development" >> $@
