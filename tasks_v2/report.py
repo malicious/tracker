@@ -224,7 +224,7 @@ def edit_tasks_all(show_resolved: bool, hide_future: bool):
     elif hide_future:
         today_scope_id = datetime.now().strftime("%G-ww%V.%u")
         recent_tasks_cutoff = datetime.utcnow() - timedelta(hours=12)
-        future_tasks_cutoff = datetime.utcnow() + timedelta(days=94)
+        future_tasks_cutoff = datetime.utcnow() + timedelta(days=32)
 
         tasks_query = Task.query \
             .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
