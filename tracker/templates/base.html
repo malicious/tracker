@@ -11,9 +11,9 @@
   --disabled-fg-color: #aaa;
   --default-hover-color: #ddd;
   --default-left-right-margin: 8.0%;
-{% if prev_scope or next_scope %}
+{%- if prev_scope or next_scope %}
   --scope-nav-height: calc(24px + 24px);
-{% else %}
+{%- else %}
   --scope-nav-height: 0px;
 {% endif %}
 }

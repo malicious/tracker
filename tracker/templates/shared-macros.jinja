@@ -92,7 +92,7 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
 </label>
 
   <div class="{{item_type}}-tabs">
-  {% for tab_name, tab_content, checkbox_attrib in tabs %}
+  {%- for tab_name, tab_content, checkbox_attrib in tabs %}
     <input type="checkbox" id="toggle-{{tab_name}}-{{unique_id}}" class="show-{{tab_name}}" {{ checkbox_attrib }}>
 
     <label for="toggle-{{tab_name}}-{{unique_id}}" class="show-{{tab_name}}">
