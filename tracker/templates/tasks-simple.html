@@ -67,15 +67,26 @@
 
 {% block content %}
 
+{% set ns = namespace(tasks_remaining = tasks_list|length) %}
+
 {% for task in tasks_list %}
-  {% set tabs = [('edit', task_macros.edit_block(task,
-                              backlink="task-{}-{}".format(task.task_id, loop.index)), ''),
-                 ('json', "<div>{}</div>".format(task.as_json()), ''),
-                 ] %}
+  {% set tabs = [
+    (
+      'edit',
+      task_macros.edit_block(
+        task,
+        backlink="task-{}-{}".format(task.task_id, loop.index)
+      ),
+      'checked' if ns.tasks_remaining == 1 else ''
+    ),
+    ('json', "<div>{}</div>".format(task.as_json()), ''),
+  ] %}
   {{ shared_macros.render_with_tabs('task',
         unique_id="{}-{}".format(task.task_id, loop.index),
         desc=_render_task_desc(task),
         tabs=tabs) }}
+
+  {% set ns.tasks_remaining = ns.tasks_remaining - 1 %}
 {% endfor %}
 
 {% endblock %}
