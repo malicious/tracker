@@ -1,7 +1,6 @@
 import pytest
 from sqlalchemy.orm import Session
 
-import notes
 import notes_v2
 import tasks_v1
 import tasks_v2
@@ -22,14 +21,6 @@ def test_app():
 @pytest.fixture
 def test_client(test_app):
     return test_app.test_client()
-
-
-@pytest.fixture(scope="function", autouse=True)
-def note_session(test_app) -> Session:
-    notes.load_models('')
-    yield notes.db_session
-    notes.db_session.remove()
-    notes.db_session = None
 
 
 @pytest.fixture(scope="function", autouse=True)
