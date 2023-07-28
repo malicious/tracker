@@ -1,4 +1,4 @@
-venv/
+venv
 **/.DS_Store
 .python-version
 
@@ -7,4 +7,4 @@ __pycache__/
 
 *.swp
 *,cover
-
+instance/*.db
