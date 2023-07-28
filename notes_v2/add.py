@@ -5,7 +5,7 @@ from os import path
 from typing import List, Dict, Optional
 
 from dateutil import parser
-from sqlalchemy.exc import IntegrityError
+from sqlalchemy.exc import IntegrityError, PendingRollbackError
 
 from notes_v2.models import Note, NoteDomain
 
@@ -76,11 +76,19 @@ def one_from_csv(session, csv_entry, expect_duplicates: bool) -> Optional[Note]:
 
     target_note = None
     if expect_duplicates:
-        inexact_match_exists = session.query(
-            Note.query.filter_by(time_scope_id=csv_entry['time_scope_id'],
-                                 desc=csv_entry['desc'])
-            .exists()
-        ).scalar()
+        try:
+            inexact_match_exists = session.query(
+                Note.query.filter_by(time_scope_id=csv_entry['time_scope_id'],
+                                     desc=csv_entry['desc'])
+                .exists()
+            ).scalar()
+        # TODO: Handle this properly, don't just do whatever the error message says
+        #       This happened from having duplicate/identical entries right before?
+        except PendingRollbackError:
+            print(csv_entry)
+            session.rollback()
+            raise
+
         if inexact_match_exists:
             matchmaker_dict = dict(csv_entry)
             for field in ['sort_time', 'created_at']:
