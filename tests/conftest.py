@@ -2,7 +2,6 @@ import pytest
 from sqlalchemy.orm import Session
 
 import notes_v2
-import tasks_v1
 import tasks_v2
 from tracker.app import create_app
 
@@ -29,14 +28,6 @@ def note_v2_session(test_app) -> Session:
     yield notes_v2.db_session
     notes_v2.db_session.remove()
     notes_v2.db_session = None
-
-
-@pytest.fixture(scope="function", autouse=True)
-def task_v1_session() -> Session:
-    tasks_v1.load_v1_models('')
-    yield tasks_v1.db_session
-    tasks_v1.db_session.remove()
-    tasks_v1.db_session = None
 
 
 @pytest.fixture(scope="function", autouse=True)

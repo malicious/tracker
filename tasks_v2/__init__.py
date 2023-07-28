@@ -8,11 +8,9 @@ from flask.cli import with_appcontext
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from tasks_v1 import db_session as tasks_v1_session
-from tasks_v1.models import Task as Task_v1
 from tasks_v1.time_scope import TimeScope
 # noinspection PyUnresolvedReferences
-from . import migrate, models, report, update
+from . import models, report, update
 from .models import Base, Task
 
 db_session = None
@@ -25,26 +23,6 @@ def init_app(app: Flask):
 
     _register_endpoints(app)
     _register_rest_endpoints(app)
-
-    @click.command('t2-migrate-one', help='Migrate one legacy task to new format')
-    @click.argument('task_id', type=click.INT)
-    @with_appcontext
-    def t2_migrate_one(task_id):
-        t1 = Task_v1.query \
-            .filter_by(task_id=task_id) \
-            .one()
-
-        migrate.do_one(db_session, t1)
-
-    app.cli.add_command(t2_migrate_one)
-
-    @click.command('t2-migrate-all', help='Migrate all legacy tasks')
-    @click.option('--delete', type=click.BOOL)
-    @with_appcontext
-    def t2_migrate_all(delete):
-        migrate.do_multiple(tasks_v1_session, db_session, delete)
-
-    app.cli.add_command(t2_migrate_all)
 
 
 def load_v2_models(current_db_path: str):

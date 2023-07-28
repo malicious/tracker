@@ -50,12 +50,6 @@ def test_quarter_type():
     assert s.end == _construct_dt(2018, 10, 1)
 
 
-def test_print_time_scope(test_client):
-    r = test_client.get('/time_scope/2020-ww35')
-    j = r.get_json()
-    assert j['start'] == "2020-08-24 00:00:00"
-
-
 def test_shorten_today():
     ref = "2020-ww48.4"
     s = TimeScope("2020-ww48.4").shorten(ref)

@@ -5,7 +5,7 @@ app := tracker.app
 .DEFAULT_GOAL := serve
 
 .PHONY: serve
-serve: instance/tasks.db
+serve:
 	source $(activate_script) \
 		&& FLASK_APP=$(app) FLASK_ENV=development flask run --port 7529
 
@@ -13,19 +13,11 @@ serve: instance/tasks.db
 
 # ---------------------------------------------------------------------
 
-.PHONY: force-test-migration
-force-test-migration: $(activate_script) instance/tasks.db
-	source $(activate_script) \
-		&& FLASK_APP=$(app) FLASK_ENV=development flask t2-migrate
-
 .PHONY: install
 install: $(activate_script)
 	source $(activate_script) \
 		&& pip install --upgrade pip \
 		&& pip install --requirement requirements.txt
-
-instance/%.db: instance/%.sql
-	-sqlite3 $@ < $<
 
 %/bin/activate:
 	-brew install pyenv
