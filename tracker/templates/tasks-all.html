@@ -94,6 +94,10 @@ body > .spacer-下 {
   flex: 1 1 0;
   flex-grow: 1;
 }
+{# this is for the markdown parser, which dumps <p> tags -#}
+.task-desc p {
+  display: inline;
+}
 .task-scope {
   color: #bbb;
 }
@@ -265,7 +269,7 @@ input.show-aio:checked  ~ .task-aio {
       <span class="task-resolution">({{ resolution_to_print }}) </span>
     {% endif %}
       {{ scope_to_print | safe }}
-      {{ t.desc }}
+      {{ t.desc | markdown }}
     {% if t.time_estimate and t.get_time_elapsed() %}
       <span class="task-time">{{ "`{:.1f} => {:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</span>
     {% elif t.time_estimate %}

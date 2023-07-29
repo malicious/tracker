@@ -21,9 +21,20 @@ def create_app(settings_overrides: Dict = {}):
     notes_v2.init_app(app)
     tasks_v2.init_app(app)
 
+    # misaka formatting is optional because it wraps a C library + is no longer maintained
+    try:
+        from flask_misaka import Misaka
+        md = Misaka()
+        md.init_app(app)
+    except ImportError:
+        def _noop_filter(text):
+            return text
+
+        app.jinja_env.filters.setdefault('markdown', _noop_filter)
+        raise
+
     try:
         from flask_debugtoolbar import DebugToolbarExtension
-
         app.config['SECRET_KEY'] = '7'
         app.config['DEBUG_TB_INTERCEPT_REDIRECTS'] = False
         toolbar = DebugToolbarExtension(app)
