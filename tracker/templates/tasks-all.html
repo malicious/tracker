@@ -278,6 +278,14 @@ input.show-aio:checked  ~ .task-aio {
 </label>
 
   <div class="bonus-options">
+    <input type="checkbox" id="toggle-aio-{{t.task_id}}-{{scope}}" class="show-aio">
+    <label for="toggle-aio-{{t.task_id}}-{{scope}}" class="show-aio">
+      <span>aio</span>
+    </label>
+    <div class="task-aio">
+      <div>{{ to_aio(t) }}</div>
+    </div>
+
     <input type="checkbox" id="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
     <label for="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
       <span>json</span>
@@ -291,14 +299,6 @@ input.show-aio:checked  ~ .task-aio {
       <span>edit</span>
     </label>
     <div class="task-edit">{{ task_macros.edit_block(t, backlink="task-{}-{}".format(t.task_id, scope)) }}</div>
-
-    <input type="checkbox" id="toggle-aio-{{t.task_id}}-{{scope}}" class="show-aio">
-    <label for="toggle-aio-{{t.task_id}}-{{scope}}" class="show-aio">
-      <span>aio</span>
-    </label>
-    <div class="task-aio">
-      <div>{{ t.as_json() }}</div>
-    </div>
 
   </div>
 </div>

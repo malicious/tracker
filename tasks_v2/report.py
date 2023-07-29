@@ -254,6 +254,20 @@ def edit_tasks_all(show_resolved: bool, hide_future: bool):
 
     render_kwargs['to_summary_html'] = to_summary_html
 
+    def _to_aio(t):
+        output = f"{t.desc}\n\n"
+        for tl in t.linkages:
+            if not tl.detailed_resolution:
+                continue
+
+            output += f"<!-- {tl.created_at} -->\n"
+            output += tl.detailed_resolution
+            output += "\n\n"
+
+        return output
+
+    render_kwargs['to_aio'] = _to_aio
+
     return render_template('tasks-all.html', **render_kwargs)
 
 
