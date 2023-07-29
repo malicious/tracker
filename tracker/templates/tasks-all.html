@@ -112,7 +112,8 @@ body > .spacer-下 {
   width: 100%;
   position: relative;
 }
-.task-json > div {
+.task-json > div,
+.task-aio  > div {
   white-space: pre-wrap;
   margin: 12px;
   padding: 12px;
@@ -139,28 +140,33 @@ body > .spacer-下 {
   width: 48px;
   right: 48px;
 }
+.bonus-options > label.show-aio {
+  width: 48px;
+  right: 96px;
+}
 .bonus-options > input {
   display: none;
 }
 
 /* highlight json/edit labels when selected */
-.task-json, .task-edit {
+.task-json, .task-edit, .task-aio {
   background-color: var(--tab-selected-bg-color);
   padding: 0.5em;
   font-size: 80%;
 }
 input.show-json:checked ~ label.show-json,
-input.show-edit:checked ~ label.show-edit {
+input.show-edit:checked ~ label.show-edit,
+input.show-aio:checked  ~ label.show-aio {
   background-color: var(--tab-selected-bg-color);
   border-bottom: 2px solid var(--tab-label-fg-color);
 }
 
-.task-json,
-.task-edit {
+.task-json, .task-edit, .task-aio {
   display: none;
 }
 input.show-json:checked ~ .task-json,
-input.show-edit:checked ~ .task-edit {
+input.show-edit:checked ~ .task-edit,
+input.show-aio:checked  ~ .task-aio {
   display: inherit;
   x-border-top: 2px solid hsl(212, 12%, 72%);
   x-border-bottom: 2px solid hsl(212, 12%, 72%);
@@ -173,15 +179,18 @@ input.show-edit:checked ~ .task-edit {
 
 /* hide json/edit labels when not-hovered + not-selected */
 .task-and-details label.show-json,
-.task-and-details label.show-edit {
+.task-and-details label.show-edit,
+.task-and-details label.show-aio {
   display: none;
 }
 .task-and-details input.show-json:checked ~ label.show-json,
-.task-and-details input.show-edit:checked ~ label.show-edit {
+.task-and-details input.show-edit:checked ~ label.show-edit,
+.task-and-details input.show-aio:checked  ~ label.show-aio {
   display: inherit;
 }
 .task-and-details:hover label.show-json,
-.task-and-details:hover label.show-edit {
+.task-and-details:hover label.show-edit,
+.task-and-details:hover label.show-aio {
   display: inherit;
 }
 
@@ -282,6 +291,14 @@ input.show-edit:checked ~ .task-edit {
       <span>edit</span>
     </label>
     <div class="task-edit">{{ task_macros.edit_block(t, backlink="task-{}-{}".format(t.task_id, scope)) }}</div>
+
+    <input type="checkbox" id="toggle-aio-{{t.task_id}}-{{scope}}" class="show-aio">
+    <label for="toggle-aio-{{t.task_id}}-{{scope}}" class="show-aio">
+      <span>aio</span>
+    </label>
+    <div class="task-aio">
+      <div>{{ t.as_json() }}</div>
+    </div>
 
   </div>
 </div>
