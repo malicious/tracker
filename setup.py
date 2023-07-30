@@ -16,7 +16,7 @@ requirements = [
 ]
 
 setup(name='tracker',
-      version='0.7',
+      version='0.8',
       install_requires=requirements,
       packages=packages,
       python_requires='>=3',
