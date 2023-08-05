@@ -1,6 +1,6 @@
 import re
 from datetime import date, datetime, timedelta
-from typing import Dict, List, Optional
+from typing import List, Optional
 
 
 class TimeScope(str):
@@ -71,10 +71,10 @@ class TimeScope(str):
             # Find the start and end dates for the quarter
             start_date = datetime(start_year, start_month, 1)
             if start_month == 10:
-                end_date = datetime(start_year+1, 1, 1)
+                end_date = datetime(start_year + 1, 1, 1)
             else:
                 # end_date is one-past-the-end, so the first of the month is expected
-                end_date = datetime(start_year, start_month+3, 1)
+                end_date = datetime(start_year, start_month + 3, 1)
 
             # Iterate over all weeks
             all_weeks = []

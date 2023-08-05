@@ -154,8 +154,8 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             return generate_fn()
         # TODO: Do not cache the current quarter.
         return cache(
-            key = (tuple(domains), tuple(scope_ids),),
-            generate_fn = generate_fn)
+            key=(tuple(domains), tuple(scope_ids),),
+            generate_fn=generate_fn)
 
     def memoized_render_day_svg(day_scope, day_dict):
         return cache(
@@ -194,12 +194,12 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         elif TimeScope(scope_ids[0]).is_quarter():
             year = int(scope_ids[0][:4])
             quarter = int(scope_ids[0][-1])
-            next_quarter = f"{year}—Q{quarter+1}"
-            prev_quarter = f"{year}—Q{quarter-1}"
+            next_quarter = f"{year}—Q{quarter + 1}"
+            prev_quarter = f"{year}—Q{quarter - 1}"
             if quarter == 1:
-                prev_quarter = f"{year-1}—Q4"
+                prev_quarter = f"{year - 1}—Q4"
             if quarter == 4:
-                next_quarter = f"{year+1}—Q1"
+                next_quarter = f"{year + 1}—Q1"
 
             render_kwargs['next_scope'] = _scope_to_html_link(next_quarter)
             render_kwargs['prev_scope'] = _scope_to_html_link(prev_quarter)
@@ -296,9 +296,9 @@ def domains(session):
             .count()
 
         domain_infos.append(DomainInfo(
-            domain_id = nd.domain_id,
-            time_scope_id = latest_note.time_scope_id,
-            count = count))
+            domain_id=nd.domain_id,
+            time_scope_id=latest_note.time_scope_id,
+            count=count))
 
     domain_infos.sort(key=lambda x: x.time_scope_id, reverse=True)
     domain_rows = []

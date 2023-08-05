@@ -1,10 +1,8 @@
 import os
 from datetime import datetime
 
-import click
 import sqlalchemy
 from flask import Flask, Blueprint, abort, redirect, request, url_for
-from flask.cli import with_appcontext
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
 

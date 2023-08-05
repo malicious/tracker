@@ -93,9 +93,9 @@ def generate_tasks_by_scope(scope_id: str):
 
         quarter_start_date = datetime(start_year, start_month, 1)
         if start_month == 10:
-            quarter_end_date = datetime(start_year+1, 1, 1)
+            quarter_end_date = datetime(start_year + 1, 1, 1)
         else:
-            quarter_end_date = datetime(start_year, start_month+3, 1)
+            quarter_end_date = datetime(start_year, start_month + 3, 1)
 
         tasks_by_scope = {}
 

@@ -125,20 +125,20 @@ def render_week_svg(week_scope, notes_dict) -> str:
         # Draw the every-6-hours lines special
         if row % 6 == 0:
             hour_line = '<line x1="{:.3f}" y1="{}" x2="{:.3f}" y2="{}" stroke="black" opacity="0.4" />'.format(
-                column * col_width_and_right_margin + col_width/2 - 15,
+                column * col_width_and_right_margin + col_width / 2 - 15,
                 row * row_height,
-                column * col_width_and_right_margin + col_width/2 + 15,
+                column * col_width_and_right_margin + col_width / 2 + 15,
                 row * row_height)
 
         rendered_notes.append(hour_line)
 
     # render the pre-monday, if needed
-    for row in range(24-hours_before,24):
+    for row in range(24 - hours_before, 24):
         draw_hour(column=0, row=row)
 
     # and now the "normal" days
-    for column in range(1,8):
-        for row in range(1,24):
+    for column in range(1, 8):
+        for row in range(1, 24):
             draw_hour(column, row)
 
         day_label = f'<text x="{column * col_width_and_right_margin + col_width/2}" y="{24 * row_height - 8}" ' \
@@ -146,7 +146,7 @@ def render_week_svg(week_scope, notes_dict) -> str:
         rendered_notes.append(day_label)
 
     # and the after-sunday
-    for row in range(1,hours_after+1):
+    for row in range(1, hours_after + 1):
         draw_hour(column=8, row=row)
 
     # and the actual tasks
@@ -172,12 +172,12 @@ def render_week_svg(week_scope, notes_dict) -> str:
 
         # calculate the sub-hour offset for the dot, scaled to include some margins on the hour-block
         dot_radius = 5
-        dot_x_offset = ((note.sort_time - day_scope_time).total_seconds() % (60*60)) / (60*60)
+        dot_x_offset = ((note.sort_time - day_scope_time).total_seconds() % (60 * 60)) / (60 * 60)
         dot_x_offset = dot_radius + dot_x_offset * (col_width - 2 * dot_radius)
 
         svg_element = '<circle cx="{:.3f}" cy="{:.3f}" r="{}" {} />'.format(
             column * col_width_and_right_margin + dot_x_offset,
-            int((note.sort_time - day_scope_time).total_seconds() / (60*60)) * row_height + row_height / 2,
+            int((note.sort_time - day_scope_time).total_seconds() / (60 * 60)) * row_height + row_height / 2,
             dot_radius,
             f'style="fill: none; {dot_color}" tracker-note-id="{note.note_id}"')
         rendered_notes.append(svg_element)
