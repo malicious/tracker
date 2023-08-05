@@ -2,7 +2,7 @@ import csv
 import json
 import sys
 from os import path
-from typing import List, Dict, Optional
+from typing import Dict, Optional, Set
 
 from dateutil import parser
 from sqlalchemy.exc import IntegrityError, PendingRollbackError
@@ -12,7 +12,7 @@ from notes_v2.models import Note, NoteDomain
 _valid_csv_fields = ['created_at', 'sort_time', 'time_scope_id', 'domains', 'source', 'desc', 'detailed_desc']
 
 
-def _special_tokenize(encoded_domain_ids: str, strip_and_sort: bool = True) -> List[str]:
+def _special_tokenize(encoded_domain_ids: str, strip_and_sort: bool = True) -> Set[str]:
     split_domain_ids = []
 
     next_domain_id = ""

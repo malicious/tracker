@@ -128,7 +128,7 @@ def render_scope(task_date, section_date):
     elif days_old == 0:
         # For the same day, we don't care what the day was
         return ''
-    elif days_old > 0 and days_old < 370:
+    elif 0 < days_old < 370:
         # For this middle ground, do things normally
         pass
     elif days_old > 370:
@@ -228,7 +228,7 @@ def edit_tasks_all(show_resolved: bool, hide_future: bool):
 
         tasks_query = Task.query \
             .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
-            .filter(or_(TaskLinkage.resolution == None, \
+            .filter(or_(TaskLinkage.resolution == None,
                         TaskLinkage.created_at > recent_tasks_cutoff)) \
             .filter(TaskLinkage.time_scope < future_tasks_cutoff) \
             .order_by(Task.category, TaskLinkage.time_scope.desc())
@@ -241,7 +241,7 @@ def edit_tasks_all(show_resolved: bool, hide_future: bool):
         recent_tasks_cutoff = datetime.utcnow() - timedelta(hours=12)
         tasks_query = Task.query \
             .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
-            .filter(or_(TaskLinkage.resolution == None, \
+            .filter(or_(TaskLinkage.resolution == None,
                         TaskLinkage.created_at > recent_tasks_cutoff)) \
             .order_by(Task.category)
 

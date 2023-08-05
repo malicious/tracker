@@ -63,7 +63,6 @@ class NoteStapler:
     def _collapse_scope_tree(self, scope: TimeScope) -> None:
         scope_tree = self._construct_scope_tree(scope)
 
-        children = scope_tree.keys()
         for child in list(scope_tree.keys()):
             if child == NOTES_KEY:
                 continue
@@ -79,9 +78,9 @@ class NoteStapler:
             del scope_tree[child]
 
     def _add_by_day(self, scope: TimeScope) -> int:
-        new_notes = list(self.filtered_query \
-                         .filter(Note.time_scope_id == scope) \
-                         .order_by(Note.time_scope_id.desc()) \
+        new_notes = list(self.filtered_query
+                         .filter(Note.time_scope_id == scope)
+                         .order_by(Note.time_scope_id.desc())
                          .all())
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
@@ -94,9 +93,9 @@ class NoteStapler:
             added_notes = self._add_by_day(TimeScope(day_scope))
             total_notes_count += added_notes
 
-        new_notes = list(self.filtered_query \
-                         .filter(Note.time_scope_id == scope) \
-                         .order_by(Note.time_scope_id.asc()) \
+        new_notes = list(self.filtered_query
+                         .filter(Note.time_scope_id == scope)
+                         .order_by(Note.time_scope_id.asc())
                          .all())
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
@@ -115,9 +114,9 @@ class NoteStapler:
             added_notes = self._add_by_week(TimeScope(week_scope))
             total_notes_count += added_notes
 
-        new_notes = list(self.filtered_query \
-                         .filter(Note.time_scope_id == scope) \
-                         .order_by(Note.time_scope_id.asc()) \
+        new_notes = list(self.filtered_query
+                         .filter(Note.time_scope_id == scope)
+                         .order_by(Note.time_scope_id.asc())
                          .all())
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]

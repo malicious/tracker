@@ -41,8 +41,7 @@ class TimeScope(str):
         m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d)\.(\d)", self)
         return m is not None
 
-    # TODO: Function spec should be Optional[TimeScope]
-    def get_parent(self) -> Optional[str]:
+    def get_parent(self) -> Optional['TimeScope']:
         if self.is_quarter():
             return None
 
