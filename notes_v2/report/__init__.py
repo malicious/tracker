@@ -157,19 +157,22 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             key=(tuple(domains), tuple(scope_ids),),
             generate_fn=generate_fn)
 
-    def memoized_render_day_svg(day_scope, day_dict):
+    def memoized_render_day_svg(day_scope, day_dict_notes):
         return cache(
             ("day_svg-cache-entry", day_scope, tuple(domains),),
-            lambda: render_day_svg(day_scope, day_dict))
+            lambda: render_day_svg(day_scope, day_dict_notes))
 
     render_kwargs['render_day_svg'] = memoized_render_day_svg
 
-    def memoized_render_week_svg(week_scope, week_dict):
+    def memoized_maybe_render_week_svg(week_scope, week_dict):
+        # Don't bother with SVG's if the week is short
+        if len(week_dict) <= 5:
+            return ""
         return cache(
             ("week_svg-cache-entry", week_scope, tuple(domains),),
             lambda: render_week_svg(week_scope, week_dict))
 
-    render_kwargs['render_week_svg'] = memoized_render_week_svg
+    render_kwargs['maybe_render_week_svg'] = memoized_maybe_render_week_svg
 
     # If this is limited to one scope, link to prev/next scopes as well.
     if len(scope_ids) == 1:

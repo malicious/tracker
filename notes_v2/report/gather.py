@@ -27,8 +27,9 @@ class NoteStapler:
                 .filter(or_(*domains_filter_sql))
 
         self.scope_tree = {}
-        self.week_promotion_threshold = 4
-        self.quarter_promotion_threshold = 8
+        # because week can be week-summary + 7 day-summaries
+        self.week_promotion_threshold = 9
+        self.quarter_promotion_threshold = 17
 
     def _construct_scope_tree(self, scope: TimeScope) -> Dict:
         # TODO: Could probably collapse these cases into something cute and recursive
