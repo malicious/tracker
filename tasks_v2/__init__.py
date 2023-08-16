@@ -6,7 +6,7 @@ from flask import Flask, Blueprint, abort, redirect, request, url_for
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from tasks_v1.time_scope import TimeScope
+from tasks_v2.time_scope import TimeScope
 # noinspection PyUnresolvedReferences
 from . import models, report, update
 from .models import Base, Task

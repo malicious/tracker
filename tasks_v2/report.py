@@ -5,7 +5,7 @@ from typing import Optional
 from flask import render_template, url_for
 from sqlalchemy import or_
 
-from tasks_v1.time_scope import TimeScope, TimeScopeUtils
+from tasks_v2.time_scope import TimeScope, TimeScopeUtils
 from tasks_v2.models import Task, TaskLinkage
 
 
