@@ -7,6 +7,7 @@ import click
 import sqlalchemy
 from flask import Blueprint, redirect, request, url_for
 from flask.cli import with_appcontext
+from flask.json.provider import DefaultJSONProvider
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
 
@@ -136,13 +137,17 @@ def _register_rest_endpoints(app):
     notes_v2_rest_bp = Blueprint('notes-v2-rest', __name__)
 
     # Add JSON encoder to handle Note types
-    class NoteEncoder(JSONEncoder):
-        def default(self, obj):
+    class NoteProvider(DefaultJSONProvider):
+        @staticmethod
+        def default(obj):
             if isinstance(obj, Note):
                 return obj.as_json(include_domains=True)
-            return super(NoteEncoder, self).default(obj)
+            else:
+                return DefaultJSONProvider.default(obj)
 
-    notes_v2_rest_bp.json_encoder = NoteEncoder
+    # TODO: Make sure this doesn't stomp on other JSON encoders
+    app.json_provider_class = NoteProvider
+    app.json = NoteProvider(app)
 
     @notes_v2_rest_bp.route("/note/<int:note_id>")
     def get_note(note_id):

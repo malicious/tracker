@@ -18,6 +18,15 @@ def test_get_note(test_client, note_v2_session):
     assert not diff
 
 
+def test_multiple_note(test_client, note_v2_session):
+    n = Note(time_scope_id="2023-ww33.3", desc="firste noete")
+    note_v2_session.add(n)
+    note_v2_session.commit()
+
+    r = test_client.get('/v2/notes')
+    assert r.response
+
+
 def test_get_domain_stats(test_client, note_v2_session):
     n = Note(time_scope_id="2021-ww32.2", desc="stacked note")
     note_v2_session.add(n)
