@@ -117,37 +117,30 @@ def generate_tasks_by_scope(scope_id: str):
 
 
 def render_scope(task_date, section_date):
+    max_task_age = 100
+
+    # Clamp the color intensity to [0,100] days
     section_date_str = section_date.strftime("%G-ww%V.%u")
-
     days_old = (section_date - task_date).days
-    color_intensity = 1 / 100.0 * min(100, max(days_old, 0))
-
-    if days_old < 0:
-        # Just do normal styling
-        color_intensity = 0
-    elif days_old == 0:
-        # For the same day, we don't care what the day was
+    if days_old == 0:
+        # For due-today tasks, don't render a scope at all
         return ''
-    elif 0 < days_old < 370:
-        # For this middle ground, do things normally
-        pass
-    elif days_old > 370:
-        # For something over a year old, drop the intensity back to zero
-        color_intensity = 0
+
+    # Scale the colors from grey to reddish
+    color_intensity = min(max_task_age, max(days_old, 0)) / 100.0
+    color_rgb = (200 +  25 * color_intensity,
+                 200 - 100 * color_intensity,
+                 200 - 100 * color_intensity)
 
     # If the year is the same, render as "ww06.5"
     short_date_str = task_date.strftime("%G-ww%V.%u")
     if short_date_str[0:5] == section_date_str[0:5]:
         short_date_str = short_date_str[5:]
 
-    # And the styling
-    color_rgb = (200 +  25 * color_intensity,
-                 200 - 100 * color_intensity,
-                 200 - 100 * color_intensity)
-    return f'''
-<span class="task-scope" style="color: rgb({color_rgb[0]}, {color_rgb[1]}, {color_rgb[2]})">
-  {short_date_str}
-</span>'''
+    return f'<span class="task-scope" ' \
+        f'style="color: rgb({color_rgb[0]}, {color_rgb[1]}, {color_rgb[2]})">\n' \
+        f'  {short_date_str}\n' \
+        f'</span>'
 
 
 def compute_ignoring_scope(todays_date):
