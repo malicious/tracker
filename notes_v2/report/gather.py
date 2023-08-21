@@ -81,7 +81,7 @@ class NoteStapler:
     def _add_by_day(self, scope: TimeScope) -> int:
         new_notes = list(self.filtered_query
                          .filter(Note.time_scope_id == scope)
-                         .order_by(Note.time_scope_id.desc())
+                         .order_by(Note.sort_time.asc())
                          .all())
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
