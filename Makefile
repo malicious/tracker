@@ -8,7 +8,7 @@ app := tracker.app
 serve:
 	source $(activate_script) \
 		&& flask --app $(app) --debug run \
-		   --port 7529 --reload --with-threads
+		   --port 7529 --with-threads
 
 
 
