@@ -14,6 +14,7 @@
 :root {
   --tab-label-fg-color: hsl(212, 32%, 60%);
   --tab-selected-bg-color: hsl(210, 0%, 96%);
+  --tab-selected-bg-color-dark-mode: #444;
   --tab-label-font-size: 12px;
   --tasks-future-fg-color: hsl(214, 40%, 65%);
 }
@@ -25,6 +26,8 @@ body {
 body > .spacer-下 {
   height: 640px;
 }
+
+{# ================================================================= -#}
 
 .scope-container > .spacer-上 {
   height: 12px;
@@ -67,6 +70,8 @@ body > .spacer-下 {
   padding-top: 12px;
   padding-bottom: 12px;
 }
+
+{# ================================================================= -#}
 
 .task-and-details {
   padding-left: var(--default-left-right-margin);
@@ -111,6 +116,8 @@ body > .spacer-下 {
 .future, .future .task-scope, .future .task-time {
   color: var(--tasks-future-fg-color);
 }
+
+{# ================================================================= -#}
 
 .bonus-options {
   width: 100%;
@@ -158,6 +165,11 @@ body > .spacer-下 {
   padding: 0.5em;
   font-size: 80%;
 }
+@media (prefers-color-scheme: dark) {
+.task-json, .task-edit, .task-aio {
+  /* TODO: regular property no longer works here for some reason */
+  background-color: var(--tab-selected-bg-color-dark-mode);
+}}
 input.show-json:checked ~ label.show-json,
 input.show-edit:checked ~ label.show-edit,
 input.show-aio:checked  ~ label.show-aio {
@@ -190,6 +202,8 @@ input.show-aio:checked  ~ .task-aio {
 .task-and-details:hover label.show-aio {
   display: inherit;
 }
+
+{# ================================================================= -#}
 
 .task-add-panel {
   position: sticky;
@@ -248,6 +262,8 @@ input.show-aio:checked  ~ .task-aio {
 
 
 
+{# ================================================================= -#}
+
 {% macro render_task(t, scope) %}
 {% set scope_to_print, resolution_to_print, is_future_task = compute_render_info_for(t) %}
 
@@ -261,8 +277,10 @@ input.show-aio:checked  ~ .task-aio {
     {% if resolution_to_print %}
       <span class="task-resolution">({{ resolution_to_print }}) </span>
     {% endif %}
-      {{ scope_to_print | safe }}
-      {{ t.desc | markdown }}
+
+    {{ scope_to_print | safe }}
+    {{ t.desc | markdown }}
+
     {% if t.time_estimate and t.get_time_elapsed() %}
       <span class="task-time">{{ "`{:.1f} => {:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</span>
     {% elif t.time_estimate %}
@@ -270,6 +288,7 @@ input.show-aio:checked  ~ .task-aio {
     {% elif t.get_time_elapsed() %}
       <span class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</span>
     {% endif %}
+
     </div>
   </div>
 </label>
@@ -304,7 +323,7 @@ input.show-aio:checked  ~ .task-aio {
 
 
 
-{# ================================================================= #}
+{# ================================================================= -#}
 
 {% macro render_add_panel() %}
 <form action="{{url_for('tasks-v2-rest.create_task')}}" method="post">
@@ -330,7 +349,7 @@ input.show-aio:checked  ~ .task-aio {
 
 
 
-{# ================================================================= #}
+{# ================================================================= -#}
 
 {% block content %}
 

@@ -13,6 +13,8 @@
 <style type="text/css">
 :root {
   --text-low-priority-color: #999;
+  --tab-selected-bg-color: hsl(210, 0%, 96%);
+  --tab-selected-bg-color-dark-mode: #444;
 }
 
 body {
@@ -22,6 +24,8 @@ body {
 body > .spacer-下 {
   height: 640px;
 }
+
+{# ================================================================= -#}
 
 .scope-container > .spacer-上 {
   height: 12px;
@@ -65,6 +69,8 @@ body > .spacer-下 {
   padding-bottom: 12px;
 }
 
+{# ================================================================= -#}
+
 .task-only > .task-scope {
   flex-shrink: 0;
   padding-right: 0.8em;
@@ -89,6 +95,7 @@ body > .spacer-下 {
   color: var(--text-low-priority-color);
 }
 
+{# ================================================================= -#}
 
 .task-json > div {
   white-space: pre-wrap;
@@ -99,6 +106,17 @@ body > .spacer-下 {
   background: var(--default-bg-color);
 }
 
+/* highlight json/edit labels when selected */
+.task-json, .task-edit {
+  background-color: var(--tab-selected-bg-color);
+  padding: 0.5em;
+  font-size: 80%;
+}
+@media (prefers-color-scheme: dark) {
+.task-json, .task-edit {
+  /* TODO: regular property no longer works here for some reason */
+  background-color: var(--tab-selected-bg-color-dark-mode);
+}}
 .sub-desc {
   white-space: pre-wrap;
   color: var(--text-low-priority-color);
@@ -109,6 +127,8 @@ body > .spacer-下 {
   padding-left: 24px;
   max-width: 600px;
 }
+
+{# ================================================================= -#}
 
 .task-add-panel {
   position: sticky;
@@ -170,10 +190,9 @@ body > .spacer-下 {
 
 
 
-{# ================================================================= #}
+{# ================================================================= -#}
 
 {% macro _render_task_desc(t, scope, resolution_to_print) %}
-
     {% if resolution_to_print %}
       <span class="task-resolution">({{ resolution_to_print }}) </span>
     {% endif %}
@@ -197,7 +216,6 @@ body > .spacer-下 {
         <div class="sub-desc">{{ t.linkage_at(scope, False).detailed_resolution }}</div>
       {% endif %}
     {% endif %}
-
 {% endmacro %}
 
 
@@ -218,7 +236,7 @@ body > .spacer-下 {
 
 
 
-{# ================================================================= #}
+{# ================================================================= -#}
 
 {% macro render_add_panel() %}
 <form action="{{url_for('tasks-v2-rest.create_task')}}" method="post">
@@ -244,7 +262,7 @@ body > .spacer-下 {
 
 
 
-{# ================================================================= #}
+{# ================================================================= -#}
 
 {% block content %}
 
