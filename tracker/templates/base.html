@@ -10,6 +10,11 @@
   --default-fg-color: dimgray;
   --disabled-fg-color: #aaa;
   --default-hover-color: #ddd;
+
+  --highlight-fg-color: black;
+  /* this needs to stand out from default-bg-color, which is off-white */
+  --highlight-bg-color: white;
+
   --default-left-right-margin: 8.0%;
 {%- if prev_scope or next_scope %}
   --scope-nav-height: calc(24px + 24px);
@@ -17,6 +22,15 @@
   --scope-nav-height: 0px;
 {% endif %}
 }
+@media (prefers-color-scheme: dark) {
+:root {
+  --default-bg-color: black;
+  --default-fg-color: silver;
+  --default-hover-color: #222;
+
+  --highlight-fg-color: white;
+  --highlight-bg-color: #444;
+}}
 body {
   font-family: 'Source Code Pro', monospace;
   overflow-wrap: break-word;
