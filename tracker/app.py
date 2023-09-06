@@ -2,6 +2,7 @@ import os
 from typing import Dict
 
 from flask import Flask
+from markupsafe import Markup
 
 import notes_v2
 import tasks_v2
@@ -28,10 +29,9 @@ def create_app(settings_overrides: Dict = {}):
         md.init_app(app)
     except ImportError:
         def _noop_filter(text):
-            return text
+            return Markup(f'<p style="white-space: pre;">{text}</p>')
 
         app.jinja_env.filters.setdefault('markdown', _noop_filter)
-        raise
 
     try:
         from flask_debugtoolbar import DebugToolbarExtension
