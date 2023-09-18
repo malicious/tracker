@@ -81,7 +81,6 @@
 }
 
 .note-plus-資訊 > div {
-  white-space: pre-wrap;
   color: var(--text-low-priority-color);
   font-size: 12px;
   line-height: 16px;
@@ -146,7 +145,7 @@
 {% if note.detailed_desc %}
   {% set tabs = [
                   ('資訊',
-                   "<div>{}</div>".format(note.detailed_desc|escape),
+                   "<div>{}</div>".format(note.detailed_desc | markdown),
                    'checked' if note.detailed_desc|length > 0 else ''
                   ),
                   ('json', "<div>{}</div>".format(render_n2_json(note)|escape), ''),
