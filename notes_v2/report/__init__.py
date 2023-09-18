@@ -125,18 +125,14 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
     render_kwargs['as_quarter_header'] = as_quarter_header
 
     def render_n2_desc(n: Note, scope_id):
-        output_str = ""
-
-        # Generate a <span> that holds some kind of sort_time
-        output_str += f'<span class="time">{_render_n2_time(n, TimeScope(scope_id))}</span>\n'
-
-        # Print the description
-        output_str += f'<span class="desc">{n.desc}</span>\n'
-
-        # And color-coded, hyperlinked domains
-        output_str += f'<span class="domains">{_render_n2_domains(n, domains, scope_ids)}</span>\n'
-
-        return output_str
+        return (
+            # Generate a <span> that holds some kind of sort_time
+            f'<div class="time">{_render_n2_time(n, TimeScope(scope_id))}</div>\n'
+            # Print the description
+            f'<div class="desc">{n.desc}</div>\n'
+            # And color-coded, hyperlinked domains
+            f'<div class="domains">{_render_n2_domains(n, domains, scope_ids)}</div>\n'
+        )
 
     def render_n2_json(n: Note) -> str:
         return json.dumps(n.as_json(include_domains=True), indent=2)

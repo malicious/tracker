@@ -22,9 +22,52 @@
 
 :root {
   --text-low-priority-color: #999;
+  --margin-between-domain-and-tabs: 8px;
 }
 
-.note-json > div, .note-plus-json > div {
+.note-plus-only,
+.note-only {
+  display: flex;
+}
+
+.note-plus-only .time,
+.note-only .time {
+  font-family: "Helvetica Neue";
+  font-weight: 300;
+  font-size: 15px;
+
+  align-self: flex-end;
+  margin-right: 0.5em;
+  color: var(--text-low-priority-color);
+}
+
+.note-plus-only .desc,
+.note-only .desc {
+  font-family: "Helvetica Neue";
+  font-weight: 400;
+  font-size: 18px;
+
+  margin-right: 16px;
+}
+
+.note-plus-and-tabs .domains {
+  margin-left: auto;
+  margin-right: calc(var(--margin-between-domain-and-tabs) + 1 * var(--tab-label-width));
+}
+.note-plus-and-tabs:hover .domains {
+  margin-right: calc(var(--margin-between-domain-and-tabs) + 2 * var(--tab-label-width));
+}
+
+.note-and-tabs .domains {
+  margin-left: auto;
+  margin-right: calc(var(--margin-between-domain-and-tabs));
+}
+.note-and-tabs:hover .domains {
+  margin-right: calc(var(--margin-between-domain-and-tabs) + 1 * var(--tab-label-width));
+}
+
+.note-plus-json > div,
+.note-json > div {
   white-space: pre-wrap;
   margin: 12px;
   padding: 12px;

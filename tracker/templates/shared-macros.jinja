@@ -3,6 +3,7 @@
   --tab-label-fg-color: hsl(212, 32%, 60%);
   --tab-selected-bg-color: hsl(210, 0%, 96%);
   --tab-label-font-size: 12px;
+  --tab-label-width: 48px;
 }
 
 .{{item_type}}-and-tabs {
@@ -18,7 +19,6 @@
   line-height: 24px;
   padding-top: 8px;
   padding-bottom: 8px;
-  display: flex;
 }
 
 .{{item_type}}-tabs {
@@ -41,8 +41,8 @@
 }
 {% for tab_name in tab_names %}
 .{{item_type}}-tabs > label.show-{{tab_name}} {
-  width: 48px;
-  right: calc(48px * {{ loop.index - 1 }});
+  width: var(--tab-label-width);
+  right: calc(var(--tab-label-width) * {{ loop.index - 1 }});
 }
 {% endfor %}
 
@@ -87,7 +87,7 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
 {# The way this `label` wraps everything, it makes the whole row a clickable #}
 <label for="toggle-{{tabs[0][0]}}-{{unique_id}}">
   <div class="{{item_type}}-only {{item_styling}}">
-    <div class="{{item_type}}-desc">{{ desc }}</div>
+    {{ desc }}
   </div>
 </label>
 
