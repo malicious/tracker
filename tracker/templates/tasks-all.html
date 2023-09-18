@@ -11,214 +11,259 @@
 <title>/tasks</title>
 
 <style type="text/css">
-:root {
-  --tab-label-fg-color: hsl(212, 32%, 60%);
-  --tab-selected-bg-color: hsl(210, 0%, 96%);
-  --tab-selected-bg-color-dark-mode: #444;
-  --tab-label-font-size: 12px;
-  --tasks-future-fg-color: hsl(214, 40%, 65%);
-}
+  :root {
+    --tab-label-fg-color: hsl(212, 32%, 60%);
+    --tab-selected-bg-color: hsl(210, 0%, 96%);
+    --tab-selected-bg-color-dark-mode: #444;
+    --tab-label-font-size: 12px;
+    --tasks-future-fg-color: hsl(214, 40%, 65%);
+    --tab-label-width: 48px;
+  }
 
-body {
-  overflow-wrap: anywhere;
-  word-break: break-word; /* Safari */
-}
-body > .spacer-下 {
-  height: 640px;
-}
+  body {
+    overflow-wrap: anywhere;
+    word-break: break-word;
+    /* Safari */
+  }
 
-{# ================================================================= -#}
+  body > .spacer-下 {
+    height: 640px;
+  }
 
-.scope-container > .spacer-上 {
-  height: 12px;
-}
-.scope-header-container {
-  position: sticky;
-  top: calc(var(--scope-nav-height));
-  height: 33px; /* includes 1px border */
-  z-index: 2;
-  background-color: var(--default-bg-color);
+  {#=================================================================-#}
 
-  padding-left: var(--default-left-right-margin);
-  padding-right: var(--default-left-right-margin);
-  padding-top: 16px;
-  padding-bottom: 12px;
-  margin-bottom: calc(32px - 8px - 12px);
-}
-.scope-container-post-spacer {
-  height: 64px;
-}
-.scope-header {
-  font-size: 24px;
-  line-height: 24px;
-  height: 24px;
-  color: var(--highlight-fg-color);
-  border-bottom: 1px solid dimgrey;
-  padding-bottom: 8px;
-}
-.category-header {
-  position: sticky;
-  top: calc(var(--scope-nav-height)
-    + 16px + 33px + 12px /* .scope-header and its -container */);
-  z-index: 1;
-  background-color: var(--default-bg-color);
-  font-weight: 600;
+  .scope-container>.spacer-上 {
+    height: 12px;
+  }
 
-  padding-left: var(--default-left-right-margin);
-  padding-right: var(--default-left-right-margin);
-  margin-top: calc(32px - 12px);
-  padding-top: 12px;
-  padding-bottom: 12px;
-}
+  .scope-header-container {
+    position: sticky;
+    top: calc(var(--scope-nav-height));
+    height: 33px;
+    /* includes 1px border */
+    z-index: 2;
+    background-color: var(--default-bg-color);
 
-{# ================================================================= -#}
+    padding-left: var(--default-left-right-margin);
+    padding-right: var(--default-left-right-margin);
+    padding-top: 16px;
+    padding-bottom: 12px;
+    margin-bottom: calc(32px - 8px - 12px);
+  }
 
-.task-and-details {
-  padding-left: var(--default-left-right-margin);
-  padding-right: var(--default-left-right-margin);
+  .scope-container-post-spacer {
+    height: 64px;
+  }
 
-  -webkit-transform: translate3d(0, 0, 0);
-}
-.task-and-details:hover {
-  background: var(--default-hover-color);
-}
+  .scope-header {
+    font-size: 24px;
+    line-height: 24px;
+    height: 24px;
+    color: var(--highlight-fg-color);
+    border-bottom: 1px solid dimgrey;
+    padding-bottom: 8px;
+  }
 
-.task-only {
-  font-size: 16px;
-  line-height: 24px;
-  padding-top: 8px;
-  padding-bottom: 8px;
-  display: flex;
-}
-.task-only > .task-scope {
-  flex-shrink: 0;
-  padding-right: 0.8em;
-  text-align: right;
-}
-.task-only > .task-desc {
-  flex: 1 1 0;
-  flex-grow: 1;
-}
-{# this is for the markdown parser, which dumps <p> tags -#}
-.task-desc p {
-  display: inline;
-}
-.task-scope {
-  color: #bbb;
-}
-.task-time {
-  color: brown;
-}
+  .category-header {
+    position: sticky;
+    top: calc(var(--scope-nav-height) + 16px + 33px + 12px
+        /* .scope-header and its -container */
+      );
+    z-index: 1;
+    background-color: var(--default-bg-color);
+    font-weight: 600;
 
-.resolved, .resolved .task-scope, .resolved .task-time {
-  color: var(--disabled-fg-color);
-}
-.future, .future .task-scope, .future .task-time {
-  color: var(--tasks-future-fg-color);
-}
+    padding-left: var(--default-left-right-margin);
+    padding-right: var(--default-left-right-margin);
+    margin-top: calc(32px - 12px);
+    padding-top: 12px;
+    padding-bottom: 12px;
+  }
 
-{# ================================================================= -#}
+    {
+    #=================================================================-#
+  }
 
-.bonus-options {
-  width: 100%;
-  position: relative;
-}
-.task-json > div,
-.task-aio  > div {
-  white-space: pre-wrap;
-  margin: 12px;
-  padding: 12px;
-  border: 1px solid rgba(29,28,29,.13);
-  border-radius: 6px;
-  background: var(--default-bg-color);
-}
+  .task-and-details {
+    padding-left: var(--default-left-right-margin);
+    padding-right: var(--default-left-right-margin);
 
-.bonus-options > label {
-  height: 24px;
-  line-height: 24px;
-  font-size: var(--tab-label-font-size);
+    -webkit-transform: translate3d(0, 0, 0);
+  }
 
-  position: absolute;
-  top: -24px;
-  color: var(--tab-label-fg-color);
-  text-align: center;
-}
-.bonus-options > label.show-edit {
-  width: 48px;
-  right: 0;
-}
-.bonus-options > label.show-json {
-  width: 48px;
-  right: 48px;
-}
-.bonus-options > label.show-aio {
-  width: 48px;
-  right: 96px;
-}
-.bonus-options > input {
-  display: none;
-}
+  .task-and-details:hover {
+    background: var(--default-hover-color);
+  }
 
-/* highlight json/edit labels when selected */
-.task-json, .task-edit, .task-aio {
-  background-color: var(--tab-selected-bg-color);
-  padding: 0.5em;
-  font-size: 80%;
-}
-@media (prefers-color-scheme: dark) {
-.task-json, .task-edit, .task-aio {
-  /* TODO: regular property no longer works here for some reason */
-  background-color: var(--tab-selected-bg-color-dark-mode);
-}}
-input.show-json:checked ~ label.show-json,
-input.show-edit:checked ~ label.show-edit,
-input.show-aio:checked  ~ label.show-aio {
-  background-color: var(--tab-selected-bg-color);
-  border-bottom: 2px solid var(--tab-label-fg-color);
-}
+  .task-only {
+    font-size: 16px;
+    line-height: 24px;
+    padding-top: 8px;
+    padding-bottom: 8px;
 
-.task-json, .task-edit, .task-aio {
-  display: none;
-}
-input.show-json:checked ~ .task-json,
-input.show-edit:checked ~ .task-edit,
-input.show-aio:checked  ~ .task-aio {
-  display: inherit;
-}
+    display: flex;
+  }
 
-/* hide json/edit labels when not-hovered + not-selected */
-.task-and-details label.show-json,
-.task-and-details label.show-edit,
-.task-and-details label.show-aio {
-  display: none;
-}
-.task-and-details input.show-json:checked ~ label.show-json,
-.task-and-details input.show-edit:checked ~ label.show-edit,
-.task-and-details input.show-aio:checked  ~ label.show-aio {
-  display: inherit;
-}
-.task-and-details:hover label.show-json,
-.task-and-details:hover label.show-edit,
-.task-and-details:hover label.show-aio {
-  display: inherit;
-}
+  .task-only>div {
+    margin-right: 0.8em;
+  }
 
-{# ================================================================= -#}
+  .task-only .scope {
+    font-size: 14px;
+    font-weight: 400;
+    align-self: flex-end;
+  }
 
-.task-add-panel {
-  position: sticky;
-  bottom: 0;
-  background-color: var(--highlight-bg-color);
-  z-index: 4;
-}
+  .task-only .desc {
+    font-family: "Helvetica Neue";
+    font-weight: 400;
+    font-size: 18px;
+  }
 
-{{ shared_macros.note_edit_css('task-add', ['add',]) }}
-{{ task_macros.task_edit_css }}
+  {#- this is for the markdown parser, which dumps <p>tags #}
+
+  .task-only p {
+    display: inline;
+  }
+
+  .task-scope {
+    color: #bbb;
+  }
+
+  .task-time {
+    color: brown;
+  }
+
+  .resolved,
+  .resolved .task-scope,
+  .resolved .task-time {
+    color: var(--disabled-fg-color);
+  }
+
+  .future,
+  .future .task-scope,
+  .future .task-time {
+    color: var(--tasks-future-fg-color);
+  }
+
+  {#=================================================================-#}
+
+  .bonus-options {
+    position: relative;
+  }
+
+  .task-json>div,
+  .task-aio>div {
+    white-space: pre-wrap;
+    margin: 12px;
+    padding: 12px;
+    border: 1px solid rgba(29, 28, 29, .13);
+    border-radius: 6px;
+    background: var(--default-bg-color);
+  }
+
+  .bonus-options>label {
+    height: 24px;
+    line-height: 24px;
+    font-size: var(--tab-label-font-size);
+
+    position: absolute;
+    top: -24px;
+    color: var(--tab-label-fg-color);
+    text-align: center;
+  }
+
+  .bonus-options>label.show-edit {
+    width: var(--tab-label-width);
+    right: 0px;
+  }
+
+  .bonus-options>label.show-json {
+    width: var(--tab-label-width);
+    right: calc(var(--tab-label-width));
+  }
+
+  .bonus-options>label.show-aio {
+    width: var(--tab-label-width);
+    right: calc(2 * var(--tab-label-width));
+  }
+
+  .bonus-options>input {
+    display: none;
+  }
+
+  /* highlight json/edit labels when selected */
+  .task-json,
+  .task-edit,
+  .task-aio {
+    background-color: var(--tab-selected-bg-color);
+    padding: 0.5em;
+    font-size: 80%;
+  }
+
+  @media (prefers-color-scheme: dark) {
+    .task-json,
+    .task-edit,
+    .task-aio {
+      /* TODO: regular property no longer works here for some reason */
+      background-color: var(--tab-selected-bg-color-dark-mode);
+    }
+  }
+
+  input.show-json:checked~label.show-json,
+  input.show-edit:checked~label.show-edit,
+  input.show-aio:checked~label.show-aio {
+    background-color: var(--tab-selected-bg-color);
+    border-bottom: 2px solid var(--tab-label-fg-color);
+  }
+
+  .task-json,
+  .task-edit,
+  .task-aio {
+    display: none;
+  }
+
+  input.show-json:checked~.task-json,
+  input.show-edit:checked~.task-edit,
+  input.show-aio:checked~.task-aio {
+    display: inherit;
+  }
+
+  /* hide json/edit labels when not-hovered + not-selected */
+  .task-and-details label.show-json,
+  .task-and-details label.show-edit,
+  .task-and-details label.show-aio {
+    display: none;
+  }
+
+  .task-and-details input.show-json:checked~label.show-json,
+  .task-and-details input.show-edit:checked~label.show-edit,
+  .task-and-details input.show-aio:checked~label.show-aio {
+    display: inherit;
+  }
+
+  .task-and-details:hover label.show-json,
+  .task-and-details:hover label.show-edit,
+  .task-and-details:hover label.show-aio {
+    display: inherit;
+  }
+
+  {#=================================================================-#}
+
+  .task-add-panel {
+    position: sticky;
+    bottom: 0;
+    background-color: var(--highlight-bg-color);
+    z-index: 4;
+  }
+
+  {{ shared_macros.note_edit_css('task-add', ['add', ]) }}
+  {{ task_macros.task_edit_css }}
 </style>
 
 <script>
-  {{ shared_macros.note_edit_js|safe }}
-  {{ task_macros.task_edit_js|safe }}
+  {{ shared_macros.note_edit_js | safe }}
+  {{ task_macros.task_edit_js | safe }}
 
   function populate_add_panel() {
     // Populate the add_panel when it's shown
@@ -238,7 +283,7 @@ input.show-aio:checked  ~ .task-aio {
 
       /* TODO: overriding with a Pacific Time shift, be less hard-coded */
       time_scope_str = toTimeScopeId(new Date(
-        generation_time.toLocaleString('en-US', {timeZone: "America/Los_Angeles"})));
+        generation_time.toLocaleString('en-US', { timeZone: "America/Los_Angeles" })));
 
       /* fill in target cells */
       time_scope_id = tl_row.querySelector('input[name="tl-new-blank-time_scope_id"]');
@@ -268,30 +313,26 @@ input.show-aio:checked  ~ .task-aio {
 {% set scope_to_print, resolution_to_print, is_future_task = compute_render_info_for(t) %}
 
 <div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
-<label for="toggle-edit-{{t.task_id}}-{{scope}}">
-  <div class="task-only
-    {% if resolution_to_print %} resolved {% endif %}
-    {% if is_future_task %} future {% endif %}
-  ">
-    <div class="task-desc">
-    {% if resolution_to_print %}
-      <span class="task-resolution">({{ resolution_to_print }}) </span>
-    {% endif %}
+  <label for="toggle-edit-{{t.task_id}}-{{scope}}">
+    <div class="task-only
+      {%- if resolution_to_print %} resolved {% endif %}
+      {%- if is_future_task %} future {% endif %}
+    ">
+      {%- if resolution_to_print %}
+      <div class="task-resolution">({{ resolution_to_print }}) </div>
+      {%- endif %}
+      <div class="scope">{{ scope_to_print | safe }}</div>
+      <div class="desc">{{ t.desc | markdown }} </div>
 
-    {{ scope_to_print | safe }}
-    {{ t.desc | markdown }}
-
-    {% if t.time_estimate and t.get_time_elapsed() %}
-      <span class="task-time">{{ "`{:.1f} => {:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</span>
-    {% elif t.time_estimate %}
-      <span class="task-time">{{ "`{:.1f}h`".format(t.time_estimate) }}</span>
-    {% elif t.get_time_elapsed() %}
-      <span class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</span>
-    {% endif %}
-
+      {%- if t.time_estimate and t.get_time_elapsed() %}
+      <div class="task-time">{{ "`{:.1f} => {:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</div>
+      {%- elif t.time_estimate %}
+      <div class="task-time">{{ "`{:.1f}h`".format(t.time_estimate) }}</div>
+      {%- elif t.get_time_elapsed() %}
+      <div class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</div>
+      {%- endif %}
     </div>
-  </div>
-</label>
+  </label>
 
   <div class="bonus-options">
     <input type="checkbox" id="toggle-aio-{{t.task_id}}-{{scope}}" class="show-aio">
@@ -340,10 +381,10 @@ input.show-aio:checked  ~ .task-aio {
 
 {% macro task_add_panel() %}
 {% set tabs = [('add', render_add_panel(), ''),
-               ] %}
+] %}
 {{ shared_macros.render_with_tabs('task-add',
-    desc='[add task]',
-    tabs=tabs) }}
+desc='[add task]',
+tabs=tabs) }}
 
 {% endmacro %}
 
@@ -362,8 +403,8 @@ input.show-aio:checked  ~ .task-aio {
   </div>
 
   <div class="category-container">
-  {% set ns.prev_task = None %}
-  {% for task in scope_tasks %}
+    {% set ns.prev_task = None %}
+    {% for task in scope_tasks %}
     {% if ns.prev_task and task.category != ns.prev_task.category %}
   </div>{# category-container #}
   <div class="category-container">
@@ -371,13 +412,13 @@ input.show-aio:checked  ~ .task-aio {
 
     {# if this is the start of a new category, print heading #}
     {% if task.category
-       and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
+    and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
     <div class="category-header">### {{ task.category }}</div>
     {% endif %}
 
     {{ render_task(task, task.linkages[0]) }}
     {% set ns.prev_task = task %}
-  {% endfor %}
+    {% endfor %}
   </div>{# category-container #}
 
 </div>{# scope-container #}
@@ -388,7 +429,7 @@ input.show-aio:checked  ~ .task-aio {
 <div class="spacer-下"></div>
 
 <div class="task-add-panel">
-{{ task_add_panel() }}
+  {{ task_add_panel() }}
 </div>
 
 {% endblock %}
