@@ -17,14 +17,18 @@ db_session = None
 def init_app(app: Flask):
     if not app.config['TESTING']:
         load_v2_models(os.path.abspath(os.path.join(app.instance_path, 'tasks-v2.db')))
-        app.teardown_request(unload_v2_models)
 
     _register_endpoints(app)
     _register_rest_endpoints(app)
 
 
 def load_v2_models(current_db_path: str):
-    engine = sqlalchemy.create_engine('sqlite:///' + current_db_path)
+    engine = sqlalchemy.create_engine(
+        'sqlite:///' + current_db_path,
+        connect_args={
+            "check_same_thread": False,
+        }
+    )
 
     Base.metadata.create_all(bind=engine)
 
@@ -35,11 +39,6 @@ def load_v2_models(current_db_path: str):
                                              bind=engine))
 
     Base.query = db_session.query_property()
-
-
-def unload_v2_models(e):
-    global db_session
-    db_session.remove()
 
 
 def _register_endpoints(app: Flask):

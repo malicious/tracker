@@ -23,7 +23,6 @@ db_session = None
 def init_app(app):
     if not app.config['TESTING']:
         load_models(os.path.abspath(os.path.join(app.instance_path, 'notes-v2.db')))
-        app.teardown_request(unload_models)
 
     _register_endpoints(app)
     _register_rest_endpoints(app)
@@ -92,8 +91,12 @@ def init_app(app):
 
 
 def load_models(current_db_path: str):
-    engine = sqlalchemy.create_engine('sqlite:///' + current_db_path)
-
+    engine = sqlalchemy.create_engine(
+        'sqlite:///' + current_db_path,
+        connect_args={
+            "check_same_thread": False,
+        }
+    )
     Base.metadata.create_all(bind=engine)
 
     # Create a Session object and bind it to the declarative_base
@@ -103,11 +106,6 @@ def load_models(current_db_path: str):
                                              bind=engine))
 
     Base.query = db_session.query_property()
-
-
-def unload_models(maybe_exception):
-    global db_session
-    db_session.remove()
 
 
 def _register_endpoints(app):
