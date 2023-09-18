@@ -59,12 +59,12 @@ def _render_n2_time(n: Note, scope: TimeScope) -> str:
         else:
             display_time = f'''{
                 TimeScope.from_datetime(n.sort_time).minimize_vs(scope)
-            } {
+            }&nbsp;{
                 n.sort_time.strftime('%H:%M')
             }'''
     # Anything in a week scope is usually "reduced"; append %H:%M also
     elif scope.is_week() and n.sort_time:
-        display_time = "{} {}".format(
+        display_time = "{}&nbsp;{}".format(
             TimeScope.from_datetime(n.sort_time).minimize_vs(scope),
             n.sort_time.strftime('%H:%M'))
 
