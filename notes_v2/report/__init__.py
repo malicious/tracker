@@ -127,7 +127,7 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
     def render_n2_desc(n: Note, scope_id):
         return (
             # Generate a <span> that holds some kind of sort_time
-            f'<div class="time">{_render_n2_time(n, TimeScope(scope_id))}</div>\n'
+            f'<div class="time" title="{n.sort_time}">{_render_n2_time(n, TimeScope(scope_id))}</div>\n'
             # Print the description
             f'<div class="desc">{n.desc}</div>\n'
             # And color-coded, hyperlinked domains
