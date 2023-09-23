@@ -21,6 +21,7 @@ body {
   overflow-wrap: anywhere;
   word-break: break-word; /* Safari */
 }
+
 body > .spacer-下 {
   height: 640px;
 }
@@ -30,6 +31,7 @@ body > .spacer-下 {
 .scope-container > .spacer-上 {
   height: 12px;
 }
+
 .scope-header-container {
   position: sticky;
   top: calc(var(--scope-nav-height));
@@ -43,9 +45,11 @@ body > .spacer-下 {
   padding-bottom: 12px;
   margin-bottom: calc(32px - 8px - 12px);
 }
+
 .scope-container-post-spacer {
   height: 64px;
 }
+
 .scope-header {
   font-size: 24px;
   line-height: 24px;
@@ -54,6 +58,7 @@ body > .spacer-下 {
   border-bottom: 1px solid dimgrey;
   padding-bottom: 8px;
 }
+
 .category-header {
   position: sticky;
   top: calc(var(--scope-nav-height)
@@ -71,27 +76,35 @@ body > .spacer-下 {
 
 {# ================================================================= -#}
 
-.task-only > .task-scope {
-  flex-shrink: 0;
-  padding-right: 0.8em;
-  text-align: right;
+.task-headline {
+  display: flex;
+  width: 100%;
+  color: var(--default-fg-color);
 }
-.task-only > .task-desc {
-  flex: 1 1 0;
-  flex-grow: 1;
+
+.task-headline span {
+  margin-left: 0.8em;
+  margin-right: 0.8em;
 }
+
 {# this is for the markdown parser, which dumps <p> tags -#}
-.task-desc p {
+
+.task-headline p {
   display: inline;
+  margin: 0;
 }
-.task-scope {
+
+.task-resolution {
   color: #bbb;
+  align-self: flex-end;
 }
+
 .task-time {
   color: brown;
 }
 
-.resolved, .resolved .task-scope, .resolved .task-time {
+.resolved,
+.resolved .task-time {
   color: var(--text-low-priority-color);
 }
 
@@ -117,6 +130,7 @@ body > .spacer-下 {
   /* TODO: regular property no longer works here for some reason */
   background-color: var(--tab-selected-bg-color-dark-mode);
 }}
+
 .sub-desc {
   white-space: pre-wrap;
   color: var(--text-low-priority-color);
@@ -193,6 +207,7 @@ body > .spacer-下 {
 {# ================================================================= -#}
 
 {% macro _render_task_desc(t, scope, resolution_to_print) %}
+  <div class="task-headline">
     {% if resolution_to_print %}
       <span class="task-resolution">({{ resolution_to_print }}) </span>
     {% endif %}
@@ -206,6 +221,7 @@ body > .spacer-下 {
     {% elif t.get_time_elapsed() %}
       <span class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</span>
     {% endif %}
+  </div>
 
     {% if t.linkages|length == 1 %}
       {% if t.linkages[0].detailed_resolution %}
@@ -277,12 +293,12 @@ body > .spacer-下 {
   <div class="category-container">
   {% set ns.prev_task = None %}
   {% for task in scope_tasks %}
-    {% if ns.prev_task and task.category != ns.prev_task.category %}
+    {%- if ns.prev_task and task.category != ns.prev_task.category %}
   </div>{# category-container #}
   <div class="category-container">
     {% endif %}
 
-    {# if this is the start of a new category, print heading #}
+    {#- if this is the start of a new category, print heading #}
     {% if task.category
        and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
     <div class="category-header">### {{ task.category }}</div>
