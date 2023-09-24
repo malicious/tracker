@@ -82,13 +82,13 @@ body > .spacer-下 {
   color: var(--default-fg-color);
 }
 
-.task-headline span {
-  margin-left: 0.8em;
-  margin-right: 0.8em;
+.task-headline {
+  font-family: "Helvetica Neue";
+  font-weight: 400;
+  font-size: 18px;
 }
 
 {# this is for the markdown parser, which dumps <p> tags -#}
-
 .task-headline p {
   display: inline;
   margin: 0;
@@ -97,15 +97,17 @@ body > .spacer-下 {
 .task-resolution {
   color: #bbb;
   align-self: flex-end;
+  margin-right: 0.5em;
 }
 
 .task-time {
   color: brown;
+  margin-left: 0.5em;
 }
 
 .resolved,
 .resolved .task-time {
-  color: var(--text-low-priority-color);
+  color: var(--disabled-fg-color);
 }
 
 {# ================================================================= -#}
@@ -207,10 +209,12 @@ body > .spacer-下 {
 {# ================================================================= -#}
 
 {% macro _render_task_desc(t, scope, resolution_to_print) %}
-  <div class="task-headline">
-    {% if resolution_to_print %}
+  <div class="task-headline
+    {%- if resolution_to_print %} resolved {% endif %}
+  ">
+    {%- if resolution_to_print %}
       <span class="task-resolution">({{ resolution_to_print }}) </span>
-    {% endif %}
+    {%- endif %}
 
     {{ t.desc | markdown }}
 
