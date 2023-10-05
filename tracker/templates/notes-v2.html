@@ -50,6 +50,16 @@
   margin-right: 16px;
 }
 
+/* Assumes that none of our domains are too long;
+ * but if that's the case, this makes things a lot nicer.
+ */
+.domains a {
+  white-space: nowrap;
+}
+.domains {
+  max-width: 60%;
+}
+
 .note-plus-and-tabs .domains {
   margin-left: auto;
   margin-right: calc(var(--margin-between-domain-and-tabs) + 1 * var(--tab-label-width));
