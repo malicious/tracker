@@ -193,10 +193,12 @@
 
 {% macro render_n2(note, scope) %}
 {% if note.detailed_desc %}
+  {# length-to-collapse is based on: #}
+  {# SELECT note_id, length(detailed_desc) as len0 FROM 'Notes-v2' WHERE len0 > 15000; #}
   {% set tabs = [
                   ('資訊',
                    "<div>{}</div>".format(note.detailed_desc | markdown),
-                   'checked' if note.detailed_desc|length > 0 else ''
+                   'checked' if note.detailed_desc | length < 20_000 else ''
                   ),
                   ('json', "<div>{}</div>".format(render_n2_json(note)|escape), ''),
                 ] %}
