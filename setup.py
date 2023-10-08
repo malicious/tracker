@@ -21,6 +21,6 @@ setup(name='tracker',
       packages=packages,
       python_requires='>=3',
       extras_require = {
-          'misaka': ['Flask-Misaka']
+          'misaka': ['misaka']
       }
 )

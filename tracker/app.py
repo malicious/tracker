@@ -24,9 +24,13 @@ def create_app(settings_overrides: Dict = {}):
 
     # misaka formatting is optional because it wraps a C library + is no longer maintained
     try:
-        from flask_misaka import Misaka
-        md = Misaka(escape=True, hard_wrap=True)
-        md.init_app(app)
+        import misaka
+        def md_wrapper(text):
+            result = misaka.html(text, extensions=0, render_flags=misaka.HTML_HARD_WRAP)
+            return Markup(result)
+
+        app.jinja_env.filters.setdefault('markdown', md_wrapper)
+
     except ImportError:
         def _noop_filter(text):
             return Markup(f'<p style="white-space: pre;">{text}</p>')
