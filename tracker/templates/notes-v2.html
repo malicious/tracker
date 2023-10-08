@@ -105,6 +105,24 @@
   display: inherit;
 }
 
+/* recreate formatting from my favorite markdown renderer */
+.note-plus-資訊 > div {
+  color: black;
+}
+.note-plus-資訊 h1:before {
+  content: "# ";
+}
+.note-plus-資訊 h2:before {
+  content: "## ";
+}
+.note-plus-資訊 h3:before {
+  content: "### ";
+}
+.note-plus-資訊 blockquote {
+  padding-left: 6px;
+  border-left: 2px solid black;
+}
+
 .domain-header {
   position: sticky;
   top: 0px;
@@ -113,11 +131,11 @@
 
   z-index: 200;
 
-{% if prev_scope or next_scope %}
+{%- if prev_scope or next_scope %}
   /* provide fat margins so we can click through to .scope-nav */
   margin-left: calc(var(--default-left-right-margin) + 10%);
   margin-right: calc(var(--default-left-right-margin) + 10%);
-{% endif %}
+{%- endif %}
 }
 .domain-header > span {
   background: var(--default-bg-color);
