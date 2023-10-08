@@ -1,4 +1,5 @@
 import os
+import re
 from typing import Dict
 
 from flask import Flask
@@ -26,7 +27,8 @@ def create_app(settings_overrides: Dict = {}):
     try:
         import misaka
         def md_wrapper(text):
-            result = misaka.html(text, extensions=0, render_flags=misaka.HTML_HARD_WRAP)
+            result0 = misaka.html(text, extensions=0, render_flags=misaka.HTML_HARD_WRAP)
+            result = re.sub(r'<!-- (.+) -->', f'<span class="comment">&lt;!-- \\1 --&gt;</span>', result0)
             return Markup(result)
 
         app.jinja_env.filters.setdefault('markdown', md_wrapper)
