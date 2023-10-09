@@ -155,7 +155,10 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             generate_fn=generate_fn)
 
     def memoized_render_day_svg(day_scope, day_dict_notes):
-        def generate_fn():
+        def generate_fn(inline=True):
+            if inline:
+                return render_day_svg(day_scope, day_dict_notes)
+
             src = f"/svg.day/{day_scope}?" + \
                 ''.join([f'&domain={d}' for d in domains])
             return f'<img src="{src}" />'
@@ -171,7 +174,10 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         if len(week_dict) <= 5:
             return ""
 
-        def generate_fn():
+        def generate_fn(inline=True):
+            if inline:
+                return render_week_svg(week_scope, week_dict)
+
             src = f"/svg.week/{week_scope}?" + \
                 ''.join([f'&domain={d}' for d in domains])
             return f'<img src="{src}" />'
