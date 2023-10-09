@@ -50,6 +50,7 @@ def _register_endpoints(app: Flask):
         hide_future = request.args.get('hide_future')
         return report.edit_tasks_all(show_resolved=show_resolved, hide_future=hide_future)
 
+    # TODO: For consistency, this should be something like "/tasks.by-scope/<scope_id>"
     @tasks_v2_bp.route("/tasks/<scope_id>")
     def edit_tasks_in_scope(scope_id):
         if scope_id == 'week':
@@ -85,18 +86,18 @@ def _register_endpoints(app: Flask):
 def _register_rest_endpoints(app: Flask):
     tasks_v2_rest_bp = Blueprint('tasks-v2-rest', __name__)
 
-    @tasks_v2_rest_bp.route("/task", methods=['post'])
+    @tasks_v2_rest_bp.route("/tasks", methods=['post'])
     def create_task():
         t = update.create_task(db_session, request.form)
         # TODO: do something more creative than redirect back to referrer
         # TODO: This isn't exactly how the anchors (CSS ID's) are generated, pass the scope in or something
         return redirect(f"{request.referrer}#task-{t.task_id}-{t.linkages[0].time_scope_id}")
 
-    @tasks_v2_rest_bp.route("/task/<int:task_id>")
+    @tasks_v2_rest_bp.route("/tasks/<int:task_id>")
     def get_task(task_id):
         return report.report_one_task(escape(task_id))
 
-    @tasks_v2_rest_bp.route("/task/<int:task_id>/edit", methods=['post'])
+    @tasks_v2_rest_bp.route("/tasks/<int:task_id>/edit", methods=['post'])
     def edit_task(task_id):
         if not request.args and not request.form and not request.is_json:
             # Assume this was a raw/direct browser request
@@ -113,7 +114,7 @@ def _register_rest_endpoints(app: Flask):
         update.update_task(db_session, task_id, request.form)
         return redirect(f"{request.referrer}#{request.form['backlink']}")
 
-    @tasks_v2_rest_bp.route("/task/<int:task_id>/<linkage_scope>/edit", methods=['post'])
+    @tasks_v2_rest_bp.route("/tasks/<int:task_id>/<linkage_scope>/edit", methods=['post'])
     def edit_linkage(task_id, linkage_scope):
         if not request.args and not request.form and not request.is_json:
             abort(400)
@@ -127,12 +128,5 @@ def _register_rest_endpoints(app: Flask):
 
         update.update_task(db_session, task_id, request.form)
         return redirect(f"{request.referrer}#{request.form['backlink']}")
-
-    @tasks_v2_rest_bp.route("/tasks", methods=['get'])
-    def get_tasks():
-        return {
-            "date": datetime.now(),
-            "ok": "not implemented",
-        }
 
     app.register_blueprint(tasks_v2_rest_bp, url_prefix='/v2')

@@ -20,6 +20,24 @@ from . import models
 db_session = None
 
 
+def load_models(current_db_path: str):
+    engine = sqlalchemy.create_engine(
+        'sqlite:///' + current_db_path,
+        connect_args={
+            "check_same_thread": False,
+        }
+    )
+    Base.metadata.create_all(bind=engine)
+
+    # Create a Session object and bind it to the declarative_base
+    global db_session
+    db_session = scoped_session(sessionmaker(autocommit=False,
+                                             autoflush=False,
+                                             bind=engine))
+
+    Base.query = db_session.query_property()
+
+
 def init_app(app):
     if not app.config['TESTING']:
         load_models(os.path.abspath(os.path.join(app.instance_path, 'notes-v2.db')))
@@ -90,34 +108,16 @@ def init_app(app):
     app.cli.add_command(n2_domain_colors)
 
 
-def load_models(current_db_path: str):
-    engine = sqlalchemy.create_engine(
-        'sqlite:///' + current_db_path,
-        connect_args={
-            "check_same_thread": False,
-        }
-    )
-    Base.metadata.create_all(bind=engine)
-
-    # Create a Session object and bind it to the declarative_base
-    global db_session
-    db_session = scoped_session(sessionmaker(autocommit=False,
-                                             autoflush=False,
-                                             bind=engine))
-
-    Base.query = db_session.query_property()
-
-
 def _register_endpoints(app):
     notes_v2_bp = Blueprint('notes-v2', __name__)
 
     @notes_v2_bp.route("/notes/<int:note_id>")
-    def edit_one_note(note_id):
+    def do_render_one_note(note_id):
         n = Note.query.filter_by(note_id=note_id).one()
         return report.edit_notes_simple(n, n)
 
     @notes_v2_bp.route("/notes")
-    def edit_notes():
+    def do_render_notes():
         page_scopes = [escape(arg) for arg in request.args.getlist('scope')]
         page_domains = [arg for arg in request.args.getlist('domain')]
 
@@ -128,13 +128,17 @@ def _register_endpoints(app):
 
         return report.edit_notes(page_domains, page_scopes)
 
+    @notes_v2_bp.route("/note-domains")
+    def do_render_note_domains():
+        return report.domains(db_session)
+
     @notes_v2_bp.route("/svg.day/<day_scope>")
-    def render_day(day_scope):
+    def do_render_svg_day(day_scope):
         domains = [arg for arg in request.args.getlist('domain')]
         return report.standalone_render_day_svg(TimeScope(day_scope), domains, request.args.get('disable_caching'))
 
     @notes_v2_bp.route("/svg.week/<week_scope>")
-    def render_week(week_scope):
+    def do_render_svg_week(week_scope):
         domains = [arg for arg in request.args.getlist('domain')]
         return report.standalone_render_week_svg(TimeScope(week_scope), domains, request.args.get('disable_caching'))
 
@@ -157,23 +161,20 @@ def _register_rest_endpoints(app):
     app.json_provider_class = NoteProvider
     app.json = NoteProvider(app)
 
-    @notes_v2_rest_bp.route("/note/<int:note_id>")
-    def get_note(note_id):
+    @notes_v2_rest_bp.route("/notes/<int:note_id>")
+    def do_get_one_note(note_id):
         n = Note.query.filter_by(note_id=escape(note_id)).one()
         return n.as_json(True)
 
     @notes_v2_rest_bp.route("/notes")
-    def get_notes():
+    def do_get_notes():
         page_scopes = [escape(arg) for arg in request.args.getlist('scope')]
         page_domains = [escape(arg) for arg in request.args.getlist('domain')]
         return report.notes_json_tree(page_domains, page_scopes)
 
-    @notes_v2_rest_bp.route("/stats/domains")
-    def get_domain_stats():
+    @notes_v2_rest_bp.route("/note-domains")
+    def do_get_note_domains():
         return report.domain_stats(db_session)
 
-    @notes_v2_rest_bp.route("/domains")
-    def get_domains():
-        return report.domains(db_session)
-
     app.register_blueprint(notes_v2_rest_bp, url_prefix='/v2')
+
