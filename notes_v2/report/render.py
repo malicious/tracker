@@ -1,6 +1,9 @@
 import hashlib
 from datetime import datetime, timedelta
 
+from flask import Response
+
+from notes_v2.report.gather import notes_json_tree
 from notes_v2.time_scope import TimeScope
 
 
@@ -56,7 +59,7 @@ def render_day_svg(day_scope, day_notes, svg_width=960) -> str:
 
     # and the actual note circles
     for note in day_notes:
-        if not note.sort_time:
+        if not hasattr(note, 'sort_time') or not note.sort_time:
             continue
 
         dot_color = "stroke: black"
@@ -88,12 +91,24 @@ def render_day_svg(day_scope, day_notes, svg_width=960) -> str:
             f'{(start_time + timedelta(hours=36)).strftime("ww%V.%u")}</text>',
     ])
 
-    return '''<svg width="{}" height="{}" id="{}">{}</svg>'''.format(
+    return '''<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}" id="{}">{}</svg>'''.format(
         svg_width,
         height_factor,
         day_scope,
         '\n'.join(rendered_notes)
     )
+
+
+def standalone_render_day_svg(day_scope, domains):
+    week_scope = day_scope.get_parent()
+    quarter_scope = week_scope.get_parent()
+
+    quarter_notes = notes_json_tree(domains, [day_scope])[quarter_scope]
+    week_notes = quarter_notes[week_scope]
+    day_notes = week_notes[day_scope]
+
+    svg_text = render_day_svg(day_scope, day_notes['notes'])
+    return Response(svg_text, mimetype='image/svg+xml')
 
 
 def render_week_svg(week_scope, notes_dict) -> str:
@@ -154,7 +169,7 @@ def render_week_svg(week_scope, notes_dict) -> str:
         """
         TODO: This is hard-coded to expect that the SVG chart starts on previous Sunday.
         """
-        if not note.sort_time:
+        if not hasattr(note, 'sort_time') or not note.sort_time:
             return
         if not TimeScope(note.time_scope_id).is_day():
             return
@@ -190,7 +205,18 @@ def render_week_svg(week_scope, notes_dict) -> str:
             for note in day_dict['notes']:
                 render_note_dot(note)
 
-    return '''<svg width="{}" height="{}">\n  {}\n</svg>'''.format(
+    return '''<svg xmlns="http://www.w3.org/2000/svg" width="{}" height="{}">\n  {}\n</svg>'''.format(
         9 * col_width_and_right_margin,
         24 * row_height,
         '\n  '.join(rendered_notes))
+
+
+def standalone_render_week_svg(week_scope, domains):
+    quarter_scope = week_scope.get_parent()
+
+    quarter_notes = notes_json_tree(domains, [week_scope])[quarter_scope]
+    week_notes = quarter_notes[week_scope]
+
+    svg_text = render_week_svg(week_scope, week_notes)
+    return Response(svg_text, mimetype='image/svg+xml')
+

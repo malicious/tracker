@@ -22,6 +22,7 @@ class NoteStapler:
         if domains_filter:
             domains_filter_sql = [NoteDomain.domain_id.like(d + "%") for d in domains_filter]
             # TODO: Combining domain and scope filtering doesn't work
+            # TODO: Need to close the session object for the queries we run
             self.filtered_query = self.filtered_query \
                 .join(NoteDomain, Note.note_id == NoteDomain.note_id) \
                 .filter(or_(*domains_filter_sql))

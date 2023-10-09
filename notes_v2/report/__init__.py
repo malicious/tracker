@@ -12,6 +12,7 @@ from notes_v2.report.render import domain_to_css_color, render_day_svg, render_w
 from notes_v2.time_scope import TimeScope
 # noinspection PyUnresolvedReferences
 from . import gather, render
+from .render import standalone_render_day_svg, standalone_render_week_svg
 
 
 def _domain_to_html_link(domain: str, scope_ids: List[str] = []) -> str:
@@ -154,9 +155,14 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             generate_fn=generate_fn)
 
     def memoized_render_day_svg(day_scope, day_dict_notes):
+        def generate_fn():
+            src = f"/svg.day/{day_scope}?" + \
+                ''.join([f'&domain={d}' for d in domains])
+            return f'<img src="{src}" />'
+
         return cache(
-            ("day_svg-cache-entry", day_scope, tuple(domains),),
-            lambda: render_day_svg(day_scope, day_dict_notes))
+            key=("day_svg-cache-entry", day_scope, tuple(domains),),
+            generate_fn=generate_fn)
 
     render_kwargs['render_day_svg'] = memoized_render_day_svg
 
@@ -164,9 +170,15 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         # Don't bother with SVG's if the week is short
         if len(week_dict) <= 5:
             return ""
+
+        def generate_fn():
+            src = f"/svg.week/{week_scope}?" + \
+                ''.join([f'&domain={d}' for d in domains])
+            return f'<img src="{src}" />'
+
         return cache(
-            ("week_svg-cache-entry", week_scope, tuple(domains),),
-            lambda: render_week_svg(week_scope, week_dict))
+            key=("week_svg-cache-entry", week_scope, tuple(domains),),
+            generate_fn=generate_fn)
 
     render_kwargs['maybe_render_week_svg'] = memoized_maybe_render_week_svg
 
