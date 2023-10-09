@@ -89,13 +89,32 @@ a:visited {
 <style type="text/css">
 .domains-grid {
   display: grid;
-  grid-template-columns: 1fr 1fr minmax(120px, 50%);
+  grid-template-columns: auto minmax(120px, auto) auto;
   max-width: 80%;
 }
+.domains-grid .header {
+  font-weight: 600;
+  padding-top: 24px;
+  background-color: darkgray;
+  color: white;
+  position: sticky;
+  top: 0;
+}
+
 .domains-grid > div {
-  padding: 6px 24px 6px 24px;
+  padding: 8px 0 8px 24px;
   border-top: 1px solid silver;
   text-align: right;
+}
+.domains-grid .time-scope-id {
+  white-space: nowrap;
+}
+.domains-grid .domain-id {
+  white-space: break-spaces;
+}
+.domains-grid .count {
+  text-align: left;
+  white-space: nowrap;
 }
 </style>
 
@@ -119,14 +138,14 @@ a:visited {
 {% endif %}
 
   <div class="domains-grid">
-    <div class="time-scope-id">time_scope_id</div>
-    <div class="count">count</div>
-    <div>domain_id</div>
+    <div class="header time-scope-id">time_scope_id</div>
+    <div class="header domain-id">domain_id</div>
+    <div class="header count">count</div>
 
   {% for info in domains_generator %}
     <div class="time-scope-id">{{ info.time_scope_id }}</div>
+    <div class="domain-id">{{ info.domain_id_link }}</div>
     <div class="count">{{ info.count }}</div>
-    <div>{{ info.domain_id_link }}</div>
   {%- endfor %}
   </div>
 

@@ -23,7 +23,7 @@ def _domain_to_html_link(domain: str, scope_ids: List[str] = []) -> str:
 
     return f'''<a href="/notes?domain={escaped_domain}{
         ''.join([f'&scope={scope_id}' for scope_id in scope_ids])
-    }" style="{domain_to_css_color(domain)}">{domain.replace(' ', '&nbsp;')}</a>'''
+    }" style="{domain_to_css_color(domain)}">{domain}</a>'''
 
 
 def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], ignore_noisy_domains: bool = False):
