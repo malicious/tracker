@@ -3,7 +3,7 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import List
 
-from flask import render_template
+from flask import Markup, render_template
 from markupsafe import escape
 
 from notes_v2.models import Note, NoteDomain
@@ -301,40 +301,55 @@ def domain_stats(session):
     return response_json
 
 
-def domains(session):
+def render_note_domains(session):
     """
     Build and return human-readable page that lists domains + their info
     """
-    DomainInfo = namedtuple("DomainInfo", "domain_id time_scope_id count")
-    domain_infos = []
+    # @dataclass
+    class DomainInfo:
+        domain_id: str
+        domain_id_link: str
+        time_scope_id: TimeScope
+        count: int
 
-    # Get the latest note for each domain_id we have
-    for nd in session.query(NoteDomain.domain_id).distinct():
-        latest_note = Note.query \
-            .join(NoteDomain, NoteDomain.note_id == Note.note_id) \
-            .filter(NoteDomain.domain_id == nd.domain_id) \
-            .order_by(Note.time_scope_id.desc()) \
-            .limit(1) \
-            .one()
-
-        count = NoteDomain.query \
-            .filter_by(domain_id=nd.domain_id) \
-            .count()
-
-        domain_infos.append(DomainInfo(
-            domain_id=nd.domain_id,
-            time_scope_id=latest_note.time_scope_id,
-            count=count))
-
-    domain_infos.sort(key=lambda x: x.time_scope_id, reverse=True)
-    domain_rows = []
-
-    for di in domain_infos:
-        domain_row = "<div>{}{}{}</div>".format(
-            f"<span style=\"padding-right: 24px;\">{di.time_scope_id}</span>",
-            f"<span style=\"padding-right: 24px;\">{di.count}</span>",
-            _domain_to_html_link(di.domain_id)
+    def render_domains():
+        # Get the latest note for each domain_id we have
+        nd_rows = (
+            session.query(NoteDomain.domain_id)
+            .distinct()
         )
-        domain_rows.append(domain_row)
 
-    return "\n".join(domain_rows)
+        for nd in nd_rows:
+            info = DomainInfo()
+
+            info.domain_id = nd.domain_id
+
+            info.domain_id_link = Markup(_domain_to_html_link(info.domain_id))
+
+            info.time_scope_id = (
+                Note.query
+                .join(NoteDomain, NoteDomain.note_id == Note.note_id)
+                .filter(NoteDomain.domain_id == nd.domain_id)
+                .order_by(Note.time_scope_id.desc())
+                .limit(1)
+                .one()
+            ).time_scope_id
+
+            info.count = (
+                NoteDomain.query
+                .filter_by(domain_id=nd.domain_id)
+                .count()
+            )
+
+            yield info
+
+    def sort_domains(domains_generator):
+        sorted_domains = list(domains_generator)
+        sorted_domains.sort(key=lambda x: x.time_scope_id, reverse=True)
+        yield from sorted_domains
+
+    return render_template(
+        'note-domains.html',
+        domains_generator=sort_domains(render_domains()),
+    )
+

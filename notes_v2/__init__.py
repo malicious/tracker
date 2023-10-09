@@ -130,7 +130,7 @@ def _register_endpoints(app):
 
     @notes_v2_bp.route("/note-domains")
     def do_render_note_domains():
-        return report.domains(db_session)
+        return report.render_note_domains(db_session)
 
     @notes_v2_bp.route("/svg.day/<day_scope>")
     def do_render_svg_day(day_scope):
