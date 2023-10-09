@@ -27,7 +27,11 @@ def create_app(settings_overrides: Dict = {}):
     try:
         import misaka
         def md_wrapper(text):
-            result0 = misaka.html(text, extensions=0, render_flags=misaka.HTML_HARD_WRAP)
+            result0 = misaka.html(
+                text,
+                extensions=misaka.EXT_TABLES,
+                render_flags=misaka.HTML_HARD_WRAP,
+            )
             result = re.sub(r'<!-- (.+) -->', f'<span class="comment">&lt;!-- \\1 --&gt;</span>', result0)
             return Markup(result)
 
