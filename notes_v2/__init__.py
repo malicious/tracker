@@ -131,12 +131,12 @@ def _register_endpoints(app):
     @notes_v2_bp.route("/svg.day/<day_scope>")
     def render_day(day_scope):
         domains = [arg for arg in request.args.getlist('domain')]
-        return report.standalone_render_day_svg(TimeScope(day_scope), domains)
+        return report.standalone_render_day_svg(TimeScope(day_scope), domains, request.args.get('disable_caching'))
 
     @notes_v2_bp.route("/svg.week/<week_scope>")
     def render_week(week_scope):
         domains = [arg for arg in request.args.getlist('domain')]
-        return report.standalone_render_week_svg(TimeScope(week_scope), domains)
+        return report.standalone_render_week_svg(TimeScope(week_scope), domains, request.args.get('disable_caching'))
 
     app.register_blueprint(notes_v2_bp, url_prefix='')
 

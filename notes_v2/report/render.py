@@ -99,7 +99,7 @@ def render_day_svg(day_scope, day_notes, svg_width=960) -> str:
     )
 
 
-def standalone_render_day_svg(day_scope, domains):
+def standalone_render_day_svg(day_scope, domains, disable_caching):
     week_scope = day_scope.get_parent()
     quarter_scope = week_scope.get_parent()
 
@@ -108,7 +108,10 @@ def standalone_render_day_svg(day_scope, domains):
     day_notes = week_notes[day_scope]
 
     svg_text = render_day_svg(day_scope, day_notes['notes'])
-    return Response(svg_text, mimetype='image/svg+xml')
+    response = Response(svg_text, mimetype='image/svg+xml')
+    if not disable_caching:
+        response.cache_control.max_age = 31536000
+    return response
 
 
 def render_week_svg(week_scope, notes_dict) -> str:
@@ -211,12 +214,15 @@ def render_week_svg(week_scope, notes_dict) -> str:
         '\n  '.join(rendered_notes))
 
 
-def standalone_render_week_svg(week_scope, domains):
+def standalone_render_week_svg(week_scope, domains, disable_caching):
     quarter_scope = week_scope.get_parent()
 
     quarter_notes = notes_json_tree(domains, [week_scope])[quarter_scope]
     week_notes = quarter_notes[week_scope]
 
     svg_text = render_week_svg(week_scope, week_notes)
-    return Response(svg_text, mimetype='image/svg+xml')
+    response = Response(svg_text, mimetype='image/svg+xml')
+    if not disable_caching:
+        response.cache_control.max_age = 31536000
+    return response
 
