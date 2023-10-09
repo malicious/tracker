@@ -144,12 +144,15 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             return jinja_render_fn(notes_tree)
 
         # Do not cache the current day.
-        if datetime.utcnow().strftime('%G-ww%V.%u') in scope_ids:
+        uncacheable_day_scope = TimeScope(datetime.utcnow().strftime('%G-ww%V.%u'))
+
+        if (
+            uncacheable_day_scope in scope_ids
+            or uncacheable_day_scope.get_parent() in scope_ids
+            or uncacheable_day_scope.get_parent().get_parent() in scope_ids
+        ):
             return generate_fn()
-        # Do not cache the current week.
-        if datetime.utcnow().strftime('%G-ww%V') in scope_ids:
-            return generate_fn()
-        # TODO: Do not cache the current quarter.
+
         return cache(
             key=(tuple(domains), tuple(scope_ids),),
             generate_fn=generate_fn)
