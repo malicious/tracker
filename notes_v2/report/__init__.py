@@ -3,8 +3,9 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import List
 
-from flask import Markup, render_template
-from markupsafe import escape
+from flask import render_template
+from markupsafe import Markup, escape
+from sqlalchemy import func, select
 
 from notes_v2.models import Note, NoteDomain
 from notes_v2.report.gather import notes_json_tree
@@ -313,33 +314,18 @@ def render_note_domains(session):
         count: int
 
     def render_domains():
-        # Get the latest note for each domain_id we have
-        nd_rows = (
-            session.query(NoteDomain.domain_id)
-            .distinct()
-        )
+        rows = session.execute(
+            select(NoteDomain.domain_id, func.max(Note.time_scope_id), func.count(Note.note_id))
+            .join(NoteDomain, NoteDomain.note_id == Note.note_id)
+            .group_by(NoteDomain.domain_id)
+        ).all()
 
-        for nd in nd_rows:
+        for row in rows:
             info = DomainInfo()
-
-            info.domain_id = nd.domain_id
-
+            info.domain_id = row[0]
             info.domain_id_link = Markup(_domain_to_html_link(info.domain_id))
-
-            info.time_scope_id = (
-                Note.query
-                .join(NoteDomain, NoteDomain.note_id == Note.note_id)
-                .filter(NoteDomain.domain_id == nd.domain_id)
-                .order_by(Note.time_scope_id.desc())
-                .limit(1)
-                .one()
-            ).time_scope_id
-
-            info.count = (
-                NoteDomain.query
-                .filter_by(domain_id=nd.domain_id)
-                .count()
-            )
+            info.time_scope_id = row[1]
+            info.count = row[2]
 
             yield info
 
