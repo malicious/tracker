@@ -124,7 +124,7 @@ def _register_endpoints(app):
         # Special arg to show recent weeks
         if page_scopes == ['week']:
             this_week = datetime.now().strftime("%G-ww%V")
-            return redirect(url_for(".edit_notes", scope=this_week, domain=page_domains))
+            return redirect(url_for(".do_render_notes", scope=this_week, domain=page_domains))
 
         return report.edit_notes(page_domains, page_scopes)
 
