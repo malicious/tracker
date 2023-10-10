@@ -167,7 +167,7 @@ def render_week_svg(week_scope, notes_dict) -> str:
     for row in range(1, hours_after + 1):
         draw_hour(column=8, row=row)
 
-    # and the actual tasks
+    # and the actual individual notes
     def render_note_dot(note):
         """
         TODO: This is hard-coded to expect that the SVG chart starts on previous Sunday.
