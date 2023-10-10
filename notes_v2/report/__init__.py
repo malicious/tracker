@@ -144,7 +144,7 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
             return jinja_render_fn(notes_tree)
 
         # Do not cache the current day.
-        uncacheable_day_scope = TimeScope(datetime.utcnow().strftime('%G-ww%V.%u'))
+        uncacheable_day_scope = TimeScope(datetime.now().strftime('%G-ww%V.%u'))
 
         if (
             uncacheable_day_scope in scope_ids
