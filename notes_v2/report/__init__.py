@@ -333,6 +333,7 @@ def render_note_domains(session):
             info.domain_id_link = Markup(_domain_to_html_link(info.domain_id))
             info.time_scope_id = row[1]
             info.count = row[2]
+            info.count_str = f"{info.count:_}"
 
             yield info
 

@@ -42,6 +42,9 @@ a {
   color: inherit;
   text-decoration: none;
 }
+a:hover {
+  text-decoration: underline;
+}
 </style>
 {% endblock %}
 
@@ -54,7 +57,7 @@ a {
 .domains-grid .header {
   font-weight: 600;
   padding-top: 24px;
-  background-color: darkgray;
+  background-color: #222;
   color: white;
   position: sticky;
   top: 0;
@@ -70,10 +73,14 @@ a {
 }
 .domains-grid .domain-id {
   white-space: break-spaces;
+  font-family: "Helvetica Neue";
 }
 .domains-grid .count {
-  text-align: left;
   white-space: nowrap;
+  padding-right: 24px;
+}
+.domains-grid .count.low-count {
+  color: red;
 }
 </style>
 
@@ -91,7 +98,11 @@ a {
   {% for info in domains_generator %}
     <div class="time-scope-id">{{ info.time_scope_id }}</div>
     <div class="domain-id">{{ info.domain_id_link }}</div>
-    <div class="count">{{ info.count }}</div>
+  {%- if info.count < 3 %}
+    <div class="count low-count">{{ info.count_str }}</div>
+  {%- else %}
+    <div class="count">{{ info.count_str }}</div>
+  {%- endif %}
   {%- endfor %}
   </div>
 
