@@ -51,7 +51,8 @@ a:hover {
 <style type="text/css">
 .domains-grid {
   display: grid;
-  grid-template-columns: auto minmax(120px, auto) auto;
+  grid-template-columns: auto auto minmax(120px, auto) auto;
+
   max-width: 80%;
 }
 .domains-grid .header {
@@ -67,16 +68,16 @@ a:hover {
   padding: 8px 0 8px 24px;
   border-top: 1px solid silver;
   text-align: right;
-}
-.domains-grid .time-scope-id {
   white-space: nowrap;
+}
+.domains-grid .earliest {
+  text-align: left;
 }
 .domains-grid .domain-id {
   white-space: break-spaces;
   font-family: "Helvetica Neue";
 }
 .domains-grid .count {
-  white-space: nowrap;
   padding-right: 24px;
 }
 .domains-grid .count.low-count {
@@ -91,12 +92,14 @@ a:hover {
 <body>
 
   <div class="domains-grid">
-    <div class="header time-scope-id">time_scope_id</div>
+    <div class="header earliest">earliest</div>
+    <div class="header latest">latest</div>
     <div class="header domain-id">domain_id</div>
     <div class="header count">count</div>
 
   {% for info in domains_generator %}
-    <div class="time-scope-id">{{ info.time_scope_id }}</div>
+    <div class="earliest">{{ info.earliest }}</div>
+    <div class="latest">{{ info.latest }}</div>
     <div class="domain-id">{{ info.domain_id_link }}</div>
   {%- if info.count < 3 %}
     <div class="count low-count">{{ info.count_str }}</div>

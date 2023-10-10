@@ -309,7 +309,10 @@ def domain_stats(session):
     return response_json
 
 
-def render_note_domains(session):
+def render_note_domains(
+        session,
+        query_limiter,
+):
     """
     Build and return human-readable page that lists domains + their info
     """
@@ -317,33 +320,45 @@ def render_note_domains(session):
     class DomainInfo:
         domain_id: str
         domain_id_link: str
-        time_scope_id: TimeScope
+
+        earliest: TimeScope
+        latest: TimeScope
+
         count: int
+        count_str: str
 
     def render_domains():
-        rows = session.execute(
-            select(NoteDomain.domain_id, func.max(Note.time_scope_id), func.count(Note.note_id))
+        query = query_limiter(
+            select(
+                NoteDomain.domain_id,
+                func.min(Note.time_scope_id),
+                func.max(Note.time_scope_id),
+                func.count(Note.note_id),
+            )
             .join(NoteDomain, NoteDomain.note_id == Note.note_id)
             .group_by(NoteDomain.domain_id)
-        ).all()
+            .order_by(func.max(Note.time_scope_id).desc())
+        )
 
+        rows = session.execute(query).all()
         for row in rows:
             info = DomainInfo()
+
             info.domain_id = row[0]
             info.domain_id_link = Markup(_domain_to_html_link(info.domain_id))
-            info.time_scope_id = row[1]
-            info.count = row[2]
+
+            info.earliest = TimeScope(row[1])
+            info.latest = TimeScope(row[2])
+
+            info.latest = info.latest.minimize_vs(info.earliest)
+
+            info.count = row[3]
             info.count_str = f"{info.count:_}"
 
             yield info
 
-    def sort_domains(domains_generator):
-        sorted_domains = list(domains_generator)
-        sorted_domains.sort(key=lambda x: x.time_scope_id, reverse=True)
-        yield from sorted_domains
-
     return render_template(
         'note-domains.html',
-        domains_generator=sort_domains(render_domains()),
+        domains_generator=render_domains(),
     )
 

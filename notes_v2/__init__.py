@@ -148,7 +148,14 @@ def _register_endpoints(app):
 
     @notes_v2_bp.route("/note-domains")
     def do_render_note_domains():
-        return report.render_note_domains(db_session)
+        limit = request.args.get('limit')
+        def nd_limiter(query):
+            if limit:
+                return query.limit(limit)
+            else:
+                return query
+
+        return report.render_note_domains(db_session, nd_limiter)
 
     @notes_v2_bp.route("/svg.day/<day_scope>")
     def do_render_svg_day(day_scope):
