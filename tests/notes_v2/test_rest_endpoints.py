@@ -10,7 +10,7 @@ def test_get_note(test_client, note_v2_session):
     note_v2_session.add(n)
     note_v2_session.commit()
 
-    r = test_client.get('/v2/note/1')
+    r = test_client.get('/v2/notes/1')
     assert r.response
 
     response_json = json.loads(r.get_data())
@@ -39,16 +39,14 @@ def test_get_domain_stats(test_client, note_v2_session):
 
     assert len(NoteDomain.query.all()) == 4
 
-    # Test actual REST API
-    r = test_client.get('/v2/stats/domains')
+    r = test_client.get('/v2/note-domains')
     j = json.loads(r.get_data())
 
     assert "domain 1" in j
 
 
 def test_domain_stats_no_domains(test_client):
-    # Test actual REST API
-    r = test_client.get('/v2/stats/domains')
+    r = test_client.get('/v2/note-domains')
     j = json.loads(r.get_data())
 
     assert not j
