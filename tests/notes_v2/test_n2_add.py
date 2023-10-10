@@ -19,7 +19,8 @@ def test_tokenize_annoying():
 
 
 def test_from_csv_minimal(note_v2_session):
-    minimal_csv_test_file = """time_scope_id,desc
+    minimal_csv_test_file = """\
+time_scope_id,desc
 2021-ww31.6,"long, long description, with commas"
 """
     all_from_csv(note_v2_session, io.StringIO(minimal_csv_test_file), expect_duplicates=False)
@@ -30,7 +31,8 @@ def test_from_csv_minimal(note_v2_session):
 
 
 def test_from_csv_full(note_v2_session):
-    csv_test_file = """source,created_at,sort_time,time_scope_id,source,desc,detailed_desc,domains
+    csv_test_file = """\
+source,created_at,sort_time,time_scope_id,source,desc,detailed_desc,domains
 ,,,2021-ww21.1,,"still, minimally-populated task",,
 ,,,2021-ww21.1,,second minimal task,,
 ,,,2021-ww21.1,,aaand a third task,,
@@ -47,7 +49,8 @@ behind the waterfall,2021-07-02 23:59:48.001,2021-08-02 23:59:48.002,2021-ww23.2
 
 
 def test_from_csv_duplicate(note_v2_session):
-    duplicitous_csv_test_file = """time_scope_id,desc
+    duplicitous_csv_test_file = """\
+time_scope_id,desc
 2021-ww31.6,"long, long description, with commas"
 """
     all_from_csv(note_v2_session, io.StringIO(duplicitous_csv_test_file), expect_duplicates=False)
@@ -58,7 +61,8 @@ def test_from_csv_duplicate(note_v2_session):
 
 
 def test_to_from_csv(note_v2_session):
-    import_export_test_file = """created_at,sort_time,time_scope_id,domains,source,desc,detailed_desc
+    import_export_test_file = """\
+created_at,sort_time,time_scope_id,domains,source,desc,detailed_desc
 ,,2021-ww31.6,,,"long, long description, with commas",
 """
     all_from_csv(note_v2_session, io.StringIO(import_export_test_file), expect_duplicates=False)
@@ -70,7 +74,8 @@ def test_to_from_csv(note_v2_session):
 
 
 def test_to_from_csv_stress(note_v2_session):
-    io_test_file = """created_at,sort_time,time_scope_id,domains,source,desc,detailed_desc
+    io_test_file = """\
+created_at,sort_time,time_scope_id,domains,source,desc,detailed_desc
 ,,2021-ww31.6,,,"long, long description, with commas",
 2000-01-01 00:00:00,,2021-ww31.7,domains: no,"maybe-invalid\r\ncopy-pasted CRLF newlines",okie desc,
 2000-01-01 00:00:00,2021-08-08 15:37:55.679000,2021-ww31.7,domains: no & domains: yes,,"escaped ""desc""
@@ -100,7 +105,8 @@ with regular LF-only newline",unniecode ❲😎😎😎❳
 
 
 def test_with_blank_lines(note_v2_session):
-    csv_test_file = """time_scope_id,desc
+    csv_test_file = """\
+time_scope_id,desc
 2021-ww32.2,desc early
 ,
 ,
@@ -111,7 +117,8 @@ def test_with_blank_lines(note_v2_session):
 
 
 def test_with_extra_columns(note_v2_session):
-    csv_test_file = """time_scope_id,desc,fake_column,super fake column
+    csv_test_file = """\
+time_scope_id,desc,fake_column,super fake column
 2021-ww32.2,desc early,,
 2021-ww32.2,desc later,,
 """
@@ -120,7 +127,8 @@ def test_with_extra_columns(note_v2_session):
 
 
 def test_with_note_id(note_v2_session):
-    io_test_file = """created_at,sort_time,time_scope_id,source,desc,detailed_desc,domains
+    io_test_file = """\
+created_at,sort_time,time_scope_id,source,desc,detailed_desc,domains
 ,,2021-ww31.6,,"long, long description, with commas",
 2000-01-01 00:00:00,,2021-ww31.7,"maybe-invalid\r\ncopy-pasted CRLF newlines",okie desc,,domains: no
 2000-01-01 00:00:00,2021-08-08 15:37:55.679000,2021-ww31.7,,"escaped ""desc""
@@ -149,3 +157,4 @@ with regular LF-only newline",unniecode ❲😎😎😎❳,domains: no & domains
         assert output_stringio.getvalue() == note_id_annotated_version.getvalue()
         assert output_stringio.getvalue() == note_id_annotated_version.getvalue()
         input_string = output_stringio.getvalue()
+
