@@ -27,13 +27,29 @@ def create_app(settings_overrides: Dict = {}):
     try:
         import misaka
         def md_wrapper(text):
-            result0 = misaka.html(
-                text,
+            # First, pre-escape timestamp-y comments with an extra newline
+            text1 = re.sub(r'<!-- (.+) -->', f'<!-- \\1 -->\n', text)
+
+            # Convert to HTML with the extra newline(s)
+            result2 = misaka.html(
+                text1,
                 extensions=misaka.EXT_TABLES,
-                render_flags=misaka.HTML_HARD_WRAP,
+                render_flags=misaka.HTML_ESCAPE | misaka.HTML_HARD_WRAP,
             )
-            result = re.sub(r'<!-- (.+) -->', f'<span class="comment">&lt;!-- \\1 --&gt;</span>', result0)
-            return Markup(result)
+
+            # Then, un-escape that newline
+            result3 = re.sub(
+                r'<p>&lt;!-- (.+) --&gt;</p>\n\n<p>',
+                f'<p><span class="comment">&lt;!-- \\1 --&gt;</span><br>',
+                result2,
+            )
+            # And tag any timestamp-y comments that didn't match that pattern
+            result4 = re.sub(
+                r'&lt;!-- (.+) --&gt;',
+                f'<span class="comment">&lt;!-- \\1 --&gt;</span>',
+                result3,
+            )
+            return Markup(result4)
 
         app.jinja_env.filters.setdefault('markdown', md_wrapper)
 
