@@ -10,6 +10,7 @@ from flask.cli import with_appcontext
 from flask.json.provider import DefaultJSONProvider
 from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.pool import NullPool
 
 from notes_v2 import add, report
 from notes_v2.models import Base, Note
@@ -25,7 +26,8 @@ def load_models(current_db_path: str):
         'sqlite:///' + current_db_path,
         connect_args={
             "check_same_thread": False,
-        }
+        },
+        poolclass=NullPool,
     )
     Base.metadata.create_all(bind=engine)
 
@@ -117,16 +119,18 @@ def _register_endpoints(app):
         return report.edit_notes_simple(n, n)
 
     @notes_v2_bp.route("/notes")
-    def do_render_notes():
+    def do_render_matching_notes():
         page_scopes = [escape(arg) for arg in request.args.getlist('scope')]
         page_domains = [arg for arg in request.args.getlist('domain')]
 
         # Special arg to show recent weeks
         if page_scopes == ['week']:
             this_week = datetime.now().strftime("%G-ww%V")
-            return redirect(url_for(".do_render_notes", scope=this_week, domain=page_domains))
+            return redirect(url_for(".do_render_matching_notes", scope=this_week, domain=page_domains))
 
-        return report.edit_notes(page_domains, page_scopes)
+        disable_inlining = request.args.get('disable_inlining')
+
+        return report.render_matching_notes(page_domains, page_scopes, disable_inlining)
 
     @notes_v2_bp.route("/note-domains")
     def do_render_note_domains():

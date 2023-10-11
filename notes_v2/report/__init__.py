@@ -99,7 +99,11 @@ def cache(key, generate_fn):
     return cache_dict[key]
 
 
-def edit_notes(domains: List[str], scope_ids: List[str]):
+def render_matching_notes(
+        domains: List[str],
+        scope_ids: List[str],
+        disable_inlining: bool,
+):
     render_kwargs = {}
 
     title_words = [f'domain={d}' for d in domains]
@@ -154,12 +158,14 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         ):
             return generate_fn()
 
+        # NB We should technically add `disable_inlining` to the cache key,
+        #    but there's never a case where it actually hurts us.
         return cache(
             key=(tuple(domains), tuple(scope_ids),),
             generate_fn=generate_fn)
 
     def memoized_render_day_svg(day_scope, day_dict_notes):
-        def generate_fn(disable_caching=False, inline=True):
+        def generate_fn(disable_caching=False, inline=not disable_inlining):
             if inline:
                 return render_day_svg(day_scope, day_dict_notes)
 
@@ -181,7 +187,7 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
         if len(week_dict) <= 5:
             return ""
 
-        def generate_fn(disable_caching=False, inline=True):
+        def generate_fn(disable_caching=False, inline=not disable_inlining):
             if inline:
                 return render_week_svg(week_scope, week_dict)
 
@@ -201,9 +207,10 @@ def edit_notes(domains: List[str], scope_ids: List[str]):
     # If this is limited to one scope, link to prev/next scopes as well.
     if len(scope_ids) == 1:
         def _scope_to_html_link(scope_id: str) -> str:
-            return '<a href="/notes?scope={}{}">{}</a>'.format(
+            return '<a href="/notes?scope={}{}{}">{}</a>'.format(
                 scope_id,
                 ''.join([f'&domain={d}' for d in domains]),
+                "&disable_inlining=true" if disable_inlining else "",
                 scope_id)
 
         if TimeScope(scope_ids[0]).is_day():
