@@ -419,7 +419,7 @@ function highlightOnInput(e) {
   }
 }
 
-function onTextareaInput() {
+function textareaResizeY() {
   this.style.height = 0;
   this.style.height = `${this.scrollHeight}px`;
 }
@@ -427,7 +427,8 @@ function onTextareaInput() {
 function enableTextareaAutoResize() {
   const textareas = document.querySelectorAll("textarea");
   for (let i = 0; i < textareas.length; i++) {
-    textareas[i].addEventListener("input", onTextareaInput, false);
+    textareas[i].addEventListener("focus", textareaResizeY, false);
+    textareas[i].addEventListener("input", textareaResizeY, false);
   }
 }
 
