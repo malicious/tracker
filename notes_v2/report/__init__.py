@@ -333,11 +333,12 @@ def render_note_domains(
                 NoteDomain.domain_id,
                 func.min(Note.time_scope_id),
                 func.max(Note.time_scope_id),
+                func.max(Note.sort_time),
                 func.count(Note.note_id),
             )
             .join(NoteDomain, NoteDomain.note_id == Note.note_id)
             .group_by(NoteDomain.domain_id)
-            .order_by(func.max(Note.time_scope_id).desc())
+            .order_by(func.max(Note.sort_time).desc())
         )
 
         rows = session.execute(query).all()
@@ -352,7 +353,7 @@ def render_note_domains(
 
             info.latest = info.latest.minimize_vs(info.earliest)
 
-            info.count = row[3]
+            info.count = row[4]
             info.count_str = f"{info.count:_}"
 
             yield info
