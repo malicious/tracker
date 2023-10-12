@@ -1,14 +1,19 @@
 venv ?= venv
 activate_script = $(venv)/bin/activate
 
-app := tracker.app
+tracker_root_dir := $(dir $(realpath $(firstword $(MAKEFILE_LIST))))
+reload_patterns := $(tracker_root_dir)/instance/* $(tracker_root_dir)/Makefile
+reload_files := $(subst $(eval ) ,:,$(wildcard $(reload_patterns)))
+flask_app := $(tracker_root_dir)tracker.app
+
 .DEFAULT_GOAL := serve
 
 .PHONY: serve
 serve:
 	source $(activate_script) \
-		&& flask --app $(app) --debug run \
-		   --port 7529 --with-threads
+		&& flask --app $(flask_app) --debug run \
+			--port 7528 --with-threads \
+			--extra-files $(reload_files)
 
 
 

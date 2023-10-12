@@ -3,7 +3,7 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import List
 
-from flask import render_template
+from flask import current_app, render_template
 from markupsafe import Markup, escape
 from sqlalchemy import func, select
 
@@ -73,30 +73,14 @@ def _render_n2_time(n: Note, scope: TimeScope) -> str:
     return display_time
 
 
-cache_dict = {}
-
-
 def cache(key, generate_fn):
-    """
-    TODO: cache_dict is not actually shared where we want it to be
+    if not hasattr(current_app, 'cache_dict'):
+        current_app.cache_dict = {}
 
-    Flask's development server (werkzeug) can reload the app without
-    actually starting a new process, which leaves the n2/report cache
-    with stale data. Remember to explicitly clear it on init.
+    if key not in current_app.cache_dict:
+        current_app.cache_dict[key] = generate_fn()
 
-    - TODO: Make this somehow-shared, so CLI state changes server state
-    - TODO: This probably also does weird things for unit testing
-    """
-    if key not in cache_dict:
-        # set max cache size, to be polite
-        if len(cache_dict) > 1000:
-            cache_dict.clear()
-
-        cache_dict[key] = generate_fn()
-    else:
-        print(f"DEBUG: Found cached output for {key}")
-
-    return cache_dict[key]
+    return current_app.cache_dict[key]
 
 
 def render_matching_notes(
