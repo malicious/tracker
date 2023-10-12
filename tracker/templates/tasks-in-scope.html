@@ -85,7 +85,16 @@ body > .spacer-下 {
 .task-headline {
   font-family: "Helvetica Neue";
   font-weight: 400;
-  font-size: 18px;
+  font-size: 20px;
+}
+.task-headline code {
+  background-color: var(--highlight-bg-color);
+  padding: 2px 4px 2px 4px;
+  font-size: 16px;
+  font-weight: 600;
+}
+.task-headline a {
+  text-decoration: underline;
 }
 
 {# this is for the markdown parser, which dumps <p> tags -#}
@@ -96,13 +105,14 @@ body > .spacer-下 {
 
 .task-resolution {
   color: #bbb;
-  align-self: flex-end;
   margin-right: 0.5em;
+  white-space: nowrap;
 }
 
 .task-time {
   color: brown;
   margin-left: 0.5em;
+  white-space: nowrap;
 }
 
 .resolved,
