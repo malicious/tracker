@@ -419,8 +419,21 @@ function highlightOnInput(e) {
   }
 }
 
+function onTextareaInput() {
+  this.style.height = 0;
+  this.style.height = `${this.scrollHeight}px`;
+}
+
+function enableTextareaAutoResize() {
+  const textareas = document.querySelectorAll("textarea");
+  for (let i = 0; i < textareas.length; i++) {
+    textareas[i].addEventListener("input", onTextareaInput, false);
+  }
+}
+
 document.addEventListener("DOMContentLoaded", enableNewTLButtons);
 document.addEventListener("DOMContentLoaded", enableDeleteTLButtons);
+document.addEventListener("DOMContentLoaded", enableTextareaAutoResize);
 
 
 {% endset %}{# task_edit_js #}
