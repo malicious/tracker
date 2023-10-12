@@ -17,7 +17,12 @@ class NoteStapler:
     or "quarter" scope for ease of scanning.
     """
 
-    def __init__(self, domains_filter: List[str]):
+    def __init__(
+            self,
+            domains_filter: List[str],
+            week_promotion_threshold: int = 0,
+            quarter_promotion_threshold: int = 0,
+    ):
         self.filtered_query = Note.query
         if domains_filter:
             domains_filter_sql = [NoteDomain.domain_id.like(d + "%") for d in domains_filter]
@@ -28,9 +33,11 @@ class NoteStapler:
                 .filter(or_(*domains_filter_sql))
 
         self.scope_tree = {}
-        # because week can be week-summary + 7 day-summaries
-        self.week_promotion_threshold = 9
-        self.quarter_promotion_threshold = 17
+        # When larger scopes have a very low number of notes,
+        # hide the <svg>'s and just render the notes directly,
+        # because we usually don't care about the timing.
+        self.week_promotion_threshold = week_promotion_threshold
+        self.quarter_promotion_threshold = quarter_promotion_threshold
 
     def _construct_scope_tree(self, scope: TimeScope) -> Dict:
         # TODO: Could probably collapse these cases into something cute and recursive
