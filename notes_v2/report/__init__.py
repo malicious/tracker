@@ -102,7 +102,7 @@ def cache(key, generate_fn):
 def render_matching_notes(
         domains: List[str],
         scope_ids: List[str],
-        disable_inlining: bool,
+        single_page: bool,
 ):
     render_kwargs = {}
 
@@ -158,15 +158,15 @@ def render_matching_notes(
         ):
             return generate_fn()
 
-        # NB We should technically add `disable_inlining` to the cache key,
+        # NB We should technically add `single_page` to the cache key,
         #    but there's never a case where it actually hurts us.
         return cache(
             key=(tuple(domains), tuple(scope_ids),),
             generate_fn=generate_fn)
 
     def memoized_render_day_svg(day_scope, day_dict_notes):
-        def generate_fn(disable_caching=False, inline=not disable_inlining):
-            if inline:
+        def generate_fn(disable_caching=False, render_inline=single_page):
+            if render_inline:
                 return render_day_svg(day_scope, day_dict_notes)
 
             src = f"/svg.day/{day_scope}?" + \
@@ -187,8 +187,8 @@ def render_matching_notes(
         if len(week_dict) <= 5:
             return ""
 
-        def generate_fn(disable_caching=False, inline=not disable_inlining):
-            if inline:
+        def generate_fn(disable_caching=False, render_inline=single_page):
+            if render_inline:
                 return render_week_svg(week_scope, week_dict)
 
             src = f"/svg.week/{week_scope}?" + \
@@ -210,7 +210,7 @@ def render_matching_notes(
             return '<a href="/notes?scope={}{}{}">{}</a>'.format(
                 scope_id,
                 ''.join([f'&domain={d}' for d in domains]),
-                "&disable_inlining=true" if disable_inlining else "",
+                "&single_page=true" if single_page else "",
                 scope_id)
 
         if TimeScope(scope_ids[0]).is_day():

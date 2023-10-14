@@ -142,9 +142,9 @@ def _register_endpoints(app):
             this_week = datetime.now().strftime("%G-ww%V")
             return redirect(url_for(".do_render_matching_notes", scope=this_week, domain=page_domains))
 
-        disable_inlining = request.args.get('disable_inlining')
+        single_page = request.args.get('single_page')
 
-        return report.render_matching_notes(page_domains, page_scopes, disable_inlining)
+        return report.render_matching_notes(page_domains, page_scopes, single_page)
 
     @notes_v2_bp.route("/note-domains")
     def do_render_note_domains():
