@@ -165,10 +165,12 @@ def render_matching_notes(
             generate_fn=generate_fn)
 
     def memoized_render_day_svg(day_scope, day_dict_notes):
-        def generate_fn(disable_caching=False, render_inline=single_page):
-            if render_inline:
-                return render_day_svg(day_scope, day_dict_notes)
+        disable_caching: bool = False
+        if datetime.now().strftime('%G-ww%V.%u') == day_scope:
+            disable_caching = True
 
+        render_inline: bool = single_page
+        if not render_inline:
             src = f"/svg.day/{day_scope}?" + \
                 ''.join([f'&domain={d}' for d in domains])
             if disable_caching:
@@ -176,9 +178,12 @@ def render_matching_notes(
 
             return f'<img src="{src}" />'
 
-        return cache(
-            key=("day_svg-cache-entry", day_scope, tuple(domains),),
-            generate_fn=generate_fn)
+        if disable_caching:
+            return render_day_svg(day_scope, day_dict_notes)
+        else:
+            return cache(
+                key=("/svg.day cache entry", day_scope, tuple(domains),),
+                generate_fn=lambda: render_day_svg(day_scope, day_dict_notes))
 
     render_kwargs['render_day_svg'] = memoized_render_day_svg
 
@@ -187,10 +192,12 @@ def render_matching_notes(
         if len(week_dict) <= 5:
             return ""
 
-        def generate_fn(disable_caching=False, render_inline=single_page):
-            if render_inline:
-                return render_week_svg(week_scope, week_dict)
+        disable_caching: bool = False
+        if datetime.now().strftime('%G-ww%V.%u') == week_scope:
+            disable_caching = True
 
+        render_inline: bool = single_page
+        if not render_inline:
             src = f"/svg.week/{week_scope}?" + \
                 ''.join([f'&domain={d}' for d in domains])
             if disable_caching:
@@ -198,9 +205,12 @@ def render_matching_notes(
 
             return f'<img src="{src}" />'
 
-        return cache(
-            key=("week_svg-cache-entry", week_scope, tuple(domains),),
-            generate_fn=generate_fn)
+        if disable_caching:
+            return render_week_svg(week_scope, week_dict)
+        else:
+            return cache(
+                key=("/svg.week cache entry", week_scope, tuple(domains),),
+                generate_fn=lambda: render_week_svg(week_scope, week_dict))
 
     render_kwargs['maybe_render_week_svg'] = memoized_maybe_render_week_svg
 
