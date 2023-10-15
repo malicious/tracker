@@ -177,7 +177,7 @@ def render_matching_notes(
             return ""
 
         disable_caching: bool = False
-        if datetime.now().strftime('%G-ww%V.%u') == week_scope:
+        if datetime.now().strftime('%G-ww%V') == week_scope:
             disable_caching = True
 
         render_inline: bool = single_page
