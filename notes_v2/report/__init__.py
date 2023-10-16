@@ -172,10 +172,6 @@ def render_matching_notes(
     render_kwargs['render_day_svg'] = memoized_render_day_svg
 
     def memoized_maybe_render_week_svg(week_scope, week_dict):
-        # Don't bother with SVG's if the week is short
-        if len(week_dict) <= 5:
-            return ""
-
         disable_caching: bool = False
         if datetime.now().strftime('%G-ww%V') == week_scope:
             disable_caching = True
