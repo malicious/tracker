@@ -6,7 +6,7 @@ reload_patterns := \
 	$(tracker_root_dir)/instance/notes-v2.db \
 	$(tracker_root_dir)/instance/notes-v2.db-wal \
 	$(tracker_root_dir)/Makefile
-reload_files := $(subst $(eval ) ,:,$(wildcard $(reload_patterns)))
+reload_files := $(subst $(eval ) ,:,$(reload_patterns))
 flask_app := $(tracker_root_dir)tracker.app
 
 .DEFAULT_GOAL := serve
