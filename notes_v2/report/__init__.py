@@ -142,11 +142,22 @@ def render_matching_notes(
         ):
             return generate_fn()
 
-        # NB We should technically add `single_page` to the cache key,
-        #    but there's never a case where it actually hurts us.
-        return cache(
-            key=(tuple(domains), tuple(scope_ids),),
+        # For a normal page, just cache the normal render.
+        if not single_page:
+            return cache(
+                key=("/notes", tuple(domains), tuple(scope_ids),),
+                generate_fn=generate_fn)
+
+        # For a `single_page`'d request, try to write two cache entries.
+        sp_result = cache(
+            key=("/notes single_page", tuple(domains), tuple(scope_ids),),
             generate_fn=generate_fn)
+
+        cache(
+            key=("/notes", tuple(domains), tuple(scope_ids),),
+            generate_fn=lambda: sp_result)
+
+        return sp_result
 
     def memoized_render_day_svg(day_scope, day_dict_notes):
         disable_caching: bool = False
