@@ -99,11 +99,11 @@ def render_day_svg(day_scope, day_notes, svg_width=960) -> str:
     )
 
 
-def standalone_render_day_svg(day_scope, domains, disable_caching):
+def standalone_render_day_svg(db_session, day_scope, domains, disable_caching):
     week_scope = day_scope.get_parent()
     quarter_scope = week_scope.get_parent()
 
-    quarter_notes = notes_json_tree(domains, [day_scope])[quarter_scope]
+    quarter_notes = notes_json_tree(db_session, domains, [day_scope])[quarter_scope]
     week_notes = quarter_notes[week_scope]
     day_notes = week_notes[day_scope]
 
@@ -214,10 +214,10 @@ def render_week_svg(week_scope, notes_dict) -> str:
         '\n  '.join(rendered_notes))
 
 
-def standalone_render_week_svg(week_scope, domains, disable_caching):
+def standalone_render_week_svg(db_session, week_scope, domains, disable_caching):
     quarter_scope = week_scope.get_parent()
 
-    quarter_notes = notes_json_tree(domains, [week_scope])[quarter_scope]
+    quarter_notes = notes_json_tree(db_session, domains, [week_scope])[quarter_scope]
     week_notes = quarter_notes[week_scope]
 
     svg_text = render_week_svg(week_scope, week_notes)

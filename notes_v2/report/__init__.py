@@ -6,6 +6,7 @@ from typing import List
 from flask import current_app, render_template
 from markupsafe import Markup, escape
 from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
 from notes_v2.models import Note, NoteDomain
 from notes_v2.report.gather import notes_json_tree
@@ -84,6 +85,7 @@ def cache(key, generate_fn):
 
 
 def render_matching_notes(
+        db_session: Session,
         domains: List[str],
         scope_ids: List[str],
         single_page: bool,
@@ -129,7 +131,7 @@ def render_matching_notes(
 
     def memoized_render_notes(jinja_render_fn):
         def generate_fn():
-            notes_tree = notes_json_tree(domains, scope_ids)
+            notes_tree = notes_json_tree(db_session, domains, scope_ids)
             return jinja_render_fn(notes_tree)
 
         # Do not cache the current day.

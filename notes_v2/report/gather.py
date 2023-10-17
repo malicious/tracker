@@ -1,6 +1,7 @@
 from typing import Dict, List
 
-from sqlalchemy import or_
+from sqlalchemy import or_, select
+from sqlalchemy.orm import Session, joinedload, query
 
 from notes_v2.models import Note, NoteDomain
 from notes_v2.time_scope import TimeScope
@@ -19,19 +20,25 @@ class NoteStapler:
 
     def __init__(
             self,
+            db_session: Session,
             domains_filter: List[str],
             week_promotion_threshold: int = 0,
             quarter_promotion_threshold: int = 0,
     ):
-        self.filtered_query = Note.query
+        self.session = db_session
+
+        domains_filter_sql = []
         if domains_filter:
             domains_filter_sql = [NoteDomain.domain_id.like(d + "%") for d in domains_filter]
-            # TODO: Combining domain and scope filtering doesn't work
-            # TODO: Need to close the session object for the queries we run
-            # TODO: ORM makes for a very slow query, we should build domains at the same time
-            self.filtered_query = self.filtered_query \
-                .join(NoteDomain, Note.note_id == NoteDomain.note_id) \
-                .filter(or_(*domains_filter_sql))
+
+        # TODO: Combining domain and scope filtering doesn't work, but it should
+        self.filtered_query = (
+            select(Note)
+            .join(NoteDomain, Note.note_id == NoteDomain.note_id)
+            .filter(or_(*domains_filter_sql))
+            .options(joinedload(Note.domains))
+            .group_by(Note)
+        )
 
         self.scope_tree = {}
         # When larger scopes have a very low number of notes,
@@ -88,10 +95,10 @@ class NoteStapler:
             del scope_tree[child]
 
     def _add_by_day(self, scope: TimeScope) -> int:
-        new_notes = list(self.filtered_query
-                         .filter(Note.time_scope_id == scope)
-                         .order_by(Note.sort_time.asc())
-                         .all())
+        new_note_rows = self.filtered_query \
+            .filter(Note.time_scope_id == scope) \
+            .order_by(Note.sort_time.asc())
+        new_notes = list(n for (n,) in self.session.execute(new_note_rows).unique().all())
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
         notes_list.extend(new_notes)
@@ -103,10 +110,10 @@ class NoteStapler:
             added_notes = self._add_by_day(TimeScope(day_scope))
             total_notes_count += added_notes
 
-        new_notes = list(self.filtered_query
-                         .filter(Note.time_scope_id == scope)
-                         .order_by(Note.time_scope_id.asc())
-                         .all())
+        new_note_rows = self.filtered_query \
+            .filter(Note.time_scope_id == scope) \
+            .order_by(Note.time_scope_id.asc())
+        new_notes = list(n for (n,) in self.session.execute(new_note_rows).unique().all())
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
         notes_list.extend(new_notes)
@@ -124,10 +131,10 @@ class NoteStapler:
             added_notes = self._add_by_week(TimeScope(week_scope))
             total_notes_count += added_notes
 
-        new_notes = list(self.filtered_query
-                         .filter(Note.time_scope_id == scope)
-                         .order_by(Note.time_scope_id.asc())
-                         .all())
+        new_note_rows = self.filtered_query \
+            .filter(Note.time_scope_id == scope) \
+            .order_by(Note.time_scope_id.asc())
+        new_notes = list(n for (n,) in self.session.execute(new_note_rows).unique().all())
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
         notes_list.extend(new_notes)
@@ -149,8 +156,10 @@ class NoteStapler:
             raise ValueError(f"TimeScope has unknown type: {repr(scope)}")
 
     def add_everything(self) -> None:
-        notes = self.filtered_query.all()
-        for n in notes:
+        new_note_rows = self.filtered_query
+        new_notes = list(n for (n,) in self.session.execute(new_note_rows).unique().all())
+
+        for n in new_notes:
             note_list = self._construct_scope_tree(TimeScope(n.time_scope_id))[NOTES_KEY]
             note_list.append(n)
 
@@ -187,8 +196,12 @@ class NoteStapler:
                 raise RuntimeError(f"ERROR: somehow, we created an empty quarter-scope {quarter}")
 
 
-def notes_json_tree(domains: List[str], scope_ids: List[str]):
-    ns = NoteStapler(domains_filter=domains)
+def notes_json_tree(
+        db_session: Session,
+        domain_ids: List[str],
+        scope_ids: List[str],
+):
+    ns = NoteStapler(db_session, domains_filter=domain_ids)
 
     for scope_id in scope_ids:
         ns.add_by_scope(TimeScope(scope_id))
