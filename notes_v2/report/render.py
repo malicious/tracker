@@ -1,3 +1,4 @@
+import functools
 import hashlib
 from datetime import datetime, timedelta
 
@@ -7,6 +8,7 @@ from notes_v2.report.gather import notes_json_tree
 from notes_v2.time_scope import TimeScope
 
 
+@functools.lru_cache
 def domain_to_css_color(domain: str) -> str:
     """
     Map the domain string to a visually-distinct CSS color.
@@ -24,6 +26,7 @@ def domain_to_css_color(domain: str) -> str:
     return f"color: hsl({color_h:.2f}, 80%, 40%);"
 
 
+@functools.lru_cache
 def _stroke_color(d):
     domain_hash = hashlib.sha256(d.encode('utf-8')).hexdigest()
     domain_hash_int = int(domain_hash[0:4], 16)
@@ -63,8 +66,9 @@ def render_day_svg(day_scope, day_notes, svg_width=960) -> str:
             continue
 
         dot_color = "stroke: black"
-        if note.domain_ids:
-            dot_color = _stroke_color(note.domain_ids[0])
+        if note.get_domain_ids():
+            domain_id0 = list(note.get_domain_ids())[0]
+            dot_color = _stroke_color(domain_id0)
 
         hour_offset = (note.sort_time - start_time).total_seconds() % 3600
         svg_element = '''<circle cx="{:.3f}" cy="{:.3f}" r="{}" style="fill: none; {}" />'''.format(
@@ -185,8 +189,9 @@ def render_week_svg(week_scope, notes_dict) -> str:
         day_scope_time = datetime(note.sort_time.year, note.sort_time.month, note.sort_time.day)
 
         dot_color = "stroke: black"
-        if note.domain_ids:
-            dot_color = _stroke_color(note.domain_ids[0])
+        if note.get_domain_ids():
+            domain_id0 = list(note.get_domain_ids())[0]
+            dot_color = _stroke_color(domain_id0)
 
         # calculate the sub-hour offset for the dot, scaled to include some margins on the hour-block
         dot_radius = 5

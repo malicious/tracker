@@ -44,10 +44,9 @@ class Note(Base):
 
     domains = relationship('NoteDomain', backref='Note')
 
-    def get_domain_ids(self) -> List[str]:
-        return [nd.domain_id for nd in self.domains]
-
-    domain_ids = property(get_domain_ids)
+    def get_domain_ids(self):
+        for nd in self.domains:
+            yield nd.domain_id
 
     def as_json(self, include_domains: bool = False) -> Dict:
         """
@@ -71,7 +70,7 @@ class Note(Base):
 
         if include_domains:
             if self.domains:
-                response_dict['domains'] = [nd.domain_id for nd in self.domains]
+                response_dict['domains'] = list(self.get_domain_ids())
 
         return response_dict
 

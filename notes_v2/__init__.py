@@ -132,8 +132,8 @@ def _register_endpoints(app):
 
     @notes_v2_bp.route("/notes")
     def do_render_matching_notes():
-        page_scopes = [escape(arg) for arg in request.args.getlist('scope')]
-        page_domains = [arg for arg in request.args.getlist('domain')]
+        page_scopes = tuple(escape(arg) for arg in request.args.getlist('scope'))
+        page_domains = tuple(arg for arg in request.args.getlist('domain'))
 
         # Special arg to show recent weeks
         if page_scopes == ['week']:

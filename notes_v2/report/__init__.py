@@ -1,7 +1,8 @@
+import functools
 import json
 from collections import namedtuple
 from datetime import datetime, timedelta
-from typing import List
+from typing import List, Tuple
 
 from flask import current_app, render_template
 from markupsafe import Markup, escape
@@ -17,7 +18,14 @@ from . import gather, render
 from .render import standalone_render_day_svg, standalone_render_week_svg
 
 
-def _domain_to_html_link(domain: str, scope_ids: List[str] = []) -> str:
+@functools.lru_cache(maxsize=100_000)
+def _domain_to_html_link(
+    domain: str,
+    scope_ids: Tuple[str] = None,
+) -> str:
+    if scope_ids is None:
+        scope_ids = tuple()
+
     escaped_domain = domain.replace('+', '%2B')
     escaped_domain = escape(escaped_domain)
     escaped_domain = escaped_domain.replace(' ', '+')
@@ -28,7 +36,12 @@ def _domain_to_html_link(domain: str, scope_ids: List[str] = []) -> str:
     }" style="{domain_to_css_color(domain)}">{domain}</a>'''
 
 
-def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], ignore_noisy_domains: bool = False):
+def _render_n2_domains(
+        n: Note,
+        page_domains: List[str],
+        scope_ids: Tuple[str],
+        ignore_noisy_domains: bool = False,
+):
     def should_display_domain(d: str) -> bool:
         # Don't render any domains that are an exact match for the page
         #
@@ -46,7 +59,7 @@ def _render_n2_domains(n: Note, page_domains: List[str], scope_ids: List[str], i
 
         return True
 
-    domains_as_html = [_domain_to_html_link(d, scope_ids) for d in n.domain_ids if should_display_domain(d)]
+    domains_as_html = [_domain_to_html_link(d, scope_ids) for d in n.get_domain_ids() if should_display_domain(d)]
     return " & ".join(domains_as_html)
 
 
@@ -86,8 +99,8 @@ def cache(key, generate_fn):
 
 def render_matching_notes(
         db_session: Session,
-        domains: List[str],
-        scope_ids: List[str],
+        domains: Tuple[str],
+        scope_ids: Tuple[str],
         single_page: bool,
 ):
     render_kwargs = {}
@@ -216,21 +229,23 @@ def render_matching_notes(
                 "&single_page=true" if single_page else "",
                 scope_id)
 
-        if TimeScope(scope_ids[0]).is_day():
-            next_dt = datetime.strptime(scope_ids[0], '%G-ww%V.%u') + timedelta(days=1)
+        scope_id0 = TimeScope(list(scope_ids)[0])
+
+        if scope_id0.is_day():
+            next_dt = datetime.strptime(scope_id0, '%G-ww%V.%u') + timedelta(days=1)
             render_kwargs['next_scope'] = _scope_to_html_link(TimeScope.from_datetime(next_dt))
-            prev_dt = datetime.strptime(scope_ids[0], '%G-ww%V.%u') + timedelta(days=-1)
+            prev_dt = datetime.strptime(scope_id0, '%G-ww%V.%u') + timedelta(days=-1)
             render_kwargs['prev_scope'] = _scope_to_html_link(TimeScope.from_datetime(prev_dt))
 
-        elif TimeScope(scope_ids[0]).is_week():
-            next_dt = datetime.strptime(scope_ids[0] + '.1', '%G-ww%V.%u') + timedelta(days=7)
+        elif scope_id0.is_week():
+            next_dt = datetime.strptime(scope_id0 + '.1', '%G-ww%V.%u') + timedelta(days=7)
             render_kwargs['next_scope'] = _scope_to_html_link(next_dt.strftime('%G-ww%V'))
-            prev_dt = datetime.strptime(scope_ids[0] + '.1', '%G-ww%V.%u') + timedelta(days=-7)
+            prev_dt = datetime.strptime(scope_id0 + '.1', '%G-ww%V.%u') + timedelta(days=-7)
             render_kwargs['prev_scope'] = _scope_to_html_link(prev_dt.strftime('%G-ww%V'))
 
-        elif TimeScope(scope_ids[0]).is_quarter():
-            year = int(scope_ids[0][:4])
-            quarter = int(scope_ids[0][-1])
+        elif scope_id0.is_quarter():
+            year = int(scope_id0[:4])
+            quarter = int(scope_id0[-1])
             next_quarter = f"{year}—Q{quarter + 1}"
             prev_quarter = f"{year}—Q{quarter - 1}"
             if quarter == 1:
