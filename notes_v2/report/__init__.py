@@ -142,7 +142,9 @@ def render_matching_notes(
         )
 
     def render_n2_json(n: Note) -> str:
-        return json.dumps(n.as_json(include_domains=True), indent=2)
+        return cache(
+            key=("note json", n.note_id),
+            generate_fn=lambda: json.dumps(n.as_json(include_domains=True), indent=2))
 
     def memoized_render_notes(jinja_render_fn):
         def generate_fn():
