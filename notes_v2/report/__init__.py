@@ -118,7 +118,7 @@ def render_matching_notes(
 
     def as_week_header(week_scope):
         week_scope_desc = datetime.strptime(week_scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
-        return '週: <a href="/notes?scope={}{}{}" id="{}">{}</a>'.format(
+        return '<a href="/notes?scope={}{}{}" id="{}">{}</a>'.format(
             week_scope,
             ''.join([f'&domain={d}' for d in domains]),
             "&single_page=true" if single_page else "",
@@ -128,7 +128,7 @@ def render_matching_notes(
     render_kwargs['as_week_header'] = as_week_header
 
     def as_quarter_header(quarter_scope):
-        return 'quarter: <a href="/notes?scope={}{}{}" id="{}">{}</a>'.format(
+        return '<a href="/notes?scope={}{}{}" id="{}">{}</a>'.format(
             quarter_scope,
             ''.join([f'&domain={d}' for d in domains]),
             "&single_page=true" if single_page else "",

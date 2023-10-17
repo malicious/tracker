@@ -25,6 +25,17 @@
   --margin-between-domain-and-tabs: 8px;
 }
 
+body > h1,
+body > h2 {
+  margin-left: calc(var(--default-left-right-margin) - 16px);
+}
+body > h1:before {
+  content: "quarter: ";
+}
+body > h2:before {
+  content: "週: ";
+}
+
 .note-plus-only,
 .note-only {
   display: flex;
