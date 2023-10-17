@@ -22,8 +22,8 @@ class NoteStapler:
             self,
             db_session: Session,
             domains_filter: List[str],
-            week_promotion_threshold: int = 0,
-            quarter_promotion_threshold: int = 0,
+            week_promotion_threshold: int = 9,
+            quarter_promotion_threshold: int = 17,
     ):
         self.session = db_session
 
