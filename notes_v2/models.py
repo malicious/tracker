@@ -1,3 +1,4 @@
+import operator
 from typing import Dict, List
 
 from dateutil import parser
@@ -45,8 +46,7 @@ class Note(Base):
     domains = relationship('NoteDomain', backref='Note')
 
     def get_domain_ids(self):
-        for nd in self.domains:
-            yield nd.domain_id
+        return map(operator.attrgetter('domain_id'), self.domains)
 
     def as_json(self, include_domains: bool = False) -> Dict:
         """

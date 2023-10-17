@@ -2,7 +2,7 @@ import functools
 import json
 from collections import namedtuple
 from datetime import datetime, timedelta
-from typing import List, Tuple
+from typing import Tuple
 
 from flask import current_app, render_template
 from markupsafe import Markup, escape
@@ -20,25 +20,25 @@ from .render import standalone_render_day_svg, standalone_render_week_svg
 
 @functools.lru_cache(maxsize=100_000)
 def _domain_to_html_link(
-    domain: str,
-    scope_ids: Tuple[str] = None,
+    domain_id: str,
+    scope_ids: Tuple[str] | None = None,
 ) -> str:
     if scope_ids is None:
         scope_ids = tuple()
 
-    escaped_domain = domain.replace('+', '%2B')
+    escaped_domain = domain_id.replace('+', '%2B')
     escaped_domain = escape(escaped_domain)
     escaped_domain = escaped_domain.replace(' ', '+')
     escaped_domain = escaped_domain.replace('&', '%26')
 
     return f'''<a href="/notes?domain={escaped_domain}{
         ''.join([f'&scope={scope_id}' for scope_id in scope_ids])
-    }" style="{domain_to_css_color(domain)}">{domain}</a>'''
+    }" style="{domain_to_css_color(domain_id)}">{domain_id}</a>'''
 
 
 def _render_n2_domains(
         n: Note,
-        page_domains: List[str],
+        domain_ids: Tuple[str],
         scope_ids: Tuple[str],
         ignore_noisy_domains: bool = False,
 ):
@@ -50,7 +50,7 @@ def _render_n2_domains(
         # because domains are OR'd together, and it's not intuitive to
         # have none of the domains printed.
         #
-        if len(page_domains) == 1 and d == page_domains[0]:
+        if len(domain_ids) == 1 and d == domain_ids[0]:
             return False
 
         if ignore_noisy_domains:
@@ -59,8 +59,10 @@ def _render_n2_domains(
 
         return True
 
-    domains_as_html = [_domain_to_html_link(d, scope_ids) for d in n.get_domain_ids() if should_display_domain(d)]
-    return " & ".join(domains_as_html)
+    return " & ".join(
+        _domain_to_html_link(d, scope_ids)
+        for d in n.get_domain_ids()
+        if should_display_domain(d))
 
 
 def _render_n2_time(n: Note, scope: TimeScope) -> str:
