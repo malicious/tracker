@@ -419,9 +419,17 @@ function highlightOnInput(e) {
   }
 }
 
-function textareaResizeY() {
+function textareaResizeY(allow_shrink = false) {
+  previous_height = this.style.height.replace(/px/, '');
+
   this.style.height = 0;
   this.style.height = `${this.scrollHeight}px`;
+
+  if (allow_shrink) {
+    console.log(`Checking shrinkability, ${this.scrollHeight} < ${previous_height}`);
+    if (this.scrollHeight < previous_height)
+      this.style.height = `${previous_height}px`;
+  }
 }
 
 function enableTextareaAutoResize() {
