@@ -22,6 +22,8 @@ from .render import standalone_render_day_svg, standalone_render_week_svg
 def _domain_to_html_link(
     domain_id: str,
     scope_ids: Tuple[str] | None = None,
+    # TODO: This should not have a default argument
+    single_page: bool = False,
 ) -> str:
     if scope_ids is None:
         scope_ids = tuple()
@@ -33,6 +35,8 @@ def _domain_to_html_link(
 
     return f'''<a href="/notes?domain={escaped_domain}{
         ''.join([f'&scope={scope_id}' for scope_id in scope_ids])
+    }{
+        "&single_page=true" if single_page else ""
     }" style="{domain_to_css_color(domain_id)}">{domain_id}</a>'''
 
 
@@ -114,18 +118,20 @@ def render_matching_notes(
 
     def as_week_header(week_scope):
         week_scope_desc = datetime.strptime(week_scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
-        return '週: <a href="/notes?scope={}{}" id="{}">{}</a>'.format(
+        return '週: <a href="/notes?scope={}{}{}" id="{}">{}</a>'.format(
             week_scope,
             ''.join([f'&domain={d}' for d in domains]),
+            "&single_page=true" if single_page else "",
             week_scope,
             week_scope_desc)
 
     render_kwargs['as_week_header'] = as_week_header
 
     def as_quarter_header(quarter_scope):
-        return 'quarter: <a href="/notes?scope={}{}" id="{}">{}</a>'.format(
+        return 'quarter: <a href="/notes?scope={}{}{}" id="{}">{}</a>'.format(
             quarter_scope,
             ''.join([f'&domain={d}' for d in domains]),
+            "&single_page=true" if single_page else "",
             quarter_scope,
             quarter_scope)
 
@@ -133,7 +139,7 @@ def render_matching_notes(
 
     def render_n2_desc(n: Note, scope_id):
         return (
-            # Generate a <span> that holds some kind of sort_time
+            # Some kind of sort_time
             f'<div class="time" title="{n.sort_time}">{_render_n2_time(n, TimeScope(scope_id))}</div>\n'
             # Print the description
             f'<div class="desc">{n.desc}</div>\n'
@@ -260,7 +266,7 @@ def render_matching_notes(
             render_kwargs['next_scope'] = _scope_to_html_link(next_quarter)
             render_kwargs['prev_scope'] = _scope_to_html_link(prev_quarter)
 
-    domains_as_html = [_domain_to_html_link(d, scope_ids) for d in domains]
+    domains_as_html = [_domain_to_html_link(d, scope_ids, single_page) for d in domains]
     render_kwargs['domain_header'] = " & ".join(domains)
     render_kwargs['domain_header_html'] = " & ".join(domains_as_html)
 
