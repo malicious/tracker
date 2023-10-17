@@ -136,7 +136,7 @@ def _register_endpoints(app):
         page_domains = tuple(arg for arg in request.args.getlist('domain'))
 
         # Special arg to show recent weeks
-        if page_scopes == ['week']:
+        if page_scopes == ('week',):
             this_week = datetime.now().strftime("%G-ww%V")
             return redirect(url_for(".do_render_matching_notes", scope=this_week, domain=page_domains))
 
