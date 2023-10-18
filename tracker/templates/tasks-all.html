@@ -426,7 +426,7 @@
     <div class="category-header">### {{ task.category }}</div>
     {% endif %}
 
-    {{ render_task(task, task.linkages[0]) }}
+    {{ render_task(task, task.linkages[0].time_scope_id) }}
     {% set ns.prev_task = task %}
   {% endfor %}
   </div>{# category-container #}
