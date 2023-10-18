@@ -135,10 +135,12 @@ def _register_endpoints(app):
         page_scopes = tuple(escape(arg) for arg in request.args.getlist('scope'))
         page_domains = tuple(arg for arg in request.args.getlist('domain'))
 
-        # Special arg to show recent weeks
         if page_scopes == ('week',):
             this_week = datetime.now().strftime("%G-ww%V")
             return redirect(url_for(".do_render_matching_notes", scope=this_week, domain=page_domains))
+        elif page_scopes == ('day',):
+            this_day = datetime.now().strftime("%G-ww%V.%u")
+            return redirect(url_for(".do_render_matching_notes", scope=this_day, domain=page_domains))
 
         single_page = request.args.get('single_page')
 

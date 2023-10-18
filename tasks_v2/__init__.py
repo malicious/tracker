@@ -4,6 +4,7 @@ from datetime import datetime
 import sqlalchemy
 from flask import Flask, Blueprint, abort, redirect, request, url_for
 from markupsafe import escape
+from sqlalchemy import select
 from sqlalchemy.orm import scoped_session, sessionmaker
 
 from tasks_v2.time_scope import TimeScope
@@ -50,35 +51,57 @@ def _register_endpoints(app: Flask):
         hide_future = request.args.get('hide_future')
         return report.edit_tasks_all(show_resolved=show_resolved, hide_future=hide_future)
 
-    # TODO: For consistency, this should be something like "/tasks.by-scope/<scope_id>"
-    @tasks_v2_bp.route("/tasks/<scope_id>")
-    def edit_tasks_in_scope(scope_id):
+    @tasks_v2_bp.route("/tasks.in-scope/<scope_id>")
+    def do_edit_tasks_in_scope(scope_id):
         if scope_id == 'week':
-            return redirect(url_for(".edit_tasks_in_scope", scope_id=datetime.now().strftime("%G-ww%V")))
-
+            this_week = datetime.now().strftime("%G-ww%V")
+            return redirect(url_for('.do_edit_tasks_in_scope', scope_id=this_week))
         elif scope_id == 'day':
-            return redirect(url_for(".edit_tasks_in_scope", scope_id=datetime.now().strftime("%G-ww%V.%u")))
+            this_day = datetime.now().strftime("%G-ww%V.%u")
+            return redirect(url_for('.do_edit_tasks_in_scope', scope_id=this_day))
 
-        page_scope = None
+        # Try to read the `scope_id` as an actual TimeScope, so we can fail early.
+        scope = TimeScope(scope_id)
+        scope.get_type()
+
+        return report.edit_tasks_in_scope(page_scope=scope)
+
+    def _do_edit_one_task(task_id: int):
+        task = db_session.execute(
+            select(Task)
+            .where(Task.task_id == task_id)
+        ).scalar_one_or_none()
+        if not task:
+            abort(404)
+
+        # DEBUG: pass in several tasks, so we can pretend we're a list
+        return report.edit_tasks_simple(task, task, task)
+
+    @tasks_v2_bp.route("/tasks/<task_id>")
+    def do_edit_one_task(task_id):
+        '''
+        Temporary endpoint; ultimately, we want this endpoint to be for individual tasks
+
+        For now though, also accept scope_id's and redirect appropriately.
+        '''
         try:
-            parsed_scope = TimeScope(scope_id)
+            parsed_scope = TimeScope(task_id)
             parsed_scope.get_type()
-            page_scope = parsed_scope
+            return redirect(
+                location=url_for('.do_edit_tasks_in_scope', scope_id=parsed_scope),
+                code=301,
+            )
         except ValueError:
             pass
 
-        return report.edit_tasks_in_scope(page_scope=page_scope)
+        return _do_edit_one_task(task_id)
 
     @tasks_v2_bp.route("/task/<int:task_id>")
-    def edit_one_task(task_id):
-        task: Task = Task.query \
-            .filter(Task.task_id == task_id) \
-            .one_or_none()
-        if not task:
-            return {"error": f"invalid task_id: {task_id}"}
-
-        # DEBUG: pass in two tasks, so we can pretend we're a list
-        return report.edit_tasks_simple(task, task, task)
+    def do_edit_one_task_legacy(task_id):
+        return redirect(
+            location=url_for('.do_edit_one_task', scope_or_id=task_id),
+            code=301,
+        )
 
     app.register_blueprint(tasks_v2_bp)
 

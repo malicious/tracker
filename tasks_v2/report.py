@@ -274,10 +274,10 @@ def edit_tasks_in_scope(page_scope: TimeScope):
     render_kwargs['to_summary_html'] = to_summary_html
 
     prev_scope = TimeScopeUtils.prev_scope(page_scope)
-    render_kwargs['prev_scope'] = f'<a href="{url_for(".edit_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
+    render_kwargs['prev_scope'] = f'<a href="{url_for(".do_edit_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
 
     next_scope = TimeScopeUtils.next_scope(page_scope)
-    render_kwargs['next_scope'] = f'<a href="{url_for(".edit_tasks_in_scope", scope_id=next_scope)}">{next_scope}</a>'
+    render_kwargs['next_scope'] = f'<a href="{url_for(".do_edit_tasks_in_scope", scope_id=next_scope)}">{next_scope}</a>'
 
     return render_template('tasks-in-scope.html', **render_kwargs)
 
