@@ -225,6 +225,10 @@ def render_matching_notes(
         disable_caching: bool = False
         if datetime.now().strftime('%G-ww%V') == week_scope:
             disable_caching = True
+        # Sometimes, we render a week <svg> for a single day.
+        # This makes the rendering weird and incomplete, so don't cache it.
+        if week_scope not in scope_ids:
+            disable_caching = True
 
         render_inline: bool = single_page
         if not render_inline:
