@@ -4,7 +4,7 @@ from collections import namedtuple
 from datetime import datetime, timedelta
 from typing import Tuple
 
-from flask import current_app, render_template
+from flask import current_app, render_template, url_for
 from markupsafe import Markup, escape
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
@@ -116,24 +116,38 @@ def render_matching_notes(
     # TODO: Timing app truncates the last character or two
     render_kwargs['page_title'] = escape('/notes?' + '&'.join(title_words))
 
-    def as_week_header(week_scope):
-        week_scope_desc = datetime.strptime(week_scope + '.1', '%G-ww%V.%u').strftime('%G-ww%V-%b-%d')
-        return '<a href="/notes?scope={}{}{}" id="{}">{}</a>'.format(
-            week_scope,
-            ''.join([f'&domain={d}' for d in domains]),
-            "&single_page=true" if single_page else "",
-            week_scope,
-            week_scope_desc)
+    def as_week_header(week_scope: TimeScope) -> str:
+        scope_url = url_for(
+            ".do_render_matching_notes",
+            scope=week_scope,
+            domain=domains,
+            single_page=single_page,
+        )
+
+        range: List[str] = week_scope.get_child_scopes()
+        def as_words(day_scope_index):
+            return datetime.strptime(range[day_scope_index], '%G-ww%V.%u').strftime('%b %d')
+
+        return (
+            f'週: <a href="{scope_url}" id="{week_scope}">'
+            f'{week_scope} | {as_words(0)} - {as_words(-1)}'
+            '</a>'
+        )
 
     render_kwargs['as_week_header'] = as_week_header
 
-    def as_quarter_header(quarter_scope):
-        return '<a href="/notes?scope={}{}{}" id="{}">{}</a>'.format(
-            quarter_scope,
-            ''.join([f'&domain={d}' for d in domains]),
-            "&single_page=true" if single_page else "",
-            quarter_scope,
-            quarter_scope)
+    def as_quarter_header(quarter_scope: TimeScope) -> str:
+        scope_url = url_for(
+            ".do_render_matching_notes",
+            scope=quarter_scope,
+            domain=domains,
+            single_page=single_page,
+        )
+        return (
+            f'<a href="{scope_url}" id="{quarter_scope}">'
+            f'quarter: {quarter_scope}'
+            '</a>'
+        )
 
     render_kwargs['as_quarter_header'] = as_quarter_header
 
