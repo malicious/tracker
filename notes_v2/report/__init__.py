@@ -21,13 +21,9 @@ from .render import standalone_render_day_svg, standalone_render_week_svg
 @functools.lru_cache(maxsize=100_000)
 def _domain_to_html_link(
     domain_id: str,
-    scope_ids: Tuple[str] | None = None,
-    # TODO: This should not have a default argument
-    single_page: bool = False,
+    scope_ids: Tuple[str],
+    single_page: bool,
 ) -> str:
-    if scope_ids is None:
-        scope_ids = tuple()
-
     escaped_domain = domain_id.replace('+', '%2B')
     escaped_domain = escape(escaped_domain)
     escaped_domain = escaped_domain.replace(' ', '+')
@@ -44,6 +40,7 @@ def _render_n2_domains(
         n: Note,
         domain_ids: Tuple[str],
         scope_ids: Tuple[str],
+        single_page: bool,
         ignore_noisy_domains: bool = False,
 ):
     def should_display_domain(d: str) -> bool:
@@ -54,7 +51,7 @@ def _render_n2_domains(
         # because domains are OR'd together, and it's not intuitive to
         # have none of the domains printed.
         #
-        if len(domain_ids) == 1 and d == domain_ids[0]:
+        if domain_ids == (d,):
             return False
 
         if ignore_noisy_domains:
@@ -64,7 +61,7 @@ def _render_n2_domains(
         return True
 
     return " & ".join(
-        _domain_to_html_link(d, scope_ids)
+        _domain_to_html_link(d, scope_ids, single_page)
         for d in n.get_domain_ids()
         if should_display_domain(d))
 
@@ -158,7 +155,7 @@ def render_matching_notes(
             # Print the description
             f'<div class="desc">{n.desc}</div>\n'
             # And color-coded, hyperlinked domains
-            f'<div class="domains">{_render_n2_domains(n, domains, scope_ids)}</div>\n'
+            f'<div class="domains">{_render_n2_domains(n, domains, scope_ids, single_page)}</div>\n'
         )
 
     def render_n2_json(n: Note) -> str:
@@ -392,7 +389,7 @@ def render_note_domains(
             info = DomainInfo()
 
             info.domain_id = row[0]
-            info.domain_id_link = Markup(_domain_to_html_link(info.domain_id))
+            info.domain_id_link = Markup(_domain_to_html_link(info.domain_id, (), None))
 
             info.earliest = TimeScope(row[1])
             info.latest = TimeScope(row[2])
