@@ -1,3 +1,4 @@
+import logging
 import os
 import re
 from typing import Dict
@@ -7,6 +8,8 @@ from markupsafe import Markup, escape
 
 import notes_v2
 import tasks_v2
+
+logging.basicConfig()
 
 
 def create_app(settings_overrides: Dict = {}):

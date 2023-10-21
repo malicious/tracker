@@ -13,6 +13,7 @@ from notes_v2.models import Note, NoteDomain
 _valid_csv_fields = ['created_at', 'sort_time', 'time_scope_id', 'domains', 'source', 'desc', 'detailed_desc']
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
 def tokenize_domain_ids(encoded_domain_ids: str):
@@ -97,7 +98,7 @@ def one_from_csv(
         # TODO: Handle this properly, don't just do whatever the error message says.
         #       This happened from having duplicate/identical entries right before?
         except PendingRollbackError:
-            print(csv_entry)
+            logger.warning(csv_entry)
             session.rollback()
             raise
 
@@ -140,18 +141,23 @@ def all_from_csv(
     times_import_failed = 0
 
     reader = csv.DictReader(csv_file)
-    for csv_entry in reader:
+    for entry_index, csv_entry in enumerate(reader):
         try:
             one_from_csv(session, csv_entry, expect_duplicates)
+
+            if (entry_index + 1) % 1000 == 0:
+                logger.info(f"Imported {entry_index + 1:7_} entries so far, up to {import_source}")
+
         except (KeyError, IntegrityError):
             if "todo" in csv_entry["domains"]:
                 times_todo_ignored += 1
                 continue
 
-            print('-' * 72)
-            print(f"WARN: Couldn\'t import CSV row")
-            print(json.dumps(csv_entry, indent=2))
-            print()
+            logger.warning('\n'.join([
+                "Couldn't import CSV row: ",
+                json.dumps(csv_entry, indent=2, ensure_ascii=False),
+                '',
+            ]))
 
             times_import_failed += 1
             continue
