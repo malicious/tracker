@@ -35,12 +35,12 @@ def create_app(settings_overrides: Dict = {}):
                 f'<span class="comment">&lt;!-- \\1 --&gt;</span>',
                 tokens[idx].content,
             )
-
-            return self.image(tokens, idx, options, env)
-
         md.add_render_rule("html_block", render_comments)
 
-        app.jinja_env.filters.setdefault('markdown', md.render)
+        def do_filter(text):
+            return Markup(md.render(text))
+
+        app.jinja_env.filters.setdefault('markdown', do_filter)
 
     except ImportError:
         def _noop_filter(text0):
