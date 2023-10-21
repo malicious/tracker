@@ -202,11 +202,12 @@ def render_matching_notes(
 
         render_inline: bool = single_page
         if not render_inline:
-            src = f"/svg.day/{day_scope}?" + \
-                ''.join([f'&domain={d}' for d in domains])
-            if disable_caching:
-                src += "&disable_caching=true"
-
+            src = url_for(
+                ".do_render_svg_day",
+                day_scope=day_scope,
+                domain=domains,
+                disable_caching=disable_caching,
+            )
             return f'<img src="{src}" />'
 
         if disable_caching:
@@ -229,11 +230,12 @@ def render_matching_notes(
 
         render_inline: bool = single_page
         if not render_inline:
-            src = f"/svg.week/{week_scope}?" + \
-                ''.join([f'&domain={d}' for d in domains])
-            if disable_caching:
-                src += "&disable_caching=true"
-
+            src = url_for(
+                ".do_render_svg_week",
+                week_scope=week_scope,
+                domain=domains,
+                disable_caching=disable_caching,
+            )
             return f'<img src="{src}" />'
 
         if disable_caching:
