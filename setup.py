@@ -20,7 +20,7 @@ setup(name='tracker',
       install_requires=requirements,
       packages=packages,
       python_requires='>=3',
-      extras_require = {
-          'misaka': ['misaka'],
-      }
+      extras_require={
+          'markdown': ['markdown-it-py'],
+      },
 )

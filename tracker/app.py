@@ -23,35 +23,23 @@ def create_app(settings_overrides: Dict = {}):
     notes_v2.init_app(app)
     tasks_v2.init_app(app)
 
-    # misaka formatting is optional because it wraps a C library + is no longer maintained
     try:
-        import misaka
-        def md_wrapper(text):
-            # First, pre-escape timestamp-y comments with an extra newline
-            text1 = re.sub(r'<!-- (.+) -->', f'<!-- \\1 -->\n', text)
+        from markdown_it import MarkdownIt
+        md = MarkdownIt()
+        md.options['breaks'] = True
 
-            # Convert to HTML with the extra newline(s)
-            result2 = misaka.html(
-                text1,
-                extensions=misaka.EXT_TABLES,
-                render_flags=misaka.HTML_ESCAPE | misaka.HTML_HARD_WRAP,
-            )
-
-            # Then, un-escape that newline
-            result3 = re.sub(
-                r'<p>&lt;!-- (.+) --&gt;</p>\n\n<p>',
-                f'<p><span class="comment">&lt;!-- \\1 --&gt;</span><br>',
-                result2,
-            )
-            # And tag any timestamp-y comments that didn't match that pattern
-            result4 = re.sub(
-                r'&lt;!-- (.+) --&gt;',
+        def render_comments(self, tokens, idx, options, env):
+            return re.sub(
+                r'<!-- (.+) -->',
                 f'<span class="comment">&lt;!-- \\1 --&gt;</span>',
-                result3,
+                tokens[idx].content,
             )
-            return Markup(result4)
 
-        app.jinja_env.filters.setdefault('markdown', md_wrapper)
+            return self.image(tokens, idx, options, env)
+
+        md.add_render_rule("html_block", render_comments)
+
+        app.jinja_env.filters.setdefault('markdown', md.render)
 
     except ImportError:
         def _noop_filter(text):
