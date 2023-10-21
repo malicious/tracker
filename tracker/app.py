@@ -27,6 +27,7 @@ def create_app(settings_overrides: Dict = {}):
         from markdown_it import MarkdownIt
         md = MarkdownIt()
         md.options['breaks'] = True
+        md.enable('table')
 
         def render_comments(self, tokens, idx, options, env):
             return re.sub(
