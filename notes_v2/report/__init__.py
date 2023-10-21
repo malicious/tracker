@@ -148,12 +148,16 @@ def render_matching_notes(
 
     render_kwargs['as_quarter_header'] = as_quarter_header
 
+    def do_markdown_filter(text):
+        filter = current_app.jinja_env.filters.get('markdown')
+        return filter(text)
+
     def render_n2_desc(n: Note, scope_id):
         return (
             # Some kind of sort_time
             f'<div class="time" title="{n.sort_time}">{_render_n2_time(n, TimeScope(scope_id))}</div>\n'
             # Print the description
-            f'<div class="desc">{n.desc}</div>\n'
+            f'<div class="desc">{do_markdown_filter(n.desc)}</div>\n'
             # And color-coded, hyperlinked domains
             f'<div class="domains">{_render_n2_domains(n, domains, scope_ids, single_page)}</div>\n'
         )

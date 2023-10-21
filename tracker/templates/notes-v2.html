@@ -35,8 +35,7 @@ body > h2 {
   display: flex;
 }
 
-.note-plus-only .time,
-.note-only .time {
+.time {
   font-family: "Helvetica Neue";
   font-weight: 300;
   font-size: 15px;
@@ -46,13 +45,15 @@ body > h2 {
   color: var(--text-low-priority-color);
 }
 
-.note-plus-only .desc,
-.note-only .desc {
+.desc {
   font-family: "Helvetica Neue";
   font-weight: 400;
   font-size: 18px;
 
   margin-right: 16px;
+}
+.desc > p {
+  display: inline;
 }
 
 /* Assumes that none of our domains are too long;
@@ -152,6 +153,7 @@ body > h2 {
   display: inline;
 }
 /* Any markdown blocks that use backticks */
+.desc > p code,
 .note-plus-資訊 code {
   font-size: 80%;
   background-color: var(--highlight-bg-color);
