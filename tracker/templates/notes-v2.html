@@ -265,7 +265,7 @@ body > h2 {
   {{ render_n2(week_note, week_scope) }}
 {% endfor %}
 
-{% for day_scope, day_dict in week_dict.items()|sort(reverse=false, attribute='0') if not day_scope == "notes" %}
+{% for day_scope, day_dict in week_dict.items()|sort(reverse=true, attribute='0') if not day_scope == "notes" %}
   {% if day_dict["notes"] %}
   <div class="day-svg">
     {{ render_day_svg(day_scope, day_dict["notes"]) | safe }}
