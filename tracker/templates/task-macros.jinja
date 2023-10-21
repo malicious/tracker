@@ -77,7 +77,7 @@
 
 
 
-{% macro linkage_row(tl) %}
+{% macro linkage_row(tl, placeholder_str="placeholder=\"None\"") %}
 <div class="linkage-row">
   <div>
     <input
@@ -93,21 +93,21 @@
     <input
       name="tl-{{tl.time_scope_id}}-time_elapsed"
       oninput="highlightOnInput(event)"
-      placeholder="None"
+      {{ placeholder_str }}
       value="{{tl.time_elapsed if tl.time_elapsed}}">
   </div>
   <div>
     <input
       name="tl-{{tl.time_scope_id}}-resolution"
       oninput="highlightOnInput(event)"
-      placeholder="None"
+      {{ placeholder_str }}
       value="{{tl.resolution | escape if tl.resolution}}">
   </div>
   <div>
     <textarea
       name="tl-{{tl.time_scope_id}}-detailed_resolution"
       oninput="highlightOnInput(event)"
-      placeholder="None"
+      {{ placeholder_str }}
     >{{tl.detailed_resolution if tl.detailed_resolution}}</textarea>
   </div>
   <div>
@@ -119,26 +119,30 @@
 
 
 
-{% macro linkage_row_new(row_id, time_scope_str, created_at_str, resolution_str) %}
+{% macro linkage_row_new(
+    row_id,
+    time_scope_str,
+    created_at_str,
+    resolution_str,
+    placeholder_str="placeholder=\"None\""
+) %}
 <div class="linkage-row not-saved">
   <div>
-    {# TODO: actual formatting #}
     <input name="tl-{{row_id}}-time_scope_id" value="{{time_scope_str}}" placeholder="[enable javascript]">
     <input name="tl-{{row_id}}-created_at"    value="{{created_at_str}}" placeholder="[enable javascript]">
   </div>
   <div>
-    <input name="tl-{{row_id}}-time_elapsed" placeholder="None" oninput="highlightOnInput(event)">
+    <input name="tl-{{row_id}}-time_elapsed" {{ placeholder_str }} oninput="highlightOnInput(event)">
   </div>
   <div>
-    <input name="tl-{{row_id}}-resolution" value="{{resolution_str}}" placeholder="None" oninput="highlightOnInput(event)">
+    <input name="tl-{{row_id}}-resolution" value="{{resolution_str}}" {{ placeholder_str }} oninput="highlightOnInput(event)">
   </div>
   <div>
-    <textarea name="tl-{{row_id}}-detailed_resolution" placeholder="None" oninput="highlightOnInput(event)"></textarea>
+    <textarea name="tl-{{row_id}}-detailed_resolution" {{ placeholder_str }} oninput="highlightOnInput(event)"></textarea>
   </div>
   <div>
     <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
     <button class="delete" disabled>x</button>
-    {# TODO: 'disabled' might mess with javascript render #}
   </div>
 </div>
 {% endmacro %}
@@ -457,11 +461,11 @@ document.addEventListener("DOMContentLoaded", enableTextareaAutoResize);
   {{ task_edit_header(t) }}
 
   <div class="linkage-block">
-    {{ linkage_header_row() }}
-    {% for tl in t.linkages %}
-      {{ linkage_row(tl) }}
-    {% endfor %}
-    {{ linkage_footer_row() }}
+    {{- linkage_header_row() }}
+    {%- for tl in t.linkages %}
+      {{- linkage_row(tl) }}
+    {%- endfor %}
+    {{- linkage_footer_row() }}
   </div>
 </form>
 {% endmacro %}

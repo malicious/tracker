@@ -1,12 +1,12 @@
-{% import "shared-macros.jinja" as shared_macros %}
-{% import "task-macros.jinja" as task_macros %}
+{%- import "shared-macros.jinja" as shared_macros %}
+{%- import "task-macros.jinja" as task_macros %}
 
-{% extends "base.html" %}
+{%- extends "base.html" %}
 
 
 
-{% block head %}
-{{ super() }}
+{%- block head %}
+{{- super() }}
 
 <title>/tasks</title>
 
@@ -29,7 +29,7 @@
     height: 640px;
   }
 
-  {# ================================================================= -#}
+  {#- ================================================================= -#}
 
   .scope-container>.spacer-上 {
     height: 12px;
@@ -78,7 +78,7 @@
     padding-bottom: 12px;
   }
 
-{# ================================================================= -#}
+  {#- ================================================================= -#}
 
   .task-and-details {
     padding-left: var(--default-left-right-margin);
@@ -154,7 +154,7 @@
     color: var(--tasks-future-fg-color);
   }
 
-  {# ================================================================= -#}
+  {#- ================================================================= -#}
 
   .bonus-options {
     position: relative;
@@ -256,7 +256,7 @@
     display: inherit;
   }
 
-  {# ================================================================= -#}
+  {#- ================================================================= -#}
 
   .task-add-panel {
     position: sticky;
@@ -265,41 +265,41 @@
     z-index: 200;
   }
 
-  {{ shared_macros.note_edit_css('task-add', ['add', ]) }}
-  {{ task_macros.task_edit_css }}
+  {{- shared_macros.note_edit_css('task-add', ['add', ]) }}
+  {{- task_macros.task_edit_css -}}
 </style>
 
 <script>
-  {{ shared_macros.note_edit_js | safe }}
-  {{ task_macros.task_edit_js | safe }}
-
+  {{- shared_macros.note_edit_js | safe }}
+  {{- task_macros.task_edit_js | safe -}}
+  
   function populate_add_panel() {
     // Populate the add_panel when it's shown
     const task_add_panel = document.querySelector(".task-add-panel");
     const add_checkbox = task_add_panel.querySelector("input.show-add");
-
+  
     console.log(add_checkbox);
     add_checkbox.addEventListener('change', (e) => {
       tl_row = e.target.parentNode.querySelector(".linkage-row");
-
+  
       /* generate target cell contents */
       generation_time = new Date();
       time_scope_str = toTimeScopeId(new Date(generation_time));
       created_at_str = generation_time.toISOString()
         .split('T').join(' ') // remove the ISO8601 'T'
         .split('Z')[0]; // and remove anything past the 'Z'
-
+  
       /* TODO: overriding with a Pacific Time shift, be less hard-coded */
       time_scope_str = toTimeScopeId(new Date(
         generation_time.toLocaleString('en-US', { timeZone: "America/Los_Angeles" })));
-
+  
       /* fill in target cells */
       time_scope_id = tl_row.querySelector('input[name="tl-new-blank-time_scope_id"]');
       if (time_scope_id && !time_scope_id.value) {
         console.log("Filling in time_scope_id: ", time_scope_str)
         time_scope_id.value = time_scope_str;
       }
-
+  
       created_at = tl_row.querySelector('input[name="tl-new-blank-created_at"]');
       if (created_at && !created_at.value) {
         console.log("Filling in created_at: ", created_at_str)
@@ -307,18 +307,18 @@
       }
     });
   }
+  
   document.addEventListener("DOMContentLoaded", populate_add_panel);
-
 </script>
 
-{% endblock %}
+{%- endblock -%}
 
 
 
 {# ================================================================= -#}
 
-{% macro render_task(t, scope) %}
-{% set scope_to_print, resolution_to_print, is_future_task = compute_render_info_for(t) %}
+{%- macro render_task(t, scope) %}
+{%- set scope_to_print, resolution_to_print, is_future_task = compute_render_info_for(t) -%}
 
 <div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
   <label for="toggle-edit-{{t.task_id}}-{{scope}}">
@@ -370,15 +370,15 @@
   </div>
 </div>
 
-{% endmacro %}
+{%- endmacro %}
 
 
 
-{# ================================================================= -#}
+{#- ================================================================= -#}
 
-{% macro render_add_panel() %}
+{%- macro render_add_panel() %}
 <form action="{{url_for('tasks-v2-rest.create_task')}}" method="post">
-  {{ task_macros.task_add_header() }}
+  {{- task_macros.task_add_header() -}}
 
   <div class="linkage-block">
     {{ task_macros.linkage_header_row() }}
@@ -390,22 +390,22 @@
 {% endmacro %}
 
 {% macro task_add_panel() %}
-{% set tabs = [('add', render_add_panel(), ''),
+{%- set tabs = [('add', render_add_panel(), ''),
                ] %}
-{{ shared_macros.render_with_tabs('task-add',
+{{- shared_macros.render_with_tabs('task-add',
     desc='[add task]',
     tabs=tabs) }}
 
-{% endmacro %}
+{%- endmacro -%}
 
 
 
-{# ================================================================= -#}
+{#- ================================================================= -#}
 
-{% block content %}
+{%- block content -%}
 
-{% set ns = namespace() %}
-{% for scope, scope_tasks in tasks_by_scope.items() if scope_tasks %}
+{%- set ns = namespace() %}
+{%- for scope, scope_tasks in tasks_by_scope.items() if scope_tasks %}
 <div class="scope-container">
   <div class="spacer-上"></div>
   <div class="scope-header-container">
@@ -413,33 +413,33 @@
   </div>
 
   <div class="category-container">
-  {% set ns.prev_task = None %}
-  {% for task in scope_tasks %}
+  {%- set ns.prev_task = None %}
+  {%- for task in scope_tasks %}
     {%- if ns.prev_task and task.category != ns.prev_task.category %}
   </div>{# category-container #}
   <div class="category-container">
-    {% endif %}
+    {%- endif %}
 
     {#- if this is the start of a new category, print heading #}
-    {% if task.category
+    {%- if task.category
        and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
     <div class="category-header">### {{ task.category }}</div>
-    {% endif %}
+    {%- endif %}
 
-    {{ render_task(task, task.linkages[0].time_scope_id) }}
-    {% set ns.prev_task = task %}
-  {% endfor %}
+    {{- render_task(task, task.linkages[0].time_scope_id) }}
+    {%- set ns.prev_task = task %}
+  {%- endfor %}
   </div>{# category-container #}
 
 </div>{# scope-container #}
 <!-- this is _outside_ `.scope-container` because the sticky header shouldn't be on top of it -->
 <div class="scope-container-post-spacer"></div>
-{% endfor %}
+{%- endfor -%}
 
 <div class="spacer-下"></div>
 
 <div class="task-add-panel">
-  {{ task_add_panel() }}
+  {{- task_add_panel() }}
 </div>
 
-{% endblock %}
+{%- endblock %}

@@ -4,6 +4,7 @@ from typing import Optional
 
 from flask import render_template, url_for
 from sqlalchemy import or_
+from markupsafe import escape
 
 from tasks_v2.time_scope import TimeScope, TimeScopeUtils
 from tasks_v2.models import Task, TaskLinkage
@@ -268,10 +269,24 @@ def edit_tasks_in_scope(page_scope: TimeScope):
     render_kwargs = {}
 
     render_kwargs['tasks_by_scope'] = generate_tasks_by_scope(page_scope)
-    # TODO: Replace with something that properly checks the endpoint here
-    render_kwargs['page_title'] = f'/tasks/{page_scope}'
+
+    render_kwargs['page_title'] = url_for(".do_edit_tasks_in_scope", scope_id=page_scope)
 
     render_kwargs['to_summary_html'] = to_summary_html
+
+    def _to_aio(t):
+        output = f"{t.desc}\n\n"
+        for tl in t.linkages:
+            if not tl.detailed_resolution:
+                continue
+
+            output += f"<!-- {tl.created_at} -->\n"
+            output += tl.detailed_resolution
+            output += "\n\n"
+
+        return escape(output)
+
+    render_kwargs['to_aio'] = _to_aio
 
     prev_scope = TimeScopeUtils.prev_scope(page_scope)
     render_kwargs['prev_scope'] = f'<a href="{url_for(".do_edit_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
