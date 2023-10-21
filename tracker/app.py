@@ -3,7 +3,7 @@ import re
 from typing import Dict
 
 from flask import Flask
-from markupsafe import Markup
+from markupsafe import Markup, escape
 
 import notes_v2
 import tasks_v2
@@ -43,8 +43,14 @@ def create_app(settings_overrides: Dict = {}):
         app.jinja_env.filters.setdefault('markdown', md.render)
 
     except ImportError:
-        def _noop_filter(text):
-            return Markup(f'<p style="white-space: pre;">{text}</p>')
+        def _noop_filter(text0):
+            text1 = escape(text0)
+            text2 = re.sub(
+                r'&lt;!-- (.+) --&gt;',
+                f'<span class="comment">&lt;!-- \\1 --&gt;</span>',
+                str(text1),
+            )
+            return Markup(f'<p class="markdown-no-parser">{text2}</p>')
 
         app.jinja_env.filters.setdefault('markdown', _noop_filter)
 
