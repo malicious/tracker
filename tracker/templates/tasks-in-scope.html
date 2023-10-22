@@ -16,11 +16,21 @@
     --tab-selected-bg-color: hsl(210, 0%, 96%);
     --tab-selected-bg-color-dark-mode: #444;
 
-    --scope-header-height: 32px;
-    --scope-header-total-height: calc(var(--scope-header-height)
-        + 16px + var(--scope-header-height) + 1px + 12px);
+    --scope-header-content: 24px;
     --scope-header-border: 1px;
-    --scope-header-padding: 12px;
+    --scope-header-padding: 8px;
+    --scope-header-total-height: calc(
+        16px
+        + var(--scope-header-content)
+        + var(--scope-header-border)
+        + var(--scope-header-padding));
+
+    --category-header-content: 18px;
+    --category-header-padding: 12px;
+    --category-header-total-height: calc(
+        var(--category-header-padding)
+        + var(--category-header-content)
+        + var(--category-header-padding));
   }
   
   body {
@@ -40,43 +50,46 @@
   
   .scope-header-container {
     position: sticky;
-    top: calc(var(--scope-nav-total-height));
-    height: calc(var(--scope-header-height) + 1px); /* includes 1px border */
+    top: var(--scope-nav-total-height);
+    height: calc(var(--scope-header-content) + var(--scope-header-border));
     z-index: 2;
     background-color: var(--default-bg-color);
   
-    padding-left: var(--default-left-right-margin);
-    padding-right: var(--default-left-right-margin);
     padding-top: 16px;
-    padding-bottom: var(--scope-header-padding);
-    margin-bottom: calc(var(--scope-header-height) - 8px - 12px); /* minus child padding */
+    padding-right: var(--default-left-right-margin);
+    padding-bottom: var(--scope-header-padding);  /* redundant with child padding */
+    padding-left: var(--default-left-right-margin);
   }
   
   .scope-header {
-    font-size: 24px;
-    line-height: 24px;
-    height: 25px; /* line height + 1px border */
+    font-size: var(--scope-header-content);
+    line-height: var(--scope-header-content);
+    height: var(--scope-header-content);
     color: var(--highlight-fg-color);
-    border-bottom: 1px solid dimgrey;
-    padding-bottom: 8px;
+    border-bottom: var(--scope-header-border) solid dimgrey;
+    padding-bottom: var(--scope-header-padding);
   }
-  
+
   .scope-container-post-spacer {
     height: 64px;
   }
   
   .category-header {
     position: sticky;
-    top: calc(var(--scope-header-total-height));
+    top: calc(var(--scope-nav-total-height) + var(--scope-header-total-height));
     z-index: 1;
     background-color: var(--default-bg-color);
+
+    font-size: var(--category-header-content);
+    line-height: var(--category-header-content);
+    height: var(--category-header-content);
     font-weight: 600;
   
     padding-left: var(--default-left-right-margin);
     padding-right: var(--default-left-right-margin);
     margin-top: calc(32px - 12px);
-    padding-top: 12px;
-    padding-bottom: 12px;
+    padding-top: var(--category-header-padding);
+    padding-bottom: var(--category-header-padding);
   }
   
   {# ================================================================= -#}
@@ -85,6 +98,8 @@
     display: flex;
     width: 100%;
     color: var(--default-fg-color);
+
+    z-index: 0;
   }
   
   .task-headline {
