@@ -1,6 +1,6 @@
 import re
 from datetime import datetime, timedelta
-from typing import Optional
+from typing import Iterable, Optional
 
 from flask import render_template, url_for
 from sqlalchemy import or_
@@ -38,6 +38,28 @@ def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
            f'<span class="time-scope">{short_scope_str}</span>' + \
            response_html + '\n' + \
            '</summary>'
+
+
+def _to_aio(t) -> Iterable[str]:
+    yield f"{t.desc}\n\n"
+    for tl in t.linkages:
+        yield f"## {tl.time_scope_id}"
+        if tl.resolution:
+            yield f" | {tl.resolution}"
+        yield "\n"
+        if tl.detailed_resolution:
+            # This is a little too hard-coded to the way I personally do notes,
+            # but given that the output format has markdown datetime-comments, it's fine.
+            if tl.detailed_resolution[:5] != '<!-- ':
+                yield f"<!-- {tl.created_at} -->\n"
+            yield tl.detailed_resolution
+            yield "\n"
+        yield "\n"
+
+
+def to_aio(t):
+    # TODO: Determine whether escape() will make this an O(n^2) operation.
+    return escape(''.join(_to_aio(t)))
 
 
 def report_one_task(task_id, return_bare_dict=False):
@@ -248,19 +270,7 @@ def edit_tasks_all(
 
     render_kwargs['to_summary_html'] = to_summary_html
 
-    def _to_aio(t):
-        output = f"{t.desc}\n\n"
-        for tl in t.linkages:
-            if not tl.detailed_resolution:
-                continue
-
-            output += f"<!-- {tl.created_at} -->\n"
-            output += tl.detailed_resolution
-            output += "\n\n"
-
-        return output
-
-    render_kwargs['to_aio'] = _to_aio
+    render_kwargs['to_aio'] = to_aio
 
     return render_template('tasks-all.html', **render_kwargs)
 
@@ -274,19 +284,7 @@ def edit_tasks_in_scope(page_scope: TimeScope):
 
     render_kwargs['to_summary_html'] = to_summary_html
 
-    def _to_aio(t):
-        output = f"{t.desc}\n\n"
-        for tl in t.linkages:
-            if not tl.detailed_resolution:
-                continue
-
-            output += f"<!-- {tl.created_at} -->\n"
-            output += tl.detailed_resolution
-            output += "\n\n"
-
-        return escape(output)
-
-    render_kwargs['to_aio'] = _to_aio
+    render_kwargs['to_aio'] = to_aio
 
     prev_scope = TimeScopeUtils.prev_scope(page_scope)
     render_kwargs['prev_scope'] = f'<a href="{url_for(".do_edit_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
