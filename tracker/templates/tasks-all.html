@@ -18,6 +18,13 @@
     --tab-label-font-size: 12px;
     --tasks-future-fg-color: hsl(214, 40%, 65%);
     --tab-label-width: 48px;
+
+    --category-header-content: 18px;
+    --category-header-padding: 12px;
+    --category-header-total-height: calc(
+        var(--category-header-padding)
+        + var(--category-header-content)
+        + var(--category-header-padding));
   }
 
   body {
@@ -39,7 +46,7 @@
     position: sticky;
     top: calc(var(--scope-nav-height));
     height: 33px; /* includes 1px border */
-    z-index: 2;
+    z-index: 100;
     background-color: var(--default-bg-color);
 
     padding-left: var(--default-left-right-margin);
@@ -64,18 +71,20 @@
 
   .category-header {
     position: sticky;
-    top: calc(var(--scope-nav-height) + 16px + 33px + 12px
-        /* .scope-header and its -container */
-      );
-    z-index: 1;
+    top: var(--scope-nav-total-height);
+    z-index: 90;
     background-color: var(--default-bg-color);
+
+    font-size: var(--category-header-content);
+    line-height: var(--category-header-content);
+    height: var(--category-header-content);
     font-weight: 600;
 
     padding-left: var(--default-left-right-margin);
     padding-right: var(--default-left-right-margin);
     margin-top: calc(32px - 12px);
-    padding-top: 12px;
-    padding-bottom: 12px;
+    padding-top: var(--category-header-padding);
+    padding-bottom: var(--category-header-padding);
   }
 
   {#- ================================================================= -#}
@@ -98,6 +107,17 @@
     padding-bottom: 8px;
 
     display: flex;
+  }
+  /* set the parent to be sticky, since .bonus-options is a sibling */
+  label.toggle-edit {
+    position: sticky;
+    display: block;
+    top: var(--category-header-total-height);
+    z-index: 80;
+    background-color: var(--default-bg-color);
+  }
+  .task-and-details:hover label.toggle-edit {
+    background-color: var(--default-hover-color);
   }
 
   .task-only > div {
@@ -179,6 +199,7 @@
     top: -24px;
     color: var(--tab-label-fg-color);
     text-align: center;
+    z-index: 81;
   }
 
   .bonus-options > label.show-edit {
@@ -321,7 +342,7 @@
 {%- set scope_to_print, resolution_to_print, is_future_task = compute_render_info_for(t) -%}
 
 <div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
-  <label for="toggle-edit-{{t.task_id}}-{{scope}}">
+  <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="toggle-edit">
     <div class="task-only
       {%- if resolution_to_print %} resolved {% endif %}
       {%- if is_future_task %} future {% endif %}
