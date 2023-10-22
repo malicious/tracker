@@ -160,10 +160,12 @@ def render_scope(task_date, section_date):
     if short_date_str[0:5] == section_date_str[0:5]:
         short_date_str = short_date_str[5:]
 
-    return f'<span class="task-scope" ' \
-        f'style="color: rgb({color_rgb[0]}, {color_rgb[1]}, {color_rgb[2]})">\n' \
-        f'  {short_date_str}\n' \
-        f'</span>'
+    return (
+        '<span class="task-scope" '
+        f'style="color: rgb({color_rgb[0]}, {color_rgb[1]}, {color_rgb[2]})">\n'
+        f'  {short_date_str}\n'
+        '</span>'
+    )
 
 
 def compute_ignoring_scope(todays_date):

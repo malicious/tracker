@@ -54,10 +54,12 @@ def render_day_svg(day_scope, day_notes, svg_width=960) -> str:
 
     # draw the hour lines on top
     for hour in range(1, 48):
-        svg = '<line ' \
-            f'x1="{svg_width * hour / 48:.3f}" y1="{0.4 * height_factor:.3f}" ' \
-            f'x2="{svg_width * hour / 48:.3f}" y2="{0.6 * height_factor:.3f}" ' \
+        svg = (
+            '<line '
+            f'x1="{svg_width * hour / 48:.3f}" y1="{0.4 * height_factor:.3f}" '
+            f'x2="{svg_width * hour / 48:.3f}" y2="{0.6 * height_factor:.3f}" '
             f'stroke="black" opacity="0.1" />'
+        )
         rendered_notes.append(svg)
 
     # and the actual note circles
@@ -81,17 +83,17 @@ def render_day_svg(day_scope, day_notes, svg_width=960) -> str:
 
     # finally, the overall day boundaries + text label(s)
     rendered_notes.extend([
-        f'<line '
+        '<line '
             f'x1="{svg_width * 1 / 4}" y1="{0.15 * height_factor:.3f}" '
             f'x2="{svg_width * 1 / 4}" y2="{0.85 * height_factor:.3f}" stroke="black" />',
         f'<text x="{svg_width / 2}" y="{0.85 * height_factor:.3f}" '
-            f'text-anchor="middle" opacity="0.5" style="font-size: 12px">'
+            'text-anchor="middle" opacity="0.5" style="font-size: 12px">'
             f'{(start_time + timedelta(hours=12)).strftime("%G-ww%V.%u-%b-%d")}</text>',
-        f'<line '
+        '<line '
             f'x1="{svg_width * 3 / 4}" y1="{0.15 * height_factor:.3f}" '
             f'x2="{svg_width * 3 / 4}" y2="{0.85 * height_factor:.3f}" stroke="black" />',
         f'<text x="{svg_width}" y="{0.85 * height_factor:.3f}" '
-            f'text-anchor="end" opacity="0.5" style="font-size: 12px">'
+            'text-anchor="end" opacity="0.5" style="font-size: 12px">'
             f'{(start_time + timedelta(hours=36)).strftime("ww%V.%u")}</text>',
     ])
 
@@ -99,7 +101,7 @@ def render_day_svg(day_scope, day_notes, svg_width=960) -> str:
         svg_width,
         height_factor,
         day_scope,
-        '\n'.join(rendered_notes)
+        '\n  '.join(rendered_notes)
     )
 
 
@@ -136,13 +138,17 @@ def render_week_svg(week_scope, notes_dict) -> str:
 
         For ease, this is expected to be 90px x 20px.
         """
-        hour_line = '<line x1="{:.3f}" y1="{}" ' \
-            'x2="{:.3f}" y2="{}" ' \
-            'stroke="black" opacity="0.1" />'.format(
-                column * col_width_and_right_margin + col_width/2 - 10,
-                row * row_height,
-                column * col_width_and_right_margin + col_width/2 + 10,
-                row * row_height)
+        hour_line = (
+            '<line '
+            'x1="{:.3f}" y1="{}" '
+            'x2="{:.3f}" y2="{}" '
+            'stroke="black" opacity="0.1" />'
+        ).format(
+            column * col_width_and_right_margin + col_width/2 - 10,
+            row * row_height,
+            column * col_width_and_right_margin + col_width/2 + 10,
+            row * row_height
+        )
 
         # Draw the every-6-hours lines special
         if row % 6 == 0:
@@ -163,8 +169,13 @@ def render_week_svg(week_scope, notes_dict) -> str:
         for row in range(1, 24):
             draw_hour(column, row)
 
-        day_label = f'<text x="{column * col_width_and_right_margin + col_width/2}" y="{24 * row_height - 8}" ' \
-            f'text-anchor="middle" opacity="0.5" style="font-size: 10px">{week_scope[5:] + "." + str(column)}</text>'
+        day_label = (
+            '<text '
+            f'x="{column * col_width_and_right_margin + col_width/2}" y="{24 * row_height - 8}" '
+            'text-anchor="middle" opacity="0.5" style="font-size: 10px">'
+            f'{week_scope[5:] + "." + str(column)}'
+            '</text>'
+        )
         rendered_notes.append(day_label)
 
     # and the after-sunday
