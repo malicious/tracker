@@ -17,9 +17,11 @@
 
   --default-left-right-margin: 8.0%;
 {%- if prev_scope or next_scope %}
-  --scope-nav-height: calc(24px + 24px);
+  --scope-nav-height: 24px;
+  --scope-nav-total-height: 48px;
 {%- else %}
-  --scope-nav-height: 0px;
+  --scope-nav-height: 0;
+  --scope-nav-total-height: 0;
 {% endif %}
 }
 @media (prefers-color-scheme: dark) {
@@ -52,14 +54,15 @@ a:hover {
   font-family: 'Source Code Pro', monospace;
 }
 
+.scope-spacer-上 {
+  height: 24px;
+}
 .scope-nav {
   /* general display stuff */
-  font-size: 24px;
-  line-height: 24px;
-  height: 24px;
+  font-size: var(--scope-nav-height);
+  line-height: var(--scope-nav-height);
+  height: var(--scope-nav-height);
   display: table;
-  padding-top: 12px;
-  padding-bottom: 6px;
 
   /* sample (reference) width calculations */
   padding-left: var(--default-left-right-margin);
@@ -78,13 +81,15 @@ a:hover {
 
 /* sticky header */
 .scope-nav {
+  padding-top: calc(
+      (var(--scope-nav-total-height) - var(--scope-nav-height)) / 2);
+  padding-bottom: calc(
+      (var(--scope-nav-total-height) - var(--scope-nav-height)) / 2);
+
   position: sticky;
   top: 0px;
   z-index: 100;
   background-color: var(--default-bg-color);
-}
-.scope-spacer-上 {
-  height: 24px;
 }
 .scope-spacer-下 {
   height: 6px;
