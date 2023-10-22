@@ -95,18 +95,30 @@
   {# ================================================================= -#}
   
   .task-headline {
+    font-family: "Helvetica Neue";
+    font-weight: 400;
+    font-size: 20px;
+
     display: flex;
     width: 100%;
     color: var(--default-fg-color);
 
+    position: sticky;
+    top: calc(var(--scope-nav-total-height) + var(--scope-header-total-height) + var(--category-header-total-height));
     z-index: 0;
   }
-  
-  .task-headline {
-    font-family: "Helvetica Neue";
-    font-weight: 400;
-    font-size: 20px;
+  /* change the spacing for sticky headers when no category field */
+  .no-category .task-headline {
+    top: calc(var(--scope-nav-total-height) + var(--scope-header-total-height));
   }
+  /* set a non-transparent background color */
+  .task-headline {
+    background-color: var(--default-bg-color);
+  }
+  .task-and-tabs:hover .task-headline {
+    background-color: var(--default-hover-color);
+  }
+  
   .task-headline code {
     background-color: var(--highlight-bg-color);
     padding: 2px 4px 2px 4px;
@@ -326,7 +338,7 @@
     <div class="scope-header">## {{ scope }}</div>
   </div>
 
-  <div class="category-container">
+  <div class="category-container no-category">
   {% set ns.prev_task = None %}
   {% for task in scope_tasks %}
     {%- if ns.prev_task and task.category != ns.prev_task.category %}
