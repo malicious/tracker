@@ -1,5 +1,6 @@
 import hashlib
 import os
+import re
 from datetime import datetime
 from json import JSONEncoder
 
@@ -141,6 +142,16 @@ def _register_endpoints(app):
         elif page_scopes == ('day',):
             this_day = datetime.now().strftime("%G-ww%V.%u")
             return redirect(url_for(".do_render_matching_notes", scope=this_day, domain=page_domains))
+        # Year-scopes get broken up into four quarters
+        elif len(page_scopes) == 1:
+            m = re.fullmatch(r'\d\d\d\d', page_scopes[0])
+            if m:
+                new_scopes = [escape(f"{m[0]}—Q{quarter}") for quarter in range(1,5)]
+                return redirect(url_for(
+                    ".do_render_matching_notes",
+                    scope=new_scopes,
+                    domain=page_domains,
+                ))
 
         single_page = request.args.get('single_page')
 
