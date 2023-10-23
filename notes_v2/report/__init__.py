@@ -254,10 +254,8 @@ def render_matching_notes(
     # If this is limited to one scope, link to prev/next scopes as well.
     if len(scope_ids) == 1:
         def _scope_to_html_link(scope_id: str) -> str:
-            return '<a href="/notes?scope={}{}{}">{}</a>'.format(
-                scope_id,
-                ''.join([f'&domain={d}' for d in domains]),
-                "&single_page=true" if single_page else "",
+            return '<a href="{}">{}</a>'.format(
+                url_for(".do_render_matching_notes", scope=scope_id, domain=domains, single_page=single_page),
                 scope_id)
 
         scope_id0 = TimeScope(list(scope_ids)[0])
@@ -287,10 +285,16 @@ def render_matching_notes(
             render_kwargs['next_scope'] = _scope_to_html_link(next_quarter)
             render_kwargs['prev_scope'] = _scope_to_html_link(prev_quarter)
 
-    domains_as_html = [_domain_to_html_link(d, scope_ids, single_page) for d in domains]
-    render_kwargs['scope_nav_header'] = Markup(' & \n'.join(
-        [f'<div>{d}</div>' for d in domains_as_html]
-    ))
+    if domains:
+        domains_as_html = [_domain_to_html_link(d, scope_ids, single_page) for d in domains]
+        domains_as_html = '\n & '.join(f'<span>{d}</span>' for d in domains_as_html)
+
+        render_kwargs['scope_nav_header'] = Markup(
+            f'<div>\n{domains_as_html}\n</div>\n'
+            '<div class="close"><a href="{}">[x]</a></div>'.format(
+                url_for(".do_render_matching_notes", scope=scope_ids, single_page=single_page),
+            )
+        )
 
     return render_template('notes-v2.html',
                            cached_render=memoized_render_notes,

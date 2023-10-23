@@ -72,26 +72,42 @@ a:hover {
 .scope-nav .left {
   display: table-cell;
   white-space: nowrap;
+  -webkit-user-select: none;
   padding-bottom: calc(
       (var(--scope-nav-total-height) - var(--scope-nav-height)) / 2);
   padding-left: 0.8em;
 }
 .scope-nav .header {
-  display: table-cell;
+  display: flex;
+  align-items: flex-end;
   text-align: center;
 
   font-size: calc(var(--scope-nav-height) * 0.8);
   overflow-y: scroll;
+  padding-right: auto;
   padding-bottom: calc(var(--scope-nav-height) * 0.3);
+  padding-left: auto;
   border-bottom: 1px solid silver;
 }
-.scope-nav .header > div {
-  display: inline;
+.scope-nav .header > *:first-child {
+  padding-left: 16px;
+}
+.scope-nav .header > *:last-child {
+  padding-right: 16px;
+}
+.scope-nav .header .close {
+  -webkit-user-select: none;
+  margin-left: auto;
+  padding-left: 16px;
+  padding-right: 16px;
+}
+.scope-nav .header a {
   white-space: nowrap;
 }
 .scope-nav .right {
   display: table-cell;
   white-space: nowrap;
+  -webkit-user-select: none;
   text-align: right;
   padding-right: 0.8em;
   padding-bottom: calc(
