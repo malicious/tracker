@@ -254,27 +254,27 @@ body > h2 {
 {# ================================================================= #}
 
 {% macro render_week(week_scope, week_dict) %}
-{% if week_dict|length > 1 or week_dict["notes"] %}
+{%- if week_dict | length > 1 or week_dict["notes"] %}
   <h2>{{ as_week_header(week_scope) | safe }}</h2>
   <div class="week-svg">
     {{ maybe_render_week_svg(week_scope, week_dict) | safe }}
   </div>
 {% endif %}
 
-{% for week_note in week_dict["notes"] %}
-  {{ render_n2(week_note, week_scope) }}
-{% endfor %}
+{%- for week_note in week_dict["notes"] %}
+  {{- render_n2(week_note, week_scope) }}
+{%- endfor %}
 
-{% for day_scope, day_dict in week_dict.items()|sort(reverse=true, attribute='0') if not day_scope == "notes" %}
-  {% if day_dict["notes"] %}
+{%- for day_scope, day_dict in week_dict.items()|sort(reverse=true, attribute='0') if not day_scope == "notes" %}
+  {%- if day_dict["notes"] %}
   <div class="day-svg">
     {{ render_day_svg(day_scope, day_dict["notes"]) | safe }}
   </div>
   {% endif %}
 
-  {% for day_note in day_dict["notes"] %}
-    {{ render_n2(day_note, day_scope) }}
-  {% endfor %}
+  {%- for day_note in day_dict["notes"] %}
+    {{- render_n2(day_note, day_scope) }}
+  {%- endfor %}
 
 {% endfor %}{# day #}
 
@@ -283,48 +283,38 @@ body > h2 {
 
 
 {% macro render_quarter(quarter_scope, quarter_dict) %}
-{% if quarter_dict|length > 1 or quarter_dict["notes"] %}
+{%- if quarter_dict | length > 1 or quarter_dict["notes"] %}
   <h1>{{ as_quarter_header(quarter_scope) | safe }}</h1>
-{% endif %}
+{%- endif %}
 
-{% for quarter_note in quarter_dict["notes"] %}
-  {{ render_n2(quarter_note, quarter_scope) }}
-{% endfor %}
+{%- for quarter_note in quarter_dict["notes"] %}
+  {{- render_n2(quarter_note, quarter_scope) }}
+{%- endfor %}
 
-{% for week_scope, week_dict in quarter_dict.items()|sort(reverse=true, attribute='0') if not week_scope == "notes" %}
-  {{ render_week(week_scope, week_dict) }}
+{%- for week_scope, week_dict in quarter_dict.items()|sort(reverse=true, attribute='0') if not week_scope == "notes" %}
+  {{- render_week(week_scope, week_dict) }}
 
-  {% if week_dict|length > 1 or week_dict["notes"] %}
-    <hr>
-  {% endif %}
+  {%- if week_dict | length > 1 or week_dict["notes"] %}
+  <hr>
+{%- endif %}
 
-{% endfor %}{# week #}
+{%- endfor %}{# week #}
 
-{% endmacro %}{# render_quarter #}
+{%- endmacro %}{# render_quarter #}
 
 
 
 {% macro render_notes(notes_tree) %}
-{% for quarter_scope, quarter_dict in notes_tree.items()|sort(reverse=true, attribute='0') %}
-  {{ render_quarter(quarter_scope, quarter_dict) }}
-{% endfor %}
+{%- for quarter_scope, quarter_dict in notes_tree.items()|sort(reverse=true, attribute='0') %}
+  {{- render_quarter(quarter_scope, quarter_dict) }}
+{%- endfor %}
 
-{% endmacro %}
+{%- endmacro %}
 
 
 
 {% block content %}
+{{- cached_render(render_notes) }}
 
-{% if domain_header_html %}
-<div class="domain-header">
-  <span>{{ domain_header_html | safe }}</span>
-</div>
-{% elif domain_header %}
-<div class="domain-header">
-  <span>{{ domain_header }}</span>
-</div>
-{% endif %}{# domain_header{,_html} #}
+{%- endblock %}
 
-{{ cached_render(render_notes) }}
-
-{% endblock %}

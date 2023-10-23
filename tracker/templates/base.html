@@ -16,7 +16,7 @@
   --highlight-bg-color: white;
 
   --default-left-right-margin: 8.0%;
-{%- if prev_scope or next_scope %}
+{%- if prev_scope or scope_nav_header or next_scope %}
   --scope-nav-height: 24px;
   --scope-nav-total-height: 48px;
 {%- else %}
@@ -71,19 +71,36 @@ a:hover {
 }
 .scope-nav .left {
   display: table-cell;
+  white-space: nowrap;
+  padding-bottom: calc(
+      (var(--scope-nav-total-height) - var(--scope-nav-height)) / 2);
   padding-left: 0.8em;
+}
+.scope-nav .header {
+  display: table-cell;
+  text-align: center;
+
+  font-size: calc(var(--scope-nav-height) * 0.8);
+  overflow-y: scroll;
+  padding-bottom: calc(var(--scope-nav-height) * 0.3);
+  border-bottom: 1px solid silver;
+}
+.scope-nav .header > div {
+  display: inline;
+  white-space: nowrap;
 }
 .scope-nav .right {
   display: table-cell;
+  white-space: nowrap;
   text-align: right;
   padding-right: 0.8em;
+  padding-bottom: calc(
+      (var(--scope-nav-total-height) - var(--scope-nav-height)) / 2);
 }
 
 /* sticky header */
 .scope-nav {
   padding-top: calc(
-      (var(--scope-nav-total-height) - var(--scope-nav-height)) / 2);
-  padding-bottom: calc(
       (var(--scope-nav-total-height) - var(--scope-nav-height)) / 2);
 
   position: sticky;
@@ -103,21 +120,26 @@ a:hover {
 
 <body>
 
-{% if prev_scope or next_scope %}
+{%- if prev_scope or scope_nav_header or next_scope %}
 <div class="scope-spacer-上"></div>
 <div class="scope-nav">
-  {% if prev_scope %}
-    <div class="left">{{ prev_scope|safe }}</div>
-  {% endif %}
-  {% if next_scope %}
-    <div class="right">{{ next_scope|safe }}</div>
-  {% endif %}
+{%- if prev_scope %}
+  <div class="left">{{ prev_scope | safe }}</div>
+{%- endif %}
+{%- if scope_nav_header %}
+  <div class="header">
+    {{ scope_nav_header | indent(4) }}
+  </div><!-- .header -->
+{%- endif %}
+{%- if next_scope %}
+  <div class="right">{{ next_scope | safe }}</div>
+{%- endif %}
 </div>
 <div class="scope-spacer-下"></div>
-{% endif %}
+{%- endif -%}
 
-{% block content %}
-{% endblock %}
+{%- block content %}
+{%- endblock -%}
 
 </body>
 </html>

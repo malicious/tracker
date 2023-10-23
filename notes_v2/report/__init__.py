@@ -288,8 +288,9 @@ def render_matching_notes(
             render_kwargs['prev_scope'] = _scope_to_html_link(prev_quarter)
 
     domains_as_html = [_domain_to_html_link(d, scope_ids, single_page) for d in domains]
-    render_kwargs['domain_header'] = " & ".join(domains)
-    render_kwargs['domain_header_html'] = " & ".join(domains_as_html)
+    render_kwargs['scope_nav_header'] = Markup(' & \n'.join(
+        [f'<div>{d}</div>' for d in domains_as_html]
+    ))
 
     return render_template('notes-v2.html',
                            cached_render=memoized_render_notes,
