@@ -44,8 +44,9 @@ def _dot_radius_and_styling(db_session: Session, note: Note) -> Tuple[str, str]:
     domain_id0 = list(note.get_domain_ids() or [''])[0]
 
     # Do an initial estimate of dot size based on note length
-    if note.detailed_desc is not None and len(note.detailed_desc) > 80:
-        dot_radius = min(20, len(note.detailed_desc) / 40)
+    if note.detailed_desc is not None and len(note.detailed_desc) > 1_000:
+        dot_radius = min(40, len(note.detailed_desc) / 200)
+        dot_opacity = min(0.6, max(0.2, 1.0 - len(note.detailed_desc) / 8_000))
 
     # Otherwise, estimate the rarity of the domain
     else:
@@ -63,8 +64,9 @@ def _dot_radius_and_styling(db_session: Session, note: Note) -> Tuple[str, str]:
 
         dot_radius = 0.1 * current_app.total_note_count / note_count
         dot_radius = min(14, dot_radius + 2)
+        dot_opacity = 0.3
 
-    return dot_radius, f'style="fill: hsl({_domain_hue(domain_id0)}, 80%, 40%); fill-opacity: 0.4"'
+    return dot_radius, f'style="fill: hsl({_domain_hue(domain_id0)}, 80%, 40%); fill-opacity: {dot_opacity:.2f}"'
 
 
 def render_day_svg(
