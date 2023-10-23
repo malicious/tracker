@@ -66,10 +66,15 @@ class TaskLinkage(Base):
 
     task_id = Column(Integer, ForeignKey("Tasks.task_id"), primary_key=True, nullable=False)
     time_scope = Column(Date, primary_key=True, nullable=False)
+
+    # Note that timestamps are always promoted to microsecond precision, for storage consistency.
+    # See `sqlalchemy.dialects.sqlite.DATETIME`.
     created_at = Column(DateTime, nullable=False)
+
+    time_elapsed = Column(Float)
     resolution = Column(String)
     detailed_resolution = Column(String)
-    time_elapsed = Column(Float)
+
     __table_args__ = (
         UniqueConstraint('task_id', 'time_scope'),
     )
@@ -94,8 +99,7 @@ class TaskLinkage(Base):
 
         Skips task_id, cause we assume we're getting called by a Task
         """
-        response_dict = {
-        }
+        response_dict = {}
 
         if self.created_at is not None:
             response_dict['created_at'] = str(self.created_at)
