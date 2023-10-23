@@ -37,12 +37,13 @@ def _domain_to_html_link(
 
 
 def _render_n2_domains(
+        db_session: Session,
         n: Note,
         domain_ids: Tuple[str],
         scope_ids: Tuple[str],
         single_page: bool,
         ignore_noisy_domains: bool = False,
-):
+) -> str:
     def should_display_domain(d: str) -> bool:
         # Don't render any domains that are an exact match for the page
         #
@@ -60,10 +61,26 @@ def _render_n2_domains(
 
         return True
 
-    return " & ".join(
-        _domain_to_html_link(d, scope_ids, single_page)
-        for d in n.get_domain_ids()
-        if should_display_domain(d))
+    renderable_domains = [d for d in n.get_domain_ids() if should_display_domain(d)]
+    if len(renderable_domains) == 0:
+        return ""
+    elif len(renderable_domains) == 1:
+        # Don't need to do any querying if there's only one domain,
+        # which is true for the majority of notes
+        return _domain_to_html_link(renderable_domains[0], scope_ids, single_page)
+    else:
+        query = (
+            select(NoteDomain.domain_id, func.count(NoteDomain.note_id))
+            .where(NoteDomain.domain_id.in_(renderable_domains))
+            .group_by(NoteDomain.domain_id)
+            .order_by(func.count(NoteDomain.note_id).asc())
+        )
+
+        rendered_domains = []
+        for domain_id, note_count in db_session.execute(query).all():
+            rendered_domains.append(_domain_to_html_link(domain_id, scope_ids, single_page))
+
+        return " & ".join(rendered_domains)
 
 
 def _render_n2_time(n: Note, scope: TimeScope) -> str:
@@ -159,7 +176,7 @@ def render_matching_notes(
             # Print the description
             f'<div class="desc">{do_markdown_filter(n.desc)}</div>\n'
             # And color-coded, hyperlinked domains
-            f'<div class="domains">{_render_n2_domains(n, domains, scope_ids, single_page)}</div>\n'
+            f'<div class="domains">{_render_n2_domains(db_session, n, domains, scope_ids, single_page)}</div>\n'
         )
 
     def render_n2_json(n: Note) -> str:

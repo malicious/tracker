@@ -41,7 +41,14 @@ def _dot_radius_and_styling(db_session: Session, note: Note) -> Tuple[str, str]:
     if not note.detailed_desc and not note.get_domain_ids():
         return 8, f'style="fill: rgba(0, 0, 0, 0.2);"'
 
-    domain_id0 = list(note.get_domain_ids() or [''])[0]
+    # Use the rarest domain, and figure out how big to make the dot
+    domain_id0, note_count = db_session.execute(
+        select(NoteDomain.domain_id, func.count(NoteDomain.note_id))
+        .where(NoteDomain.domain_id.in_(list(note.get_domain_ids())))
+        .group_by(NoteDomain.domain_id)
+        .order_by(func.count(NoteDomain.note_id).asc())
+        .limit(1)
+    ).one()
 
     # Do an initial estimate of dot size based on note length
     if note.detailed_desc is not None and len(note.detailed_desc) > 1_000:
@@ -50,12 +57,6 @@ def _dot_radius_and_styling(db_session: Session, note: Note) -> Tuple[str, str]:
 
     # Otherwise, estimate the rarity of the domain
     else:
-        # Use the first domain, and figure out how big to make the dot
-        note_count = db_session.execute(
-            select(func.count(NoteDomain.note_id))
-            .where(NoteDomain.domain_id == domain_id0)
-        ).scalar()
-
         # Check if we've cached a note count somewhere
         if not hasattr(current_app, 'total_note_count'):
             current_app.total_note_count = db_session.execute(
