@@ -23,7 +23,8 @@
     --category-header-padding: 12px;
     --category-header-total-height: calc(
         var(--category-header-padding)
-        + var(--category-header-content));
+        + var(--category-header-content)
+        + var(--category-header-padding));
   }
 
   body {
@@ -76,14 +77,16 @@
 
     font-size: var(--category-header-content);
     line-height: var(--category-header-content);
-    height: var(--category-header-content);
     font-weight: 600;
 
+    /* TODO: If we need a line-break, this breaks */
+    height: var(--category-header-content);
+  
     padding-top: var(--category-header-padding);
     padding-right: var(--default-left-right-margin);
+    padding-bottom: var(--category-header-padding);
     padding-left: var(--default-left-right-margin);
-    margin-top: calc(32px - 12px);
-    margin-bottom: var(--category-header-padding);
+    margin-top: calc(32px - var(--category-header-padding));
   }
 
   {#- ================================================================= -#}
@@ -338,13 +341,12 @@
 {# ================================================================= -#}
 
 {%- macro render_task(t, scope) %}
-{%- set scope_to_print, resolution_to_print, is_future_task = compute_render_info_for(t) -%}
-
+{%- set scope_to_print, resolution_to_print, is_future_task = compute_render_info_for(t) %}
 <div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
   <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="toggle-edit">
     <div class="task-only
-      {%- if resolution_to_print %} resolved {% endif %}
-      {%- if is_future_task %} future {% endif %}
+      {%- if resolution_to_print %} resolved {% endif -%}
+      {%- if is_future_task %} future {% endif -%}
     ">
       {%- if resolution_to_print %}
       <div class="task-resolution">({{ resolution_to_print }}) </div>
@@ -352,7 +354,9 @@
       {%- if scope_to_print %}
       <div class="scope">{{ scope_to_print | safe }}</div>
       {%- endif %}
-      <div class="desc">{{ t.desc | markdown }} </div>
+      <div class="desc">
+        {{ t.desc | markdown | indent(6) }}
+      </div>
 
       {%- if t.time_estimate and t.get_time_elapsed() %}
       <div class="task-time">{{ "`{:.1f} => {:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</div>
@@ -370,7 +374,9 @@
       <span>aio</span>
     </label>
     <div class="task-aio">
-      <div>{{ to_aio(t) }}</div>
+      <div>
+        {{ to_aio(t) | indent(6) }}
+      </div>
     </div>
 
     <input type="checkbox" id="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
@@ -378,19 +384,22 @@
       <span>json</span>
     </label>
     <div class="task-json">
-      <div>{{ t.as_json() }}</div>
+      <div>
+        {{ t.as_json() | indent(6) }}
+      </div>
     </div>
 
     <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
     <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
       <span>edit</span>
     </label>
-    <div class="task-edit">{{ task_macros.edit_block(t, backlink="task-{}-{}".format(t.task_id, scope)) }}</div>
+    <div class="task-edit">
+      {{- task_macros.edit_block(t, backlink="task-{}-{}".format(t.task_id, scope)) | indent(6) }}
+    </div><!-- .task-edit -->
+  </div><!-- .bonus-options -->
+</div><!-- .task-and-details -->
 
-  </div>
-</div>
-
-{%- endmacro %}
+{% endmacro %}
 
 
 
@@ -404,7 +413,7 @@
     {{ task_macros.linkage_header_row() }}
     {{ task_macros.linkage_row_new('new-blank', '', '', '') }}
     {{ task_macros.linkage_footer_row('create task') }}
-  </div>
+  </div><!-- .linkage-block -->
 </form>
 
 {% endmacro %}
@@ -429,7 +438,7 @@
 <div class="scope-container">
   <div class="spacer-上"></div>
   <div class="scope-header-container">
-    <div class="scope-header">## {{ scope }}</div>
+    <div class="scope-header">tasks</div>
   </div>
 
   <div class="category-container no-category">

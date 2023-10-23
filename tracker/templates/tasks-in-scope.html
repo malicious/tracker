@@ -29,7 +29,8 @@
     --category-header-padding: 12px;
     --category-header-total-height: calc(
         var(--category-header-padding)
-        + var(--category-header-content));
+        + var(--category-header-content)
+        + var(--category-header-padding));
   }
   
   body {
@@ -81,14 +82,16 @@
 
     font-size: var(--category-header-content);
     line-height: var(--category-header-content);
-    height: var(--category-header-content);
     font-weight: 600;
+
+    /* TODO: If we need a line-break, this breaks */
+    height: var(--category-header-content);
   
     padding-top: var(--category-header-padding);
     padding-right: var(--default-left-right-margin);
+    padding-bottom: var(--category-header-padding);
     padding-left: var(--default-left-right-margin);
-    margin-top: calc(32px - 12px);
-    margin-bottom: var(--category-header-padding);
+    margin-top: calc(32px - var(--category-header-padding));
   }
   
   {# ================================================================= -#}

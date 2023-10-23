@@ -88,17 +88,17 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
     unique_id,
     desc,
     tabs,
-    sub_desc = None
+    sub_desc = ""
 ) %}
 <div class="{{item_type}}-and-tabs" id="{{item_type}}-{{unique_id}}">
-{# The way this `label` wraps everything, it makes the whole row a clickable #}
-<label for="toggle-{{tabs[0][0]}}-{{unique_id}}" class="toggle-{{tabs[0][0]}}">
-  <div class="{{item_type}}-only {{item_styling}}">
-    {{ desc }}
-  </div>
-</label>
+  {#- The way this `label` wraps everything, it makes the whole row a clickable #}
+  <label for="toggle-{{tabs[0][0]}}-{{unique_id}}" class="toggle-{{tabs[0][0]}}">
+    <div class="{{item_type}}-only {{item_styling}}">
+      {{ desc }}
+    </div>
+  </label>
 
-  {{ sub_desc }}
+  {{- sub_desc }}
 
   <div class="{{item_type}}-tabs">
   {%- for tab_name, tab_content, checkbox_attrib in tabs %}

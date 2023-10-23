@@ -1,6 +1,6 @@
-{# ================================================================= #}
+{#- ================================================================= #}
 
-{% macro task_edit_header(t) %}
+{%- macro task_edit_header(t) -%}
 <div class="task-edit-task-only">
   <div>
     <label>task_id</label>
@@ -22,11 +22,11 @@
   </div>
 </div>
 
-{% endmacro %}
+{%- endmacro -%}
 
 
 
-{% macro task_add_header() %}
+{%- macro task_add_header() -%}
 <div class="task-edit-task-only">
   <div>
     <label>category</label>
@@ -42,42 +42,42 @@
   </div>
 </div>
 
-{% endmacro %}
+{%- endmacro -%}
 
 
 
-{# ================================================================= #}
+{#- ================================================================= #}
 
-{% macro linkage_header_row() %}
-  <div class="linkage-header-row">
-    <label>time_scope_id / created_at</label>
-    <label>time_elapsed</label>
-    <label>resolution</label>
-    <label>detailed_resolution</label>
-    <div></div>
+{%- macro linkage_header_row() %}
+<div class="linkage-header-row">
+  <label>time_scope_id / created_at</label>
+  <label>time_elapsed</label>
+  <label>resolution</label>
+  <label>detailed_resolution</label>
+  <div></div>
+</div>
+{%- endmacro -%}
+
+
+
+{%- macro linkage_footer_row(button_name='💾 save task') %}
+<div class="linkage-footer-row">
+  <div>
+    <button class="new" disabled>+</button>
   </div>
-{% endmacro %}
-
-
-
-{% macro linkage_footer_row(button_name='💾 save task') %}
-  <div class="linkage-footer-row">
-    <div>
-      <button class="new" disabled>+</button>
-    </div>
-    <div></div>
-    <div>
-      <button class="done" disabled>mark done</button>
-    </div>
-    <div style="text-align: right;">
-      <button>{{ button_name }}</button>
-    </div>
+  <div></div>
+  <div>
+    <button class="done" disabled>mark done</button>
   </div>
-{% endmacro %}
+  <div style="text-align: right;">
+    <button>{{ button_name }}</button>
+  </div>
+</div><!-- .linkage-footer-row -->
+{%- endmacro -%}
 
 
 
-{% macro linkage_row(tl, placeholder_str="placeholder=\"None\"") %}
+{%- macro linkage_row(tl, placeholder_str="placeholder=\"None\"") -%}
 <div class="linkage-row">
   <div>
     <input
@@ -114,7 +114,7 @@
     <button>存</button> {# TODO: update the "formaction" field here, so it's linkage-only #}
     <button class="delete" disabled>x</button>
   </div>
-</div>
+</div><!-- .linkage-row -->
 {% endmacro %}
 
 
@@ -458,14 +458,13 @@ document.addEventListener("DOMContentLoaded", enableTextareaAutoResize);
 {% macro edit_block(t, backlink) %}
 <form action="{{url_for("tasks-v2-rest.edit_task", task_id=t.task_id)}}" method="post">
   <input type="hidden" name="backlink" value="{{backlink}}">
-  {{ task_edit_header(t) }}
-
+  {{- task_edit_header(t) | indent(2) }}
   <div class="linkage-block">
-    {{- linkage_header_row() }}
-    {%- for tl in t.linkages %}
-      {{- linkage_row(tl) }}
-    {%- endfor %}
-    {{- linkage_footer_row() }}
-  </div>
+  {{- linkage_header_row() | indent(4) }}
+  {%- for tl in t.linkages %}
+    {{ linkage_row(tl) | indent(4) }}
+  {%- endfor %}
+    {{ linkage_footer_row() | indent(4) }}
+  </div><!-- .linkage-block -->
 </form>
-{% endmacro %}
+{%- endmacro %}
