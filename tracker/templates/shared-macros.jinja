@@ -38,6 +38,7 @@
   top: -24px;
   color: var(--tab-label-fg-color);
   text-align: center;
+  z-index: 81;
 }
 {% for tab_name in tab_names %}
 .{{item_type}}-tabs > label.show-{{tab_name}} {
@@ -49,7 +50,6 @@
 {% for tab_name in tab_names %}
 /* highlight tab labels when selected */
 .{{item_type}}-{{tab_name}} {
-  margin-top: -8px;
   padding-bottom: 8px;
   font-size: 12px;
   display: none;
@@ -82,14 +82,23 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
 
 
 
-{% macro render_with_tabs(item_type, item_styling, unique_id, desc, tabs) %}
+{% macro render_with_tabs(
+    item_type,
+    item_styling,
+    unique_id,
+    desc,
+    tabs,
+    sub_desc = None
+) %}
 <div class="{{item_type}}-and-tabs" id="{{item_type}}-{{unique_id}}">
 {# The way this `label` wraps everything, it makes the whole row a clickable #}
-<label for="toggle-{{tabs[0][0]}}-{{unique_id}}">
+<label for="toggle-{{tabs[0][0]}}-{{unique_id}}" class="toggle-{{tabs[0][0]}}">
   <div class="{{item_type}}-only {{item_styling}}">
     {{ desc }}
   </div>
 </label>
+
+  {{ sub_desc }}
 
   <div class="{{item_type}}-tabs">
   {%- for tab_name, tab_content, checkbox_attrib in tabs %}

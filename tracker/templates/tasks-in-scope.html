@@ -29,8 +29,7 @@
     --category-header-padding: 12px;
     --category-header-total-height: calc(
         var(--category-header-padding)
-        + var(--category-header-content)
-        + var(--category-header-padding));
+        + var(--category-header-content));
   }
   
   body {
@@ -45,14 +44,14 @@
   {#- ================================================================= -#}
   
   .scope-container > .spacer-上 {
-    height: 24px;
+    height: 12px;
   }
   
   .scope-header-container {
     position: sticky;
     top: var(--scope-nav-total-height);
     height: calc(var(--scope-header-content) + var(--scope-header-border));
-    z-index: 2;
+    z-index: 90;
     background-color: var(--default-bg-color);
   
     padding-top: 16px;
@@ -77,7 +76,7 @@
   .category-header {
     position: sticky;
     top: calc(var(--scope-nav-total-height) + var(--scope-header-total-height));
-    z-index: 1;
+    z-index: 80;
     background-color: var(--default-bg-color);
 
     font-size: var(--category-header-content);
@@ -85,11 +84,11 @@
     height: var(--category-header-content);
     font-weight: 600;
   
-    padding-left: var(--default-left-right-margin);
-    padding-right: var(--default-left-right-margin);
-    margin-top: calc(32px - 12px);
     padding-top: var(--category-header-padding);
-    padding-bottom: var(--category-header-padding);
+    padding-right: var(--default-left-right-margin);
+    padding-left: var(--default-left-right-margin);
+    margin-top: calc(32px - 12px);
+    margin-bottom: var(--category-header-padding);
   }
   
   {# ================================================================= -#}
@@ -102,14 +101,6 @@
     display: flex;
     width: 100%;
     color: var(--default-fg-color);
-
-    position: sticky;
-    top: calc(var(--scope-nav-total-height) + var(--scope-header-total-height) + var(--category-header-total-height));
-    z-index: 0;
-  }
-  /* change the spacing for sticky headers when no category field */
-  .no-category .task-headline {
-    top: calc(var(--scope-nav-total-height) + var(--scope-header-total-height));
   }
   /* set a non-transparent background color */
   .task-headline {
@@ -119,6 +110,21 @@
     background-color: var(--default-hover-color);
   }
   
+  label.toggle-edit {
+    position: sticky;
+    display: block;
+    top: calc(var(--scope-nav-total-height) + var(--scope-header-total-height) + var(--category-header-total-height));
+    z-index: 70;
+    background-color: var(--default-bg-color);
+  }
+  .task-and-tabs:hover label.toggle-edit {
+    background-color: var(--default-hover-color);
+  }
+  /* change the spacing for sticky headers when no category field */
+  .no-category label.toggle-edit {
+    top: calc(var(--scope-nav-total-height) + var(--scope-header-total-height));
+  }
+
   .task-headline code {
     background-color: var(--highlight-bg-color);
     padding: 2px 4px 2px 4px;
@@ -181,8 +187,8 @@
     color: var(--text-low-priority-color);
     font-size: 12px;
     line-height: 16px;
-  
-    margin-top: 8px;
+
+    padding-bottom: 8px;
     padding-left: 24px;
     max-width: 600px;
   }
@@ -251,7 +257,7 @@
 
 {# ================================================================= -#}
 
-{%- macro _render_task_desc(t, scope, resolution_to_print) %}
+{%- macro _render_desc(t, scope, resolution_to_print) %}
   <div class="task-headline
     {%- if resolution_to_print %} resolved {% endif -%}
   ">
@@ -269,7 +275,9 @@
       <span class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</span>
     {%- endif %}
   </div>
+{%- endmacro -%}
 
+{%- macro _render_subdesc(t, scope) %}
     {%- if t.linkages|length == 1 %}
       {%- if t.linkages[0].detailed_resolution %}
         <div class="sub-desc">{{ t.linkages[0].detailed_resolution }}</div>
@@ -279,30 +287,31 @@
         <div class="sub-desc">{{ t.linkage_at(scope, False).detailed_resolution }}</div>
       {%- endif %}
     {%- endif %}
-{% endmacro %}
+{%- endmacro -%}
 
 
 
-{% macro render_task(task, scope) %}
-  {% set tabs = [('edit', task_macros.edit_block(task,
+{%- macro render_task(task, scope) %}
+  {%- set tabs = [('edit', task_macros.edit_block(task,
                               backlink="task-{}-{}".format(task.task_id, scope)), ''),
                  ('json', "<div>{}</div>".format(task.as_json()), ''),
                  ('aio', "<div>{}</div>".format(to_aio(task)), ''),
                  ] %}
-  {% set resolution_to_print =
+  {%- set resolution_to_print =
          task.linkage_at(scope, create_if_none=False).resolution %}
-  {{ shared_macros.render_with_tabs('task',
+  {{- shared_macros.render_with_tabs('task',
         item_styling="resolved" if resolution_to_print,
         unique_id="{}-{}".format(task.task_id, scope),
-        desc=_render_task_desc(task, scope, resolution_to_print),
-        tabs=tabs) }}
-{% endmacro %}
+        desc=_render_desc(task, scope, resolution_to_print),
+        tabs=tabs,
+        sub_desc=_render_subdesc(task, scope)) }}
+{%- endmacro -%}
 
 
 
-{# ================================================================= -#}
+{#- ================================================================= -#}
 
-{% macro render_add_panel() %}
+{%- macro render_add_panel() %}
 <form action="{{url_for('tasks-v2-rest.create_task')}}" method="post">
   {{ task_macros.task_add_header() }}
 

@@ -23,8 +23,7 @@
     --category-header-padding: 12px;
     --category-header-total-height: calc(
         var(--category-header-padding)
-        + var(--category-header-content)
-        + var(--category-header-padding));
+        + var(--category-header-content));
   }
 
   body {
@@ -80,11 +79,11 @@
     height: var(--category-header-content);
     font-weight: 600;
 
-    padding-left: var(--default-left-right-margin);
-    padding-right: var(--default-left-right-margin);
-    margin-top: calc(32px - 12px);
     padding-top: var(--category-header-padding);
-    padding-bottom: var(--category-header-padding);
+    padding-right: var(--default-left-right-margin);
+    padding-left: var(--default-left-right-margin);
+    margin-top: calc(32px - 12px);
+    margin-bottom: var(--category-header-padding);
   }
 
   {#- ================================================================= -#}
@@ -433,7 +432,7 @@
     <div class="scope-header">## {{ scope }}</div>
   </div>
 
-  <div class="category-container">
+  <div class="category-container no-category">
   {%- set ns.prev_task = None %}
   {%- for task in scope_tasks %}
     {%- if ns.prev_task and task.category != ns.prev_task.category %}
