@@ -134,11 +134,12 @@ def render_day_svg(
             dot_radius, dot_styling = _dot_radius_and_styling(db_session, note)
             hour_offset = (note.sort_time - start_time).total_seconds() % 3600
 
-            yield '''<circle cx="{:.3f}" cy="{:.3f}" r="{}" {} />'''.format(
+            yield '''<circle cx="{:.3f}" cy="{:.3f}" r="{}" {}><title>{}</title></circle>'''.format(
                 ((note.sort_time - start_time).total_seconds() - hour_offset + 1800) * width_factor,
                 hour_offset / 3600 * height_factor,
                 dot_radius,
                 dot_styling,
+                escape('\n'.join(note.get_domain_ids())) or "[no domains]",
             )
 
     return (
@@ -257,12 +258,13 @@ def render_week_svg(
         dot_x_offset = ((note.sort_time - day_scope_time).total_seconds() % (60 * 60)) / (60 * 60)
         dot_x_offset = dot_radius + dot_x_offset * (col_width - 2 * dot_radius)
 
-        return '<circle cx="{:.3f}" cy="{:.3f}" r="{}" {} {} />'.format(
+        return '<circle cx="{:.3f}" cy="{:.3f}" r="{}" {} {}><title>{}</title></circle>'.format(
             column * col_width_and_right_margin + dot_x_offset,
             int((note.sort_time - day_scope_time).total_seconds() / (60 * 60)) * row_height + row_height / 2,
             dot_radius,
             dot_styling,
             f'tracker-note-id="{note.note_id}"',
+            escape('\n'.join(note.get_domain_ids())) or "[no domains]",
         )
 
     def draw_note_dots() -> Iterable[str]:
