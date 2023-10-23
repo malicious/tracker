@@ -2,16 +2,28 @@ import functools
 import hashlib
 import itertools
 from datetime import datetime, timedelta
-from typing import Iterable
+from typing import Iterable, Tuple
 
-from flask import Response
+from flask import Response, current_app
+from sqlalchemy import func, select
+from sqlalchemy.orm import Session
 
+from notes_v2.models import Note, NoteDomain
 from notes_v2.report.gather import notes_json_tree
 from notes_v2.time_scope import TimeScope
 
 
 @functools.lru_cache
-def domain_to_css_color(domain: str) -> str:
+def _domain_hue(d: str) -> str:
+    domain_hash = hashlib.sha256(d.encode('utf-8')).hexdigest()
+    domain_hash_int = int(domain_hash[0:4], 16)
+
+    color_h = (domain_hash_int % 12) * (256.0 / 12)
+    return f"{color_h:.2f}"
+
+
+@functools.lru_cache
+def domain_to_css_color(d: str) -> str:
     """
     Map the domain string to a visually-distinct CSS color.
 
@@ -21,23 +33,42 @@ def domain_to_css_color(domain: str) -> str:
 
     TODO: We could probably do with more than equally-spaced "hue" values
     """
-    domain_hash = hashlib.sha256(domain.encode('utf-8')).hexdigest()
-    domain_hash_int = int(domain_hash[0:4], 16)
-
-    color_h = (domain_hash_int % 12) * (256.0 / 12)
-    return f"color: hsl({color_h:.2f}, 80%, 40%);"
+    return f"color: hsl({_domain_hue(d)}, 80%, 40%);"
 
 
 @functools.lru_cache
-def _stroke_color(d):
-    domain_hash = hashlib.sha256(d.encode('utf-8')).hexdigest()
-    domain_hash_int = int(domain_hash[0:4], 16)
+def _dot_radius_and_styling(db_session: Session, note: Note) -> Tuple[str, str]:
+    if not note.detailed_desc and not note.get_domain_ids():
+        return 8, f'style="fill: rgba(0, 0, 0, 0.2);"'
 
-    color_h = (domain_hash_int % 12) * (256.0 / 12)
-    return f"stroke: hsl({color_h:.2f}, 80%, 40%); stroke-width: 4px;"
+    domain_id0 = list(note.get_domain_ids() or [''])[0]
+
+    # Do an initial estimate of dot size based on note length
+    if note.detailed_desc is not None and len(note.detailed_desc) > 80:
+        dot_radius = min(20, len(note.detailed_desc) / 40)
+
+    # Otherwise, estimate the rarity of the domain
+    else:
+        # Use the first domain, and figure out how big to make the dot
+        note_count = db_session.execute(
+            select(func.count(NoteDomain.note_id))
+            .where(NoteDomain.domain_id == domain_id0)
+        ).scalar()
+
+        # Check if we've cached a note count somewhere
+        if not hasattr(current_app, 'total_note_count'):
+            current_app.total_note_count = db_session.execute(
+                select(func.count(Note.note_id))
+            ).scalar()
+
+        dot_radius = 0.1 * current_app.total_note_count / note_count
+        dot_radius = min(14, dot_radius + 2)
+
+    return dot_radius, f'style="fill: hsl({_domain_hue(domain_id0)}, 80%, 40%); fill-opacity: 0.4"'
 
 
 def render_day_svg(
+    db_session: Session,
     day_scope_id: str,
     day_notes,
     svg_width: int = 960,
@@ -99,19 +130,14 @@ def render_day_svg(
             if not hasattr(note, 'sort_time') or not note.sort_time:
                 continue
 
-            dot_color = "stroke: black"
-            if note.get_domain_ids():
-                domain_id0 = list(note.get_domain_ids())[0]
-                dot_color = _stroke_color(domain_id0)
-
-            dot_radius = 5
+            dot_radius, dot_styling = _dot_radius_and_styling(db_session, note)
             hour_offset = (note.sort_time - start_time).total_seconds() % 3600
 
             yield '''<circle cx="{:.3f}" cy="{:.3f}" r="{}" {} />'''.format(
                 ((note.sort_time - start_time).total_seconds() - hour_offset + 1800) * width_factor,
                 hour_offset / 3600 * height_factor,
                 dot_radius,
-                f'style="fill: none; {dot_color}"',
+                dot_styling,
             )
 
     return (
@@ -138,7 +164,7 @@ def standalone_render_day_svg(db_session, day_scope, domains, disable_caching):
     week_notes = quarter_notes[week_scope]
     day_notes = week_notes[day_scope]
 
-    svg_text = render_day_svg(day_scope, day_notes['notes'])
+    svg_text = render_day_svg(db_session, day_scope, day_notes['notes'])
     response = Response(svg_text, mimetype='image/svg+xml')
     if not disable_caching:
         response.cache_control.max_age = 31536000
@@ -146,6 +172,7 @@ def standalone_render_day_svg(db_session, day_scope, domains, disable_caching):
 
 
 def render_week_svg(
+        db_session: Session,
         week_scope_id: str,
         notes_dict,
         initial_indent_str: str = ' ' * 4,
@@ -224,21 +251,17 @@ def render_week_svg(
             column = 0
         day_scope_time = datetime(note.sort_time.year, note.sort_time.month, note.sort_time.day)
 
-        dot_color = "stroke: black"
-        if note.get_domain_ids():
-            domain_id0 = list(note.get_domain_ids())[0]
-            dot_color = _stroke_color(domain_id0)
-
         # calculate the sub-hour offset for the dot, scaled to include some margins on the hour-block
-        dot_radius = 5
+        dot_radius, dot_styling = _dot_radius_and_styling(db_session, note)
         dot_x_offset = ((note.sort_time - day_scope_time).total_seconds() % (60 * 60)) / (60 * 60)
         dot_x_offset = dot_radius + dot_x_offset * (col_width - 2 * dot_radius)
 
-        return '<circle cx="{:.3f}" cy="{:.3f}" r="{}" {} />'.format(
+        return '<circle cx="{:.3f}" cy="{:.3f}" r="{}" {} {} />'.format(
             column * col_width_and_right_margin + dot_x_offset,
             int((note.sort_time - day_scope_time).total_seconds() / (60 * 60)) * row_height + row_height / 2,
             dot_radius,
-            f'style="fill: none; {dot_color}" tracker-note-id="{note.note_id}"',
+            dot_styling,
+            f'tracker-note-id="{note.note_id}"',
         )
 
     def draw_note_dots() -> Iterable[str]:
@@ -270,7 +293,7 @@ def standalone_render_week_svg(db_session, week_scope, domains, disable_caching)
     quarter_notes = notes_json_tree(db_session, domains, [week_scope])[quarter_scope]
     week_notes = quarter_notes[week_scope]
 
-    svg_text = render_week_svg(week_scope, week_notes)
+    svg_text = render_week_svg(db_session, week_scope, week_notes)
     response = Response(svg_text, mimetype='image/svg+xml')
     if not disable_caching:
         response.cache_control.max_age = 31536000

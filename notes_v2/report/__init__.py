@@ -215,11 +215,11 @@ def render_matching_notes(
             return f'<img src="{src}" />'
 
         if disable_caching:
-            return render_day_svg(day_scope, day_dict_notes)
+            return render_day_svg(db_session, day_scope, day_dict_notes)
         else:
             return cache(
                 key=("/svg.day cache entry", day_scope, tuple(domains),),
-                generate_fn=lambda: render_day_svg(day_scope, day_dict_notes))
+                generate_fn=lambda: render_day_svg(db_session, day_scope, day_dict_notes))
 
     render_kwargs['render_day_svg'] = memoized_render_day_svg
 
@@ -243,11 +243,11 @@ def render_matching_notes(
             return f'<img src="{src}" />'
 
         if disable_caching:
-            return render_week_svg(week_scope, week_dict)
+            return render_week_svg(db_session, week_scope, week_dict)
         else:
             return cache(
                 key=("/svg.week cache entry", week_scope, tuple(domains),),
-                generate_fn=lambda: render_week_svg(week_scope, week_dict))
+                generate_fn=lambda: render_week_svg(db_session, week_scope, week_dict))
 
     render_kwargs['maybe_render_week_svg'] = memoized_maybe_render_week_svg
 
