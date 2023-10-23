@@ -261,35 +261,35 @@
 {# ================================================================= -#}
 
 {%- macro _render_desc(t, scope, resolution_to_print) %}
-  <div class="task-headline
-    {%- if resolution_to_print %} resolved {% endif -%}
-  ">
-    {%- if resolution_to_print %}
-      <span class="task-resolution">({{ resolution_to_print }}) </span>
-    {%- endif %}
+<div class="task-headline
+  {%- if resolution_to_print %} resolved {% endif -%}
+">
+{%- if resolution_to_print %}
+  <span class="task-resolution">({{ resolution_to_print }}) </span>
+{% endif -%}
 
-    {{- t.desc | markdown }}
+  {{- t.desc | markdown | indent(2) -}}
 
-    {%- if t.time_estimate and t.get_time_elapsed() %}
-      <span class="task-time">{{ "`{:.1f} => {:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</span>
-    {%- elif t.time_estimate %}
-      <span class="task-time">{{ "`{:.1f}h`".format(t.time_estimate) }}</span>
-    {%- elif t.get_time_elapsed() %}
-      <span class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</span>
-    {%- endif %}
-  </div>
+  {%- if t.time_estimate and t.get_time_elapsed() %}
+    <span class="task-time">{{ "`{:.1f} => {:.3f}h`".format(t.time_estimate, t.get_time_elapsed()) }}</span>
+  {%- elif t.time_estimate %}
+    <span class="task-time">{{ "`{:.1f}h`".format(t.time_estimate) }}</span>
+  {%- elif t.get_time_elapsed() %}
+    <span class="task-time">{{ "`=> {:.3f}h`".format(t.get_time_elapsed()) }}</span>
+  {%- endif %}
+</div>
 {%- endmacro -%}
 
 {%- macro _render_subdesc(t, scope) %}
-    {%- if t.linkages|length == 1 %}
-      {%- if t.linkages[0].detailed_resolution %}
-        <div class="sub-desc">{{ t.linkages[0].detailed_resolution }}</div>
-      {%- endif %}
-    {%- elif t.linkage_at(scope, False) %}
-      {%- if t.linkage_at(scope, False).detailed_resolution %}
-        <div class="sub-desc">{{ t.linkage_at(scope, False).detailed_resolution }}</div>
-      {%- endif %}
-    {%- endif %}
+{%- if t.linkages|length == 1 %}
+  {%- if t.linkages[0].detailed_resolution %}
+    <div class="sub-desc">{{ t.linkages[0].detailed_resolution }}</div>
+  {%- endif %}
+{%- elif t.linkage_at(scope, False) %}
+  {%- if t.linkage_at(scope, False).detailed_resolution %}
+    <div class="sub-desc">{{ t.linkage_at(scope, False).detailed_resolution }}</div>
+  {%- endif %}
+{%- endif %}
 {%- endmacro -%}
 
 

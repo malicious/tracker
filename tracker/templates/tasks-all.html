@@ -375,7 +375,7 @@
     </label>
     <div class="task-aio">
       <div>
-        {{ to_aio(t) | indent(6) }}
+        {{- to_aio(t) }}{# rip `| indent(6)` -#}
       </div>
     </div>
 
@@ -385,7 +385,7 @@
     </label>
     <div class="task-json">
       <div>
-        {{ t.as_json() | indent(6) }}
+        {{- t.as_json() }}{# should be `| indent(6)` -#}
       </div>
     </div>
 
@@ -394,7 +394,8 @@
       <span>edit</span>
     </label>
     <div class="task-edit">
-      {{- task_macros.edit_block(t, backlink="task-{}-{}".format(t.task_id, scope)) | indent(6) }}
+      {{- task_macros.edit_block(t, backlink="task-{}-{}".format(t.task_id, scope)) }}
+      {# should have been `| indent(6)` -#}
     </div><!-- .task-edit -->
   </div><!-- .bonus-options -->
 </div><!-- .task-and-details -->

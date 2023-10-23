@@ -460,9 +460,9 @@ document.addEventListener("DOMContentLoaded", enableTextareaAutoResize);
   <input type="hidden" name="backlink" value="{{backlink}}">
   {{- task_edit_header(t) | indent(2) }}
   <div class="linkage-block">
-  {{- linkage_header_row() | indent(4) }}
+  {{- linkage_header_row() }}{# should be `| indent(4)`, but <textarea> #}
   {%- for tl in t.linkages %}
-    {{ linkage_row(tl) | indent(4) }}
+    {{ linkage_row(tl) }}{# should be `| indent(4)`, but <textarea> #}
   {%- endfor %}
     {{ linkage_footer_row() | indent(4) }}
   </div><!-- .linkage-block -->

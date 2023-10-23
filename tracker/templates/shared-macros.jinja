@@ -94,7 +94,7 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
   {#- The way this `label` wraps everything, it makes the whole row a clickable #}
   <label for="toggle-{{tabs[0][0]}}-{{unique_id}}" class="toggle-{{tabs[0][0]}}">
     <div class="{{item_type}}-only {{item_styling}}">
-      {{ desc }}
+      {{- desc | indent(6) }}
     </div>
   </label>
 
@@ -107,7 +107,7 @@ input.show-{{tab_name}}:checked ~ .{{item_type}}-{{tab_name}} {
       <span>{{ tab_name }}</span>
     </label>
     <div class="{{item_type}}-{{tab_name}}">
-      {{- tab_content }}
+      {{- tab_content }}{# should be `| indent(6)`, but we have an embedded <textarea> #}
     </div>
 
   {%- endfor %}
