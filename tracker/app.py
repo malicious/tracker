@@ -30,15 +30,20 @@ def create_app(settings_overrides: Dict = {}):
         from markdown_it import MarkdownIt
         md = MarkdownIt()
         md.options['breaks'] = True
+        md.options['html'] = False
         md.enable('table')
 
         def render_comments(self, tokens, idx, options, env):
-            return re.sub(
-                r'<!-- (.+) -->',
-                f'<span class="comment">&lt;!-- \\1 --&gt;</span>',
-                tokens[idx].content,
-            )
-        md.add_render_rule("html_block", render_comments)
+            if re.fullmatch(r'<!-- (.+) -->', tokens[idx].content):
+                return re.sub(
+                    r'<!-- (.+) -->',
+                    f'<span class="comment">&lt;!-- \\1 --&gt;</span>',
+                    tokens[idx].content,
+                )
+
+            return self.text(tokens, idx, options, env)
+
+        md.add_render_rule("text", render_comments)
 
         def do_filter(text):
             return Markup(md.render(text))
