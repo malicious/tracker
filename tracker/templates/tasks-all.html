@@ -38,26 +38,20 @@
 
   {#- ================================================================= -#}
 
-  .scope-container>.spacer-上 {
-    height: 12px;
+  .scope-container > .spacer-上 {
+    height: 20px;
   }
 
   .scope-header-container {
     position: sticky;
     top: calc(var(--scope-nav-height));
     height: 33px; /* includes 1px border */
-    z-index: 100;
+    z-index: 90;
     background-color: var(--default-bg-color);
 
+    padding: 0;
     padding-left: var(--default-left-right-margin);
     padding-right: var(--default-left-right-margin);
-    padding-top: 16px;
-    padding-bottom: 12px;
-    margin-bottom: calc(32px - 8px - 12px);
-  }
-
-  .scope-container-post-spacer {
-    height: 64px;
   }
 
   .scope-header {
@@ -65,14 +59,22 @@
     line-height: 24px;
     height: 24px;
     color: var(--highlight-fg-color);
-    border-bottom: 1px solid dimgrey;
+
+    padding-top: 8px;
     padding-bottom: 8px;
+    border-bottom: 1px solid dimgrey;
+  }
+  .scope-container-post-spacer {
+    height: 64px;
   }
 
+  .category-container.no-category {
+    margin-top: 16px;
+  }
   .category-header {
     position: sticky;
     top: var(--scope-nav-total-height);
-    z-index: 90;
+    z-index: 80;
     background-color: var(--default-bg-color);
 
     font-size: var(--category-header-content);
@@ -114,12 +116,16 @@
   label.toggle-edit {
     position: sticky;
     display: block;
-    top: var(--category-header-total-height);
-    z-index: 80;
+    top: calc(var(--scope-nav-total-height) + var(--category-header-total-height));
+    z-index: 70;
     background-color: var(--default-bg-color);
   }
   .task-and-details:hover label.toggle-edit {
     background-color: var(--default-hover-color);
+  }
+  /* change the spacing for sticky headers when no category */
+  .no-category label.toggle-edit {
+    top: 0;
   }
 
   .task-only > div {
@@ -151,6 +157,7 @@
   {# this is for the markdown parser, which dumps <p>tags -#}
   .task-only p {
     display: inline;
+    margin: 0;
   }
 
   .task-scope,
@@ -201,7 +208,7 @@
     top: -24px;
     color: var(--tab-label-fg-color);
     text-align: center;
-    z-index: 81;
+    z-index: 71;
   }
 
   .bonus-options > label.show-edit {
@@ -442,19 +449,21 @@
     <div class="scope-header">tasks</div>
   </div>
 
+  {#- first div is always this one; sometimes it's empty, though #}
   <div class="category-container no-category">
   {%- set ns.prev_task = None %}
   {%- for task in scope_tasks %}
-    {%- if ns.prev_task and task.category != ns.prev_task.category %}
+
+    {%- if (not ns.prev_task and task_category)
+        or (ns.prev_task
+            and not (task.category == ns.prev_task.category)) %}
   </div>{# category-container #}
   <div class="category-container">
-    {%- endif %}
-
-    {#- if this is the start of a new category, print heading #}
-    {%- if task.category
-       and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
+      {#- if this is the start of a new category, print heading #}
+      {%- if task.category %}
     <div class="category-header">### {{ task.category }}</div>
-    {%- endif %}
+      {%- endif %}{# task.category #}
+    {%- endif %}{# [started new category-container] #}
 
     {{- render_task(task, task.linkages[0].time_scope_id) }}
     {%- set ns.prev_task = task %}

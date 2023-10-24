@@ -20,7 +20,7 @@
     --scope-header-border: 1px;
     --scope-header-padding: 8px;
     --scope-header-total-height: calc(
-        16px
+        var(--scope-header-padding)
         + var(--scope-header-content)
         + var(--scope-header-border)
         + var(--scope-header-padding));
@@ -45,19 +45,18 @@
   {#- ================================================================= -#}
   
   .scope-container > .spacer-上 {
-    height: 12px;
+    height: calc(32px - var(--scope-header-padding));
   }
   
   .scope-header-container {
     position: sticky;
     top: var(--scope-nav-total-height);
-    height: calc(var(--scope-header-content) + var(--scope-header-border));
+    height: calc(--scope-header-total-height);
     z-index: 90;
     background-color: var(--default-bg-color);
   
-    padding-top: 16px;
+    padding: 0;
     padding-right: var(--default-left-right-margin);
-    padding-bottom: var(--scope-header-padding);  /* redundant with child padding */
     padding-left: var(--default-left-right-margin);
   }
   
@@ -66,14 +65,18 @@
     line-height: var(--scope-header-content);
     height: var(--scope-header-content);
     color: var(--highlight-fg-color);
-    border-bottom: var(--scope-header-border) solid dimgrey;
-    padding-bottom: var(--scope-header-padding);
-  }
 
+    padding-top: var(--scope-header-padding);
+    padding-bottom: var(--scope-header-padding);
+    border-bottom: var(--scope-header-border) solid dimgrey;
+  }
   .scope-container-post-spacer {
     height: 64px;
   }
   
+  .category-container.no-category {
+    margin-top: 16px;
+  }
   .category-header {
     position: sticky;
     top: calc(var(--scope-nav-total-height) + var(--scope-header-total-height));
@@ -123,7 +126,7 @@
   .task-and-tabs:hover label.toggle-edit {
     background-color: var(--default-hover-color);
   }
-  /* change the spacing for sticky headers when no category field */
+  /* change the spacing for sticky headers when no category */
   .no-category label.toggle-edit {
     top: calc(var(--scope-nav-total-height) + var(--scope-header-total-height));
   }
@@ -168,7 +171,7 @@
     white-space: pre-wrap;
     margin: 12px;
     padding: 12px;
-    border: 1px solid rgba(29,28,29,.13);
+    border: 1px solid rgba(29, 28, 29, .13);
     border-radius: 6px;
     background: var(--default-bg-color);
   }
@@ -350,17 +353,20 @@
     <div class="scope-header">## {{ scope }}</div>
   </div>
 
+  {#- first div is always this one; sometimes it's empty, though #}
   <div class="category-container no-category">
-  {% set ns.prev_task = None %}
-  {% for task in scope_tasks %}
-    {%- if ns.prev_task and task.category != ns.prev_task.category %}
+  {%- set ns.prev_task = None %}
+  {%- for task in scope_tasks %}
+    {%- if (not ns.prev_task and task.category)
+        or (ns.prev_task
+            and not (task.category == ns.prev_task.category)) %}
   </div>{# category-container #}
   <div class="category-container">
     {%- endif -%}
 
     {#- if this is the start of a new category, print heading #}
     {%- if task.category
-       and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
+        and not (ns.prev_task.category and task.category == ns.prev_task.category) %}
     <div class="category-header">### {{ task.category }}</div>
     {% endif %}
 
