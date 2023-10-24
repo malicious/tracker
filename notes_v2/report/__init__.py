@@ -85,26 +85,18 @@ def _render_n2_domains(
 
 def _render_n2_time(n: Note, scope: TimeScope) -> str:
     display_time = TimeScope(n.time_scope_id).minimize_vs(scope)
+    if not n.sort_time:
+        return display_time
 
-    # If we're showing a sub-day scope, draw the time, instead
-    if scope.is_day() and n.sort_time:
-        # For same-day notes, just show %H:%M
+    # For same-day notes, just show %H:%M
+    if scope.is_day():
         if scope == TimeScope.from_datetime(n.sort_time):
-            display_time = n.sort_time.strftime('%H:%M')
-        # For different day, show the day _also_
-        else:
-            display_time = f'''{
-                TimeScope.from_datetime(n.sort_time).minimize_vs(scope)
-            }&nbsp;{
-                n.sort_time.strftime('%H:%M')
-            }'''
-    # Anything in a week scope is usually "reduced"; append %H:%M also
-    elif scope.is_week() and n.sort_time:
-        display_time = "{}&nbsp;{}".format(
-            TimeScope.from_datetime(n.sort_time).minimize_vs(scope),
-            n.sort_time.strftime('%H:%M'))
+            return n.sort_time.strftime('%H:%M')
 
-    return display_time
+    return "{} {}".format(
+        TimeScope.from_datetime(n.sort_time).minimize_vs(scope),
+        n.sort_time.strftime('%H:%M'),
+    )
 
 
 def cache(key, generate_fn):
