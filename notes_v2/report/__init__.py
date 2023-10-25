@@ -69,6 +69,8 @@ def _render_n2_domains(
         # which is true for the majority of notes
         return _domain_to_html_link(renderable_domains[0], scope_ids, single_page)
     else:
+        # TODO: Profile and decide whether memoizing this will help.
+        # And also, whether we can do it with functools, or need flask.current_app.
         query = (
             select(NoteDomain.domain_id, func.count(NoteDomain.note_id))
             .where(NoteDomain.domain_id.in_(renderable_domains))
