@@ -233,11 +233,12 @@ def edit_tasks_all(
         hide_future: bool,
 ):
     render_kwargs = {}
-    today_scope_id = datetime.now().strftime("%G-ww%V.%u")
+    render_scope_dt = datetime.now()
+    render_scope = TimeScope(render_scope_dt.strftime("%G-ww%V.%u"))
 
     if show_resolved:
         render_kwargs['tasks_by_scope'] = {
-            today_scope_id: Task.query \
+            render_scope: Task.query \
                 .order_by(Task.category) \
                 .all(),
         }
@@ -253,7 +254,7 @@ def edit_tasks_all(
             .order_by(Task.category, TaskLinkage.time_scope.desc())
 
         render_kwargs['tasks_by_scope'] = {
-            today_scope_id: tasks_query.all(),
+            render_scope: tasks_query.all(),
         }
     else:
         recent_tasks_cutoff = datetime.utcnow() - timedelta(hours=12)
@@ -264,10 +265,10 @@ def edit_tasks_all(
             .order_by(Task.category)
 
         render_kwargs['tasks_by_scope'] = {
-            today_scope_id: tasks_query.all(),
+            render_scope: tasks_query.all(),
         }
 
-    todays_date = datetime.now().date()
+    todays_date = render_scope_dt.date()
     render_kwargs['compute_render_info_for'] = compute_ignoring_scope(todays_date)
 
     render_kwargs['to_summary_html'] = to_summary_html
