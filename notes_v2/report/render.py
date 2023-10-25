@@ -37,7 +37,11 @@ def domain_to_css_color(d: str) -> str:
 
 
 @functools.lru_cache
-def _dot_radius_and_styling(db_session: Session, note: Note) -> Tuple[str, str]:
+def _dot_radius_and_styling(
+    db_session: Session,
+    domain_ids: Tuple[str],
+    note: Note,
+) -> Tuple[str, str]:
     if not note.detailed_desc and not note.get_domain_ids():
         return 8, f'style="fill: rgba(0, 0, 0, 0.2);"'
 
@@ -67,11 +71,17 @@ def _dot_radius_and_styling(db_session: Session, note: Note) -> Tuple[str, str]:
         dot_radius = min(14, dot_radius + 2)
         dot_opacity = 0.3
 
+    # Make in-focus domains very visible
+    if domain_id0 in domain_ids:
+        dot_radius = max(8, dot_radius)
+        dot_opacity = 0.8
+
     return dot_radius, f'style="fill: hsl({_domain_hue(domain_id0)}, 80%, 40%); fill-opacity: {dot_opacity:.2f}"'
 
 
 def render_day_svg(
     db_session: Session,
+    domains: Tuple[str],
     day_scope_id: str,
     day_notes,
     svg_width: int = 960,
@@ -131,7 +141,7 @@ def render_day_svg(
             if not hasattr(note, 'sort_time') or not note.sort_time:
                 continue
 
-            dot_radius, dot_styling = _dot_radius_and_styling(db_session, note)
+            dot_radius, dot_styling = _dot_radius_and_styling(db_session, domains, note)
             hour_offset = (note.sort_time - start_time).total_seconds() % 3600
 
             yield '''<circle cx="{:.3f}" cy="{:.3f}" r="{}" {}><title>{}</title></circle>'''.format(
@@ -158,7 +168,7 @@ def render_day_svg(
     )
 
 
-def standalone_render_day_svg(db_session, day_scope, domains, disable_caching):
+def standalone_render_day_svg(db_session, domains, day_scope, disable_caching):
     week_scope = day_scope.get_parent()
     quarter_scope = week_scope.get_parent()
 
@@ -166,7 +176,7 @@ def standalone_render_day_svg(db_session, day_scope, domains, disable_caching):
     week_notes = quarter_notes[week_scope]
     day_notes = week_notes[day_scope]
 
-    svg_text = render_day_svg(db_session, day_scope, day_notes['notes'])
+    svg_text = render_day_svg(db_session, domains, day_scope, day_notes['notes'])
     response = Response(svg_text, mimetype='image/svg+xml')
     if not disable_caching:
         response.cache_control.max_age = 31536000
@@ -175,6 +185,7 @@ def standalone_render_day_svg(db_session, day_scope, domains, disable_caching):
 
 def render_week_svg(
         db_session: Session,
+        domains: Tuple[str],
         week_scope_id: str,
         notes_dict,
         initial_indent_str: str = ' ' * 4,
@@ -254,7 +265,7 @@ def render_week_svg(
         day_scope_time = datetime(note.sort_time.year, note.sort_time.month, note.sort_time.day)
 
         # calculate the sub-hour offset for the dot, scaled to include some margins on the hour-block
-        dot_radius, dot_styling = _dot_radius_and_styling(db_session, note)
+        dot_radius, dot_styling = _dot_radius_and_styling(db_session, domains, note)
         dot_x_offset = ((note.sort_time - day_scope_time).total_seconds() % (60 * 60)) / (60 * 60)
         dot_x_offset = dot_radius + dot_x_offset * (col_width - 2 * dot_radius)
 
@@ -295,13 +306,13 @@ def render_week_svg(
     )
 
 
-def standalone_render_week_svg(db_session, week_scope, domains, disable_caching):
+def standalone_render_week_svg(db_session, domains, week_scope, disable_caching):
     quarter_scope = week_scope.get_parent()
 
     quarter_notes = notes_json_tree(db_session, domains, [week_scope])[quarter_scope]
     week_notes = quarter_notes[week_scope]
 
-    svg_text = render_week_svg(db_session, week_scope, week_notes)
+    svg_text = render_week_svg(db_session, domains, week_scope, week_notes)
     response = Response(svg_text, mimetype='image/svg+xml')
     if not disable_caching:
         response.cache_control.max_age = 31536000
