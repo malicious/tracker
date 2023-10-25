@@ -302,6 +302,8 @@ def render_matching_notes(
             render_kwargs['prev_scope'] = _scope_to_html_link(prev_quarter)
 
     if domains:
+        # TODO: Sort domains by length-of-domain_id, for prettier rendering.
+        #       Should also check whether rarity sort is useful.
         domains_as_html = [_domain_to_html_link(d, scope_ids, single_page) for d in domains]
         domains_as_html = '\n & '.join(f'<span>{d}</span>' for d in domains_as_html)
 
