@@ -51,7 +51,9 @@ def _to_aio(t) -> Iterable[str]:
             # This is a little too hard-coded to the way I personally do notes,
             # but given that the output format has markdown datetime-comments, it's fine.
             if tl.detailed_resolution[:5] != '<!-- ':
-                yield f"<!-- {tl.created_at} -->\n"
+                # NB we only support millisecond precision in generation,
+                # but the SQLite backing store upgrades everything to microseconds.
+                yield f"<!-- {tl.created_at.strftime('%G-ww%V.%u %H:%M:%S.%f')} -->\n"
             yield tl.detailed_resolution
             yield "\n"
         yield "\n"
