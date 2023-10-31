@@ -337,16 +337,12 @@
   
       /* fill in target cells */
       time_scope_id = tl_row.querySelector('input[name="tl-new-blank-time_scope_id"]');
-      if (time_scope_id && !time_scope_id.value) {
-        console.log("Filling in time_scope_id: ", time_scope_str)
+      if (time_scope_id && !time_scope_id.value)
         time_scope_id.value = time_scope_str;
-      }
   
       created_at = tl_row.querySelector('input[name="tl-new-blank-created_at"]');
-      if (created_at && !created_at.value) {
-        console.log("Filling in created_at: ", created_at_str)
+      if (created_at && !created_at.value)
         created_at.value = created_at_str;
-      }
     });
   }
   
@@ -357,7 +353,7 @@
 
 
 
-{# ================================================================= -#}
+{#- ================================================================= -#}
 
 {%- macro render_task(t, scope) %}
 {%- set scope_to_print, resolution_to_print, is_future_task = compute_render_info_for(t) %}
