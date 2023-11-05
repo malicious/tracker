@@ -49,7 +49,7 @@ def _register_endpoints(app: Flask):
     def edit_tasks():
         show_resolved = request.args.get('show_resolved')
         hide_future = request.args.get('hide_future')
-        return report.edit_tasks_all(show_resolved=show_resolved, hide_future=hide_future)
+        return report.edit_tasks_all(db_session, show_resolved=show_resolved, hide_future=hide_future)
 
     @tasks_v2_bp.route("/tasks.in-scope/<scope_id>")
     def do_edit_tasks_in_scope(scope_id):
@@ -64,7 +64,7 @@ def _register_endpoints(app: Flask):
         scope = TimeScope(scope_id)
         scope.get_type()
 
-        return report.edit_tasks_in_scope(page_scope=scope)
+        return report.edit_tasks_in_scope(db_session, page_scope=scope)
 
     def _do_edit_one_task(task_id: int):
         task = db_session.execute(

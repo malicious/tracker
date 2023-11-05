@@ -447,7 +447,7 @@
 
 {#- ================================================================= -#}
 
-{%- block content -%}
+{%- block oldcontent -%}
 
 {%- set ns = namespace() %}
 {%- for scope, scope_tasks in tasks_by_scope.items() if scope_tasks %}
@@ -489,4 +489,33 @@
   {{- task_add_panel() }}
 </div>
 
-{%- endblock %}
+{%- endblock %}{# oldcontent #}
+
+
+
+{%- block content -%}
+
+<div class="scope-container">
+  <div class="spacer-上"></div>
+  <div class="scope-header-container">
+    <div class="scope-header">all tasks</div>
+  </div>
+
+{%- for domain, domain_tasks in tasks_by_domain.items() %}
+  <div class="category-container 
+    {%- if not domain %} no-category {% endif -%}
+  ">
+  {%- if domain %}
+    <div class="category-header">### {{ domain }}</div>
+  {%- endif %}{# domain #}
+
+  {%- for task in domain_tasks %}
+    {{- render_task(task, task.linkages[0].time_scope_id) }}
+  {%- endfor %}
+
+  </div>{# category-container #}
+{%- endfor -%}
+</div>{# scope-container #}
+
+{%- endblock %}{# content #}
+

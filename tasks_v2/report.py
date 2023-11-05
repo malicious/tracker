@@ -1,9 +1,11 @@
 import re
+from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Iterable, Optional
 
 from flask import render_template, url_for
-from sqlalchemy import or_
+from sqlalchemy import or_, select
+from sqlalchemy.orm import Session
 from markupsafe import escape
 
 from tasks_v2.time_scope import TimeScope, TimeScopeUtils
@@ -77,7 +79,7 @@ def report_one_task(task_id, return_bare_dict=False):
     return f'<html><body><pre>{task.as_json()}</pre></body></html>'
 
 
-def generate_tasks_by_scope(scope_id: str):
+def generate_tasks_by_scope(db_session: Session, scope_id: str):
     # day-like scope (`%G-ww%V.%u`)
     m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d).(\d)", scope_id)
     if m:
@@ -139,6 +141,31 @@ def generate_tasks_by_scope(scope_id: str):
 
     # otherwise, no idea
     raise ValueError(f"No idea how to handle {repr(scope_id)}")
+
+
+def fetch_tasks_by_domain(
+    db_session: Session,
+    query_limiter,
+):
+    # Fetch the final list of tasks; duplicate according to domain-ish splits.
+    tasks_by_domain = defaultdict(set)
+
+    query = query_limiter(
+        select(Task)
+        # TODO: This time-sorting doesn't quite do what we want.
+        .order_by(Task.category, TaskLinkage.time_scope.desc())
+    )
+    task_rows = db_session.execute(query).all()
+
+    for (task,) in task_rows:
+        domains = ['']
+        if task.category is not None and task.category.strip():
+            domains = [d.strip() for d in task.category.strip().split('&')]
+
+        for d in domains:
+            tasks_by_domain[d].add(task)
+
+    return tasks_by_domain
 
 
 def render_scope(task_date, section_date):
@@ -231,12 +258,18 @@ def compute_ignoring_scope(todays_date):
 # NB the arguments are kinda weird and inconsistent because they're default-false
 #
 def edit_tasks_all(
+        db_session: Session,
         show_resolved: bool,
         hide_future: bool,
 ):
     render_kwargs = {}
+    # Use the server's local time for rendering
     render_scope_dt = datetime.now()
     render_scope = TimeScope(render_scope_dt.strftime("%G-ww%V.%u"))
+
+    render_time_dt = datetime.utcnow()
+    recent_tasks_cutoff = render_time_dt - timedelta(hours=12)
+    future_tasks_cutoff = render_time_dt + timedelta(days=32)
 
     if show_resolved:
         render_kwargs['tasks_by_scope'] = {
@@ -245,9 +278,6 @@ def edit_tasks_all(
                 .all(),
         }
     elif hide_future:
-        recent_tasks_cutoff = datetime.utcnow() - timedelta(hours=12)
-        future_tasks_cutoff = datetime.utcnow() + timedelta(days=32)
-
         tasks_query = Task.query \
             .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
             .filter(or_(TaskLinkage.resolution == None,
@@ -259,7 +289,6 @@ def edit_tasks_all(
             render_scope: tasks_query.all(),
         }
     else:
-        recent_tasks_cutoff = datetime.utcnow() - timedelta(hours=12)
         tasks_query = Task.query \
             .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
             .filter(or_(TaskLinkage.resolution == None,
@@ -269,6 +298,25 @@ def edit_tasks_all(
         render_kwargs['tasks_by_scope'] = {
             render_scope: tasks_query.all(),
         }
+
+    def query_limiter(query):
+        if show_resolved:
+            return query
+
+        elif hide_future:
+            return query \
+                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .filter(or_(TaskLinkage.resolution == None,
+                            TaskLinkage.created_at > recent_tasks_cutoff)) \
+                .filter(TaskLinkage.time_scope < future_tasks_cutoff)
+
+        else:
+            return query \
+                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .filter(or_(TaskLinkage.resolution == None,
+                            TaskLinkage.created_at > recent_tasks_cutoff))
+
+    render_kwargs['tasks_by_domain'] = fetch_tasks_by_domain(db_session, query_limiter)
 
     todays_date = render_scope_dt.date()
     render_kwargs['compute_render_info_for'] = compute_ignoring_scope(todays_date)
@@ -280,7 +328,10 @@ def edit_tasks_all(
     return render_template('tasks-all.html', **render_kwargs)
 
 
-def edit_tasks_in_scope(page_scope: TimeScope):
+def edit_tasks_in_scope(
+        db_session: Session,
+        page_scope: TimeScope,
+):
     render_kwargs = {}
 
     render_kwargs['tasks_by_scope'] = generate_tasks_by_scope(page_scope)
