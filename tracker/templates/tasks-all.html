@@ -473,5 +473,14 @@
 {%- endfor -%}
 </div>{# scope-container #}
 
+<!-- this is _outside_ `.scope-container` because the sticky header shouldn't be on top of it -->
+<div class="scope-container-post-spacer"></div>
+
+<div class="spacer-下"></div>
+
+<div class="task-add-panel">
+  {{- task_add_panel() }}
+</div>
+
 {%- endblock %}{# content #}
 
