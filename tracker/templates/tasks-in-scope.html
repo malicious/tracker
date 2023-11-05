@@ -297,17 +297,17 @@
 
 
 
-{%- macro render_task(task, scope) %}
-  {%- set tabs = [('edit', task_macros.edit_block(task,
-                              backlink="task-{}-{}".format(task.task_id, scope)), ''),
-                 ('json', "<div>{}</div>".format(task.as_json()), ''),
-                 ('aio', "<div>{}</div>".format(to_aio(task)), ''),
-                 ] %}
+{%- macro render_task(task, scope, unique_id) %}
+  {%- set tabs = [
+              ('edit', task_macros.edit_block(task, backlink=unique_id), ''),
+              ('json', "<div>{}</div>".format(task.as_json()), ''),
+              ('aio', "<div>{}</div>".format(to_aio(task)), ''),
+  ] %}
   {%- set resolution_to_print =
          task.linkage_at(scope, create_if_none=False).resolution %}
   {{- shared_macros.render_with_tabs('task',
         item_styling="resolved" if resolution_to_print,
-        unique_id="{}-{}".format(task.task_id, scope),
+        unique_id=unique_id,
         desc=_render_desc(task, scope, resolution_to_print),
         tabs=tabs,
         sub_desc=_render_subdesc(task, scope)) }}
@@ -370,7 +370,12 @@
     <div class="category-header">### {{ task.category }}</div>
     {% endif %}
 
-    {{- render_task(task, scope) }}
+    {%- set task_unique_id = "{}-{}{}".format(
+              task.task_id,
+              scope,
+              '-' + '-'.join(task.category.split()) if task.category else '',
+    ) -%}
+    {{- render_task(task, scope, task_unique_id) }}
     {%- set ns.prev_task = task %}
   {% endfor %}
   </div>{# category-container #}

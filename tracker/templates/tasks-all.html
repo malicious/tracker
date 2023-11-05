@@ -355,10 +355,10 @@
 
 {#- ================================================================= -#}
 
-{%- macro render_task(t, scope) %}
+{%- macro render_task(t, unique_id) %}
 {%- set scope_to_print, resolution_to_print, is_future_task = compute_render_info_for(t) %}
-<div class="task-and-details" id="task-{{t.task_id}}-{{scope}}">
-  <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="toggle-edit">
+<div class="task-and-details" id="task-{{unique_id}}">
+  <label for="toggle-edit-{{unique_id}}" class="toggle-edit">
     <div class="task-only
       {%- if resolution_to_print %} resolved {% endif -%}
       {%- if is_future_task %} future {% endif -%}
@@ -386,8 +386,8 @@
   </label>
 
   <div class="bonus-options">
-    <input type="checkbox" id="toggle-aio-{{t.task_id}}-{{scope}}" class="show-aio">
-    <label for="toggle-aio-{{t.task_id}}-{{scope}}" class="show-aio">
+    <input type="checkbox" id="toggle-aio-{{unique_id}}" class="show-aio">
+    <label for="toggle-aio-{{unique_id}}" class="show-aio">
       <span>aio</span>
     </label>
     <div class="task-aio">
@@ -396,8 +396,8 @@
       </div>
     </div>
 
-    <input type="checkbox" id="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
-    <label for="toggle-json-{{t.task_id}}-{{scope}}" class="show-json">
+    <input type="checkbox" id="toggle-json-{{unique_id}}" class="show-json">
+    <label for="toggle-json-{{unique_id}}" class="show-json">
       <span>json</span>
     </label>
     <div class="task-json">
@@ -406,12 +406,12 @@
       </div>
     </div>
 
-    <input type="checkbox" id="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
-    <label for="toggle-edit-{{t.task_id}}-{{scope}}" class="show-edit">
+    <input type="checkbox" id="toggle-edit-{{unique_id}}" class="show-edit">
+    <label for="toggle-edit-{{unique_id}}" class="show-edit">
       <span>edit</span>
     </label>
     <div class="task-edit">
-      {{- task_macros.edit_block(t, backlink="task-{}-{}".format(t.task_id, scope)) }}
+      {{- task_macros.edit_block(t, backlink=unique_id) }}
       {# should have been `| indent(6)` -#}
     </div><!-- .task-edit -->
   </div><!-- .bonus-options -->
@@ -466,7 +466,11 @@
   {%- endif %}{# domain #}
 
   {%- for task in domain_tasks %}
-    {{- render_task(task, task.linkages[0].time_scope_id) }}
+    {%- set task_unique_id = "{}-{}".format(
+              task.task_id,
+              '-'.join(domain.split()),
+    ) -%}
+    {{- render_task(task, task_unique_id) }}
   {%- endfor %}
 
   </div>{# category-container #}
