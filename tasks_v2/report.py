@@ -334,7 +334,7 @@ def edit_tasks_in_scope(
 ):
     render_kwargs = {}
 
-    render_kwargs['tasks_by_scope'] = generate_tasks_by_scope(page_scope)
+    render_kwargs['tasks_by_scope'] = generate_tasks_by_scope(db_session, page_scope)
 
     render_kwargs['page_title'] = url_for(".do_edit_tasks_in_scope", scope_id=page_scope)
 
