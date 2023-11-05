@@ -85,18 +85,30 @@ def _render_n2_domains(
         return " & ".join(rendered_domains)
 
 
-def _render_n2_time(n: Note, scope: TimeScope) -> str:
-    display_time = TimeScope(n.time_scope_id).minimize_vs(scope)
+def _render_n2_time(
+        n: Note,
+        scope_ids: Tuple[str],
+        reference_scope: TimeScope,
+) -> str:
+    # For complex scope sets, we need to keep the year + do no minimization.
+    scope_id_years = set([ts[0:4] for ts in scope_ids])
+    if n.time_scope_id[0:4] not in scope_id_years:
+        if n.sort_time:
+            return TimeScope.from_datetime(n.sort_time)
+        else:
+            return n.time_scope_id
+
+    # For notes without a sort_time, just dump the date
     if not n.sort_time:
-        return display_time
+        return TimeScope(n.time_scope_id).minimize_vs(reference_scope)
 
     # For same-day notes, just show %H:%M
-    if scope.is_day():
-        if scope == TimeScope.from_datetime(n.sort_time):
+    if reference_scope.is_day():
+        if reference_scope == TimeScope.from_datetime(n.sort_time):
             return n.sort_time.strftime('%H:%M')
 
     return "{} {}".format(
-        TimeScope.from_datetime(n.sort_time).minimize_vs(scope),
+        TimeScope.from_datetime(n.sort_time).minimize_vs(reference_scope),
         n.sort_time.strftime('%H:%M'),
     )
 
@@ -121,8 +133,8 @@ def render_matching_notes(
 
     title_words = [f'domain={d}' for d in domains]
     title_words.extend([f'scope={ts}' for ts in scope_ids])
-    # TODO: Timing app truncates the last character or two
-    render_kwargs['page_title'] = escape('/notes?' + '&'.join(title_words))
+    # NB Timing app truncates the last character/s, so append a few for no reason.
+    render_kwargs['page_title'] = escape('/notes?' + '&'.join(title_words) + '  ')
 
     def as_week_header(week_scope: TimeScope) -> str:
         scope_url = url_for(
@@ -166,7 +178,7 @@ def render_matching_notes(
     def render_n2_desc(n: Note, scope_id):
         return (
             # Some kind of sort_time
-            f'<div class="time" title="{n.sort_time}">{_render_n2_time(n, TimeScope(scope_id))}</div>\n'
+            f'<div class="time" title="{n.sort_time}">{_render_n2_time(n, scope_ids, TimeScope(scope_id))}</div>\n'
             # Print the description
             f'<div class="desc">{do_markdown_filter(n.desc)}</div>\n'
             # And color-coded, hyperlinked domains
