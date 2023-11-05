@@ -191,8 +191,8 @@ def render_scope(task_date, section_date):
 
     return (
         '<span class="task-scope" '
-        f'style="color: rgb({color_rgb[0]}, {color_rgb[1]}, {color_rgb[2]})">\n'
-        f'  {short_date_str}\n'
+        f'style="color: rgb({color_rgb[0]}, {color_rgb[1]}, {color_rgb[2]})">'
+        f'{short_date_str}'
         '</span>'
     )
 

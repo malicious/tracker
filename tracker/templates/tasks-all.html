@@ -367,7 +367,9 @@
       <div class="task-resolution">({{ resolution_to_print }}) </div>
       {%- endif %}
       {%- if scope_to_print %}
-      <div class="scope">{{ scope_to_print | safe }}</div>
+      <div class="scope">
+        {{ scope_to_print | safe }}
+      </div>
       {%- endif %}
       <div class="desc">
         {{ t.desc | markdown | indent(6) }}
