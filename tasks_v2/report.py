@@ -271,34 +271,6 @@ def edit_tasks_all(
     recent_tasks_cutoff = render_time_dt - timedelta(hours=12)
     future_tasks_cutoff = render_time_dt + timedelta(days=32)
 
-    if show_resolved:
-        render_kwargs['tasks_by_scope'] = {
-            render_scope: Task.query \
-                .order_by(Task.category) \
-                .all(),
-        }
-    elif hide_future:
-        tasks_query = Task.query \
-            .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
-            .filter(or_(TaskLinkage.resolution == None,
-                        TaskLinkage.created_at > recent_tasks_cutoff)) \
-            .filter(TaskLinkage.time_scope < future_tasks_cutoff) \
-            .order_by(Task.category, TaskLinkage.time_scope.desc())
-
-        render_kwargs['tasks_by_scope'] = {
-            render_scope: tasks_query.all(),
-        }
-    else:
-        tasks_query = Task.query \
-            .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
-            .filter(or_(TaskLinkage.resolution == None,
-                        TaskLinkage.created_at > recent_tasks_cutoff)) \
-            .order_by(Task.category)
-
-        render_kwargs['tasks_by_scope'] = {
-            render_scope: tasks_query.all(),
-        }
-
     def query_limiter(query):
         if show_resolved:
             return query

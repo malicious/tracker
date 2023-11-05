@@ -447,52 +447,6 @@
 
 {#- ================================================================= -#}
 
-{%- block oldcontent -%}
-
-{%- set ns = namespace() %}
-{%- for scope, scope_tasks in tasks_by_scope.items() if scope_tasks %}
-<div class="scope-container">
-  <div class="spacer-上"></div>
-  <div class="scope-header-container">
-    <div class="scope-header">tasks, as of {{ scope.lengthen() }}</div>
-  </div>
-
-  {#- first div is always this one; sometimes it's empty, though #}
-  <div class="category-container no-category">
-  {%- set ns.prev_task = None %}
-  {%- for task in scope_tasks %}
-
-    {%- if (not ns.prev_task and task_category)
-        or (ns.prev_task
-            and not (task.category == ns.prev_task.category)) %}
-  </div>{# category-container #}
-  <div class="category-container">
-      {#- if this is the start of a new category, print heading #}
-      {%- if task.category %}
-    <div class="category-header">### {{ task.category }}</div>
-      {%- endif %}{# task.category #}
-    {%- endif %}{# [started new category-container] #}
-
-    {{- render_task(task, task.linkages[0].time_scope_id) }}
-    {%- set ns.prev_task = task %}
-  {%- endfor %}
-  </div>{# category-container #}
-
-</div>{# scope-container #}
-<!-- this is _outside_ `.scope-container` because the sticky header shouldn't be on top of it -->
-<div class="scope-container-post-spacer"></div>
-{%- endfor -%}
-
-<div class="spacer-下"></div>
-
-<div class="task-add-panel">
-  {{- task_add_panel() }}
-</div>
-
-{%- endblock %}{# oldcontent #}
-
-
-
 {%- block content -%}
 
 <div class="scope-container">
