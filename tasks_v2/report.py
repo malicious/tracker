@@ -1,3 +1,4 @@
+import operator
 import re
 from collections import defaultdict
 from datetime import datetime, timedelta
@@ -165,7 +166,20 @@ def fetch_tasks_by_domain(
         for d in domains:
             tasks_by_domain[d].add(task)
 
-    return tasks_by_domain
+    # Create a sorted version of this, for non-jumpy rendering.
+    # TODO: This should be doable with an SQLAlchemy-level sort.
+    sorted_tbd = {}
+    for domain in sorted(tasks_by_domain.keys()):
+        def sort_time(t: Task):
+            return (
+                max(map(operator.attrgetter('time_scope'), t.linkages)),
+                t.task_id,
+            )
+
+        tasks = list(tasks_by_domain[domain])
+        sorted_tbd[domain] = sorted(tasks, key=sort_time, reverse=True)
+
+    return sorted_tbd
 
 
 def render_scope(task_date, section_date):
