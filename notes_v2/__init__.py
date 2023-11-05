@@ -135,13 +135,24 @@ def _register_endpoints(app):
     def do_render_matching_notes():
         page_scopes = tuple(escape(arg) for arg in request.args.getlist('scope'))
         page_domains = tuple(request.args.getlist('domain'))
+        single_page = request.args.get('single_page')
 
         if page_scopes == ('week',):
             this_week = datetime.now().strftime("%G-ww%V")
-            return redirect(url_for(".do_render_matching_notes", scope=this_week, domain=page_domains))
+            return redirect(url_for(
+                ".do_render_matching_notes",
+                domain=page_domains,
+                scope=this_week,
+                single_page=single_page,
+            ))
         elif page_scopes == ('day',):
             this_day = datetime.now().strftime("%G-ww%V.%u")
-            return redirect(url_for(".do_render_matching_notes", scope=this_day, domain=page_domains))
+            return redirect(url_for(
+                ".do_render_matching_notes",
+                domain=page_domains,
+                scope=this_day,
+                single_page=single_page,
+            ))
         # Year-scopes get broken up into four quarters
         elif len(page_scopes) == 1:
             m = re.fullmatch(r'\d\d\d\d', page_scopes[0])
@@ -149,11 +160,10 @@ def _register_endpoints(app):
                 new_scopes = [escape(f"{m[0]}—Q{quarter}") for quarter in range(1,5)]
                 return redirect(url_for(
                     ".do_render_matching_notes",
-                    scope=new_scopes,
                     domain=page_domains,
+                    scope=new_scopes,
+                    single_page=single_page,
                 ))
-
-        single_page = request.args.get('single_page')
 
         return report.render_matching_notes(db_session, page_domains, page_scopes, single_page)
 
