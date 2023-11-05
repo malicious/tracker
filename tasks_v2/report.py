@@ -4,7 +4,7 @@ from datetime import datetime, timedelta
 from typing import Iterable, Optional
 
 from flask import render_template, url_for
-from sqlalchemy import or_, select
+from sqlalchemy import func, or_, select
 from sqlalchemy.orm import Session
 from markupsafe import escape
 
@@ -152,8 +152,8 @@ def fetch_tasks_by_domain(
 
     query = query_limiter(
         select(Task)
-        # TODO: This time-sorting doesn't quite do what we want.
-        .order_by(Task.category, TaskLinkage.time_scope.desc())
+        # TODO: Need to figure out a way to do time-sorting
+        .order_by(Task.category)
     )
     task_rows = db_session.execute(query).all()
 
