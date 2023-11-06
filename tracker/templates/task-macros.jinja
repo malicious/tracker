@@ -272,6 +272,8 @@ function constructBlankTLRow(tl_preceding, resolution_str) {
 
   // add delete listener
   new_row.content.querySelector('button.delete').addEventListener("click", deleteTLRow, false);
+  new_row.content.querySelector('textarea').addEventListener("focus", textareaResizeY, false);
+  new_row.content.querySelector('textarea').addEventListener("input", textareaResizeY, false);
 
   if (tl_preceding != null) {
     // mark "roll" resolution in previous row, if it's empty
