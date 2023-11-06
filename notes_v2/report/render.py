@@ -68,14 +68,13 @@ def _dot_radius_and_styling(
                 select(func.count(Note.note_id))
             ).scalar()
 
-        dot_radius = 0.1 * current_app.total_note_count / note_count
-        dot_radius = min(14, dot_radius + 2)
+        dot_radius_weight = 0.1 * current_app.total_note_count / note_count
+        dot_radius = min(14, dot_radius_weight + 2)
         dot_opacity = 0.3
 
-    # Make in-focus domains very visible
+    # Make in-focus domains a little more consistent
     if domain_id0 in domain_ids:
-        dot_radius = max(8, dot_radius)
-        dot_opacity = 0.8
+        dot_radius = min(40, dot_radius + 6)
 
     return dot_radius, f'style="fill: hsl({_domain_hue(domain_id0)}, 80%, 40%); fill-opacity: {dot_opacity:.2f}"'
 
