@@ -7,4 +7,5 @@ __pycache__/
 
 .idea/
 *.swp
-instance/*.db
+instance*
+instance*/*.db
