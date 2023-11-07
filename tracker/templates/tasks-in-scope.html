@@ -299,7 +299,7 @@
 
 {%- macro render_task(task, scope, unique_id) %}
   {%- set tabs = [
-              ('edit', task_macros.edit_block(task, backlink=unique_id), ''),
+              ('edit', task_macros.edit_block(task, backlink="task-{}".format(unique_id)), ''),
               ('json', "<div>{}</div>".format(task.as_json()), ''),
               ('aio', "<div>{}</div>".format(to_aio(task)), ''),
   ] %}
