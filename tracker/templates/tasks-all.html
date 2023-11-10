@@ -170,15 +170,22 @@
     margin: 0;
   }
 
-  .task-scope,
   .task-resolution {
     color: var(--task-resolved-fg-color);
     white-space: nowrap;
+    /* TODO: Some older, batch-imported tasks have abnormally long resolutions */
+    overflow-x: scroll;
+    max-width: 300px;
   }
-
+  .task-scope {
+    color: var(--task-resolved-fg-color);
+    white-space: nowrap;
+    max-width: 180px;
+  }
   .task-time {
     color: brown;
     white-space: nowrap;
+    max-width: 180px;
   }
 
   .resolved,
