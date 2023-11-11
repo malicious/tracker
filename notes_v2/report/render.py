@@ -5,6 +5,7 @@ from datetime import datetime, timedelta
 from typing import Iterable, Tuple
 
 from flask import Response, current_app
+from markupsafe import escape
 from sqlalchemy import func, select
 from sqlalchemy.orm import Session
 
