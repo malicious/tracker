@@ -91,8 +91,6 @@ def render_day_svg(
     width_factor = svg_width / (48 * 60 * 60)
     height_factor = 96
 
-    rendered_notes = []
-
     def draw_hour_lines() -> Iterable[str]:
         # draw the hour lines on top
         for hour in range(1, 48):
@@ -279,10 +277,15 @@ def render_week_svg(
         '<svg xmlns="http://www.w3.org/2000/svg" '
         f'width="{9 * col_width_and_right_margin}" '
         f'height="{24 * row_height}">'
-        + ('\n' + initial_indent_str + additional_indent_str).join(
-            itertools.chain(
-                [''],
-                draw_hour_lines(),
+        # Dump all background boxes into one group, because otherwise
+        # there are so many that it slows down browser tools.
+        + ('\n' + initial_indent_str + additional_indent_str)
+        + '<g group-id="hour-lines">{}</g>'.format(
+            ('\n' + initial_indent_str + additional_indent_str).join(draw_hour_lines())
+        )
+        + ('\n' + initial_indent_str + additional_indent_str)
+        + '<g group-id="note-dots">{}</g>'.format(
+            ('\n' + initial_indent_str + additional_indent_str).join(
                 (dot for dot in draw_note_dots() if dot is not None),
             ))
         + '\n' + initial_indent_str + '</svg>'
