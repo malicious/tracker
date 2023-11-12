@@ -27,16 +27,30 @@ def load_models(current_db_path: str):
         connect_args={
             "check_same_thread": False,
         },
+        # NB This breaks pytests.
         poolclass=NullPool,
     )
     Base.metadata.create_all(bind=engine)
 
-    # Create a Session object and bind it to the declarative_base
     global db_session
     db_session = scoped_session(sessionmaker(autocommit=False,
                                              autoflush=False,
                                              bind=engine))
 
+    # TODO: Stop using the .query attribute, in favor of new SQLAlchemy 2.0 API model.
+    Base.query = db_session.query_property()
+
+
+def load_models_pytest():
+    engine = sqlalchemy.create_engine('sqlite:///')
+    Base.metadata.create_all(bind=engine)
+
+    global db_session
+    db_session = scoped_session(sessionmaker(autocommit=False,
+                                             autoflush=False,
+                                             bind=engine))
+
+    # TODO: Stop using the .query attribute, in favor of new SQLAlchemy 2.0 API model.
     Base.query = db_session.query_property()
 
 

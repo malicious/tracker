@@ -24,7 +24,7 @@ def test_client(test_app):
 
 @pytest.fixture(scope="function", autouse=True)
 def note_v2_session(test_app) -> Session:
-    notes_v2.load_models('')
+    notes_v2.load_models_pytest()
     yield notes_v2.db_session
     notes_v2.db_session.remove()
     notes_v2.db_session = None
