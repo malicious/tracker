@@ -147,6 +147,7 @@ def _register_endpoints(app):
     @notes_v2_bp.route("/note-domains")
     def do_render_note_domains():
         limit = request.args.get('limit')
+
         def nd_limiter(query):
             if limit:
                 return query.limit(limit)
@@ -200,4 +201,3 @@ def _register_rest_endpoints(app):
         return report.domain_stats(db_session)
 
     app.register_blueprint(notes_v2_rest_bp, url_prefix='/v2')
-

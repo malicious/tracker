@@ -2,6 +2,7 @@ import io
 import json
 
 import jsondiff
+from flask import url_for
 
 from notes_v2.add import all_from_csv
 from notes_v2.models import Note
@@ -80,7 +81,13 @@ def test_stapler_endpoint(test_client, note_v2_session):
 
     assert not jsondiff.diff(j, {
         "2000—Q2": {
-            "notes": [n.as_json()],
+            "2000-ww20": {
+                "2000-ww20.2": {
+                    "notes": [n.as_json()],
+                },
+                "notes": [],
+            },
+            "notes": [],
         },
     })
 
@@ -98,5 +105,6 @@ with regular LF-only newline",unniecode ❲😎😎😎❳,domains: no & domains
     j = json.loads(r.get_data())
 
     assert list(j.keys()) == ['2021—Q3']
-    assert list(j['2021—Q3'].keys()) == ['notes']
-    assert len(j['2021—Q3']['notes']) == 2
+    assert list(j['2021—Q3'].keys()) == ['2021-ww31', 'notes']
+    assert len(j['2021—Q3']['notes']) == 0
+    assert len(j['2021—Q3']['2021-ww31']) == 2
