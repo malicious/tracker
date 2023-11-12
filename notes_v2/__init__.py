@@ -196,7 +196,7 @@ def _register_rest_endpoints(app):
     def do_get_notes():
         page_scopes = [escape(arg) for arg in request.args.getlist('scope')]
         page_domains = [escape(arg) for arg in request.args.getlist('domain')]
-        return report.notes_json_tree(page_domains, page_scopes)
+        return report.notes_json_tree(db_session, page_domains, page_scopes)
 
     @notes_v2_rest_bp.route("/note-domains")
     def do_get_note_domains():

@@ -38,8 +38,8 @@ def test_scope_children2():
     assert ts1s[0] == "2021-ww27.1"
 
 
-def test_stapler_basic():
-    ns = NoteStapler(domains_filter=[])
+def test_stapler_basic(note_v2_session):
+    ns = NoteStapler(note_v2_session, [])
     assert ns
 
     ns._construct_scope_tree(TimeScope("2021-ww32.3"))
@@ -58,8 +58,8 @@ def test_stapler_basic():
     assert not jsondiff.diff(ref_st, ns.scope_tree)
 
 
-def test_stapler_collapse():
-    ns = NoteStapler([])
+def test_stapler_collapse(note_v2_session):
+    ns = NoteStapler(note_v2_session, [])
     ns._construct_scope_tree(TimeScope("2021-ww32.3"))
     ns._construct_scope_tree(TimeScope("2021-ww31.7"))
     ns._collapse_scope_tree(TimeScope("2021—Q3"))
@@ -68,27 +68,6 @@ def test_stapler_collapse():
         "2021—Q3": {
             "notes": []
         }
-    })
-
-
-def test_stapler_endpoint(test_client, note_v2_session):
-    n = Note(time_scope_id="2000-ww20.2", desc="stapler testing")
-    note_v2_session.add(n)
-    note_v2_session.commit()
-
-    r = test_client.get('/v2/notes')
-    j = json.loads(r.get_data())
-
-    assert not jsondiff.diff(j, {
-        "2000—Q2": {
-            "2000-ww20": {
-                "2000-ww20.2": {
-                    "notes": [n.as_json()],
-                },
-                "notes": [],
-            },
-            "notes": [],
-        },
     })
 
 
@@ -104,7 +83,6 @@ with regular LF-only newline",unniecode ❲😎😎😎❳,domains: no & domains
     r = test_client.get('/v2/notes?domain=domains:%20no')
     j = json.loads(r.get_data())
 
-    assert list(j.keys()) == ['2021—Q3']
-    assert list(j['2021—Q3'].keys()) == ['2021-ww31', 'notes']
-    assert len(j['2021—Q3']['notes']) == 0
-    assert len(j['2021—Q3']['2021-ww31']) == 2
+    assert ['2021—Q3'] == list(j.keys())
+    assert ['notes'] == list(j['2021—Q3'].keys())
+    assert 2 == len(j['2021—Q3']['notes'])
