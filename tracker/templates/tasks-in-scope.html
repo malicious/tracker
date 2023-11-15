@@ -15,6 +15,8 @@
     --text-low-priority-color: #999;
     --tab-selected-bg-color: hsl(210, 0%, 96%);
     --tab-selected-bg-color-dark-mode: #444;
+    --task-resolved-fg-color: #bbb;
+    --task-resolved-highlight-bg-color: var(--highlight-bg-color);
 
     --scope-header-content: 24px;
     --scope-header-border: 1px;
@@ -33,6 +35,13 @@
         + var(--category-header-padding));
   }
   
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --task-resolved-fg-color: #222;
+      --task-resolved-highlight-bg-color: #111;
+    }
+  }
+
   body {
     overflow-wrap: anywhere;
     word-break: break-word; /* Safari */
@@ -148,7 +157,7 @@
   }
   
   .task-resolution {
-    color: #bbb;
+    color: var(--task-resolved-fg-color);
     margin-right: 0.5em;
     white-space: nowrap;
   }
@@ -161,7 +170,13 @@
   
   .resolved,
   .resolved .task-time {
-    color: var(--disabled-fg-color);
+    color: var(--task-resolved-fg-color);
+  }
+  .resolved code {
+    background-color: var(--task-resolved-highlight-bg-color);
+  }
+  .resolved.sub-desc {
+    color: var(--task-resolved-fg-color);
   }
   
   {#- ================================================================= -#}
@@ -286,11 +301,15 @@
 {%- macro _render_subdesc(t, scope) %}
 {%- if t.linkages|length == 1 %}
   {%- if t.linkages[0].detailed_resolution %}
-    <div class="sub-desc">{{ t.linkages[0].detailed_resolution }}</div>
+    <div class="sub-desc
+      {%- if t.linkage_at(scope, False).resolution %} resolved {% endif -%}
+    ">{{ t.linkages[0].detailed_resolution }}</div>
   {%- endif %}
 {%- elif t.linkage_at(scope, False) %}
   {%- if t.linkage_at(scope, False).detailed_resolution %}
-    <div class="sub-desc">{{ t.linkage_at(scope, False).detailed_resolution }}</div>
+    <div class="sub-desc
+      {%- if t.linkage_at(scope, False).resolution %} resolved {% endif -%}
+    ">{{ t.linkage_at(scope, False).detailed_resolution }}</div>
   {%- endif %}
 {%- endif %}
 {%- endmacro -%}
