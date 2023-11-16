@@ -13,6 +13,8 @@ from notes_v2.models import Note, NoteDomain
 from notes_v2.report.gather import notes_json_tree
 from notes_v2.time_scope import TimeScope
 
+default_dot_render_offset = 0
+
 
 @functools.lru_cache
 def _domain_hue(d: str) -> str:
@@ -141,7 +143,7 @@ def render_day_svg(
             if hasattr(note, 'sort_time') and note.sort_time:
                 seconds_offset = (note.sort_time - start_time).total_seconds()
             elif render_if_missing_time:
-                seconds_offset = 0
+                seconds_offset = default_dot_render_offset
             else:
                 continue
 
@@ -252,30 +254,46 @@ def render_week_svg(
             yield day_label
 
     # and the actual individual notes
-    def _draw_note_dot(note) -> str | None:
+    def _draw_note_dot(note, render_if_missing_time: bool = True) -> str | None:
         """
         TODO: This is hard-coded to expect that the SVG chart starts on previous Sunday.
         """
-        if not hasattr(note, 'sort_time') or not note.sort_time:
-            return None
-        if not TimeScope(note.time_scope_id).is_day():
-            return None
+        if hasattr(note, 'sort_time') and note.sort_time:
+            day_scope_time = datetime(note.sort_time.year, note.sort_time.month, note.sort_time.day)
+            seconds_offset = (note.sort_time - day_scope_time).total_seconds()
 
-        column = note.sort_time.isoweekday()
-        if column == 1 and note.time_scope_id[-1] == "7":
-            column = 8
-        if column == 7 and note.time_scope_id[-1] == "1":
-            column = 0
-        day_scope_time = datetime(note.sort_time.year, note.sort_time.month, note.sort_time.day)
+            # Push some notes to the start/end of the week, based on the time scope
+            render_column = note.sort_time.isoweekday()
+            if render_column == 1 and note.time_scope_id[-1] == "7":
+                render_column = 8
+            if render_column == 7 and note.time_scope_id[-1] == "1":
+                render_column = 0
+
+        elif render_if_missing_time:
+            if TimeScope(note.time_scope_id).is_day():
+                # just dump the dot in the top row
+                seconds_offset = default_dot_render_offset
+                note_time_scope = datetime.strptime(note.time_scope_id, "%G-ww%V.%u")
+                render_column = note_time_scope.isoweekday()
+
+            elif TimeScope(note.time_scope_id).is_week():
+                seconds_offset = 0
+                render_column = 0
+
+            else:
+                return None
+
+        else:
+            return None
 
         # calculate the sub-hour offset for the dot, scaled to include some margins on the hour-block
         dot_radius, dot_styling = _dot_radius_and_styling(db_session, domains, note)
-        dot_x_offset = ((note.sort_time - day_scope_time).total_seconds() % (60 * 60)) / (60 * 60)
+        dot_x_offset = (seconds_offset % (60 * 60)) / (60 * 60)
         dot_x_offset = dot_radius + dot_x_offset * (col_width - 2 * dot_radius)
 
         return '<circle cx="{:.3f}" cy="{:.3f}" r="{}" {} {}><title>{}</title></circle>'.format(
-            column * col_width_and_right_margin + dot_x_offset,
-            int((note.sort_time - day_scope_time).total_seconds() / (60 * 60)) * row_height + row_height / 2,
+            render_column * col_width_and_right_margin + dot_x_offset,
+            int(seconds_offset / (60 * 60)) * row_height + row_height / 2,
             dot_radius,
             dot_styling,
             f'tracker-note-id="{note.note_id}"',
