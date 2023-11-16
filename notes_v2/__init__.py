@@ -149,7 +149,7 @@ def _register_endpoints(app):
     def do_render_matching_notes():
         page_scopes = tuple(escape(arg) for arg in request.args.getlist('scope'))
         page_domains = tuple(request.args.getlist('domain'))
-        single_page = request.args.get('single_page')
+        single_page = strtobool(request.args.get('single_page'))
 
         if page_scopes == ('week',):
             this_week = datetime.now().strftime("%G-ww%V")

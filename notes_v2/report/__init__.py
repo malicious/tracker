@@ -240,7 +240,7 @@ def render_matching_notes(
                 domain=domains,
                 disable_caching=disable_caching,
             )
-            return f'<img src="{src}" />'
+            return f'<img class="day-svg-external" src="{src}" />'
 
         if disable_caching:
             return render_day_svg(db_session, domains, day_scope, day_dict_notes)
@@ -257,18 +257,33 @@ def render_matching_notes(
             disable_caching = True
         # Sometimes, we render a week <svg> for a single day.
         # This makes the rendering weird and incomplete, so don't cache it.
-        if week_scope not in scope_ids:
+        if len(scope_ids) == 1 and TimeScope(scope_ids[0]).is_day():
             disable_caching = True
 
         render_inline: bool = single_page
         if not render_inline:
-            src = url_for(
-                ".do_render_svg_week",
-                week_scope=week_scope,
-                domain=domains,
-                disable_caching=disable_caching,
-            )
-            return f'<img src="{src}" />'
+            if not disable_caching:
+                image_src = url_for(
+                    ".do_render_svg_week",
+                    week_scope=week_scope,
+                    domain=domains,
+                    disable_caching=disable_caching,
+                )
+                link_href = url_for(
+                    ".do_render_matching_notes",
+                    scope=scope_ids,
+                    domain=domains,
+                    single_page="true",
+                )
+                return f'<a href="{link_href}"><img class="week-svg-external" src="{image_src}" /></a>'
+            else:
+                src = url_for(
+                    ".do_render_svg_week",
+                    week_scope=week_scope,
+                    domain=domains,
+                    disable_caching=disable_caching,
+                )
+                return f'<img class="week-svg-external" src="{src}" />'
 
         if disable_caching:
             return render_week_svg(db_session, domains, week_scope, week_dict)
