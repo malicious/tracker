@@ -136,16 +136,20 @@ def render_day_svg(
         )
 
     # and the actual note circles
-    def draw_note_dots() -> Iterable[str]:
+    def draw_note_dots(render_if_missing_time: bool = True) -> Iterable[str]:
         for note in day_notes:
-            if not hasattr(note, 'sort_time') or not note.sort_time:
+            if hasattr(note, 'sort_time') and note.sort_time:
+                seconds_offset = (note.sort_time - start_time).total_seconds()
+            elif render_if_missing_time:
+                seconds_offset = 0
+            else:
                 continue
 
             dot_radius, dot_styling = _dot_radius_and_styling(db_session, domains, note)
-            hour_offset = (note.sort_time - start_time).total_seconds() % 3600
+            hour_offset = seconds_offset % 3600
 
             yield '''<circle cx="{:.3f}" cy="{:.3f}" r="{}" {}><title>{}</title></circle>'''.format(
-                ((note.sort_time - start_time).total_seconds() - hour_offset + 1800) * width_factor,
+                (seconds_offset - hour_offset + 1800) * width_factor,
                 hour_offset / 3600 * height_factor,
                 dot_radius,
                 dot_styling,

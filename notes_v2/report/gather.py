@@ -22,8 +22,8 @@ class NoteStapler:
             self,
             db_session: Session,
             domains_filter: List[str],
-            week_promotion_threshold: int = 9,
-            quarter_promotion_threshold: int = 17,
+            week_promotion_threshold: int,
+            quarter_promotion_threshold: int,
     ):
         self.session = db_session
 
@@ -200,8 +200,20 @@ def notes_json_tree(
         db_session: Session,
         domain_ids: List[str],
         scope_ids: List[str],
+        disable_scope_collapse: bool = True,
 ):
-    ns = NoteStapler(db_session, domains_filter=domain_ids)
+    week_promotion_threshold: int = 9
+    quarter_promotion_threshold: int = 17
+    if disable_scope_collapse:
+        week_promotion_threshold = 0
+        quarter_promotion_threshold = 0
+
+    ns = NoteStapler(
+        db_session,
+        domain_ids,
+        week_promotion_threshold,
+        quarter_promotion_threshold,
+    )
 
     for scope_id in scope_ids:
         ns.add_by_scope(TimeScope(scope_id))
