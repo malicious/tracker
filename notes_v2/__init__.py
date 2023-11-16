@@ -59,7 +59,9 @@ def strtobool(val):
     """
     Formerly distutils.util.strtobool(), deprecated in Python 3.10
     """
-    if val.lower() in ('y', 'yes', 't', 'true', 'on', '1'):
+    if val is None or val.lower() in ('none',):
+        return None
+    elif val.lower() in ('y', 'yes', 't', 'true', 'on', '1'):
         return 1
     elif val.lower() in ('n', 'no', 'f', 'false', 'off', '0'):
         return 0
