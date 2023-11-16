@@ -55,6 +55,18 @@ def load_models_pytest():
     Base.query = db_session.query_property()
 
 
+def strtobool(val):
+    """
+    Formerly distutils.util.strtobool(), deprecated in Python 3.10
+    """
+    if val.lower() in ('y', 'yes', 't', 'true', 'on', '1'):
+        return 1
+    elif val.lower() in ('n', 'no', 'f', 'false', 'off', '0'):
+        return 0
+    else:
+        raise ValueError(f"unrecognized bool-value {val}")
+
+
 def init_app(app):
     if not app.config['TESTING']:
         load_models(os.path.abspath(os.path.join(app.instance_path, 'notes-v2.db')))
@@ -185,7 +197,7 @@ def _register_endpoints(app):
             db_session,
             tuple(request.args.getlist('domain')),
             TimeScope(day_scope),
-            request.args.get('disable_caching'),
+            strtobool(request.args.get('disable_caching')),
         )
 
     @notes_v2_bp.route("/svg.week/<week_scope>")
@@ -194,7 +206,7 @@ def _register_endpoints(app):
             db_session,
             tuple(request.args.getlist('domain')),
             TimeScope(week_scope),
-            request.args.get('disable_caching'),
+            strtobool(request.args.get('disable_caching')),
         )
 
     app.register_blueprint(notes_v2_bp, url_prefix='')
