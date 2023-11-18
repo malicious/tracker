@@ -1,3 +1,4 @@
+from datetime import datetime
 from typing import Dict, List
 
 from sqlalchemy import or_, select
@@ -93,6 +94,25 @@ class NoteStapler:
                 scope_tree[child][NOTES_KEY]
             )
             del scope_tree[child]
+
+        # TODO: Export this function as something shared/shareable
+        def as_sort_time(n: Note) -> datetime:
+            if n.sort_time:
+                return n.sort_time
+
+            ts = TimeScope(n.time_scope_id)
+            if ts.is_day():
+                return datetime.strptime(n.time_scope_id, "%G-ww%V.%u")
+            elif ts.is_week():
+                return datetime.strptime(n.time_scope_id + '.1', "%G-ww%V.%u")
+            elif ts.is_quarter():
+                start_year = int(ts[:4])
+                start_month = int(ts[-1]) * 3 - 2
+                return datetime(start_year, start_month, 1)
+            else:
+                raise ValueError("Unsortable Note.time_scope_id")
+
+        scope_tree[NOTES_KEY].sort(key=as_sort_time)
 
     def _add_by_day(self, scope: TimeScope) -> int:
         new_note_rows = self.filtered_query \
@@ -200,7 +220,7 @@ def notes_json_tree(
         db_session: Session,
         domain_ids: List[str],
         scope_ids: List[str],
-        disable_scope_collapse: bool = True,
+        disable_scope_collapse: bool = False,
 ):
     week_promotion_threshold: int = 9
     quarter_promotion_threshold: int = 17
