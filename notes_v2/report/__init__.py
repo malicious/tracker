@@ -426,7 +426,9 @@ def render_note_domains(
         count: int
         count_str: str
 
-    def render_domains():
+    def render_domains(
+            max_notes_cutoff: int = 100,
+    ):
         query = query_limiter(
             select(
                 NoteDomain.domain_id,
@@ -444,16 +446,28 @@ def render_note_domains(
         for row in rows:
             info = DomainInfo()
 
-            info.domain_id = row[0]
-            info.domain_id_link = Markup(_domain_to_html_link(info.domain_id, (), None))
-
             info.earliest = TimeScope(row[1])
             info.latest = TimeScope(row[2])
+
+            info.domain_id = row[0]
+            info.domain_id_link = Markup(_domain_to_html_link(info.domain_id, (), None))
 
             info.latest = info.latest.minimize_vs(info.earliest)
 
             info.count = row[4]
             info.count_str = f"{info.count:_}"
+
+            # If there's too many notes, limit it to the latest quarter scope
+            if info.count > max_notes_cutoff:
+                target_scope = info.latest
+                while target_scope.get_parent():
+                    target_scope = target_scope.get_parent()
+
+                info.domain_id_link = Markup(_domain_to_html_link(
+                    info.domain_id,
+                    (target_scope,),
+                    None,
+                ))
 
             yield info
 
