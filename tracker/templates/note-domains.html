@@ -51,9 +51,10 @@ a:hover {
 <style type="text/css">
 .domains-grid {
   display: grid;
-  grid-template-columns: auto auto minmax(120px, auto) auto;
-
-  max-width: 80%;
+  grid-template-columns: max-content max-content minmax(120px, 500px) max-content;
+  max-width: 1080px;
+  margin-left: auto;
+  margin-right: auto;
 }
 .domains-grid .header {
   font-weight: 600;
