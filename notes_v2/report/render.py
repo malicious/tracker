@@ -81,6 +81,16 @@ def _dot_radius_and_styling(
     return dot_radius, f'style="fill: hsl({_domain_hue(domain_id0)}, 80%, 40%); fill-opacity: {dot_opacity:.2f}"'
 
 
+@functools.lru_cache
+def _domain_ids_tooltip(
+        note: Note,
+):
+    """
+    Returns a formatted list of domain_ids, suitable for an `svg * > title`
+    """
+    return escape('\n'.join(note.get_domain_ids())) or "[no domains]"
+
+
 def render_day_svg(
     db_session: Session,
     domains: Tuple[str],
@@ -155,7 +165,7 @@ def render_day_svg(
                 hour_offset / 3600 * height_factor,
                 dot_radius,
                 dot_styling,
-                escape('\n'.join(note.get_domain_ids())) or "[no domains]",
+                _domain_ids_tooltip(note),
             )
 
     return (
@@ -297,7 +307,7 @@ def render_week_svg(
             dot_radius,
             dot_styling,
             f'tracker-note-id="{note.note_id}"',
-            escape('\n'.join(note.get_domain_ids())) or "[no domains]",
+            _domain_ids_tooltip(note),
         )
 
     def draw_note_dots() -> Iterable[str]:
