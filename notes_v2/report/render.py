@@ -41,9 +41,9 @@ def domain_to_css_color(d: str) -> str:
 
 @functools.lru_cache
 def _dot_radius_and_styling(
-    db_session: Session,
-    domain_ids: Tuple[str],
-    note: Note,
+        db_session: Session,
+        domain_ids: Tuple[str],
+        note: Note,
 ) -> Tuple[str, str]:
     if not note.detailed_desc and not note.get_domain_ids():
         return 8, f'style="fill: rgba(0, 0, 0, 0.2);"'
