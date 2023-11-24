@@ -114,7 +114,10 @@ class NoteStapler:
 
         scope_tree[NOTES_KEY].sort(key=as_sort_time)
 
-    def _add_by_day(self, scope: TimeScope) -> int:
+    def _add_by_day(
+            self,
+            scope: TimeScope,
+    ) -> int:
         new_note_rows = self.filtered_query \
             .filter(Note.time_scope_id == scope) \
             .order_by(Note.sort_time.asc())
@@ -124,11 +127,16 @@ class NoteStapler:
         notes_list.extend(new_notes)
         return len(new_notes)
 
-    def _add_by_week(self, scope: TimeScope) -> int:
+    def _add_by_week(
+            self,
+            scope: TimeScope,
+            skip_child_scopes: bool = False,
+    ) -> int:
         total_notes_count = 0
-        for day_scope in scope.child_scopes:
-            added_notes = self._add_by_day(TimeScope(day_scope))
-            total_notes_count += added_notes
+        if not skip_child_scopes:
+            for day_scope in scope.child_scopes:
+                added_notes = self._add_by_day(TimeScope(day_scope))
+                total_notes_count += added_notes
 
         new_note_rows = self.filtered_query \
             .filter(Note.time_scope_id == scope) \
@@ -145,11 +153,16 @@ class NoteStapler:
 
         return total_notes_count
 
-    def _add_by_quarter(self, scope: TimeScope) -> int:
+    def _add_by_quarter(
+            self,
+            scope: TimeScope,
+            skip_child_scopes: bool = False,
+    ) -> int:
         total_notes_count = 0
-        for week_scope in scope.child_scopes:
-            added_notes = self._add_by_week(TimeScope(week_scope))
-            total_notes_count += added_notes
+        if not skip_child_scopes:
+            for week_scope in scope.child_scopes:
+                added_notes = self._add_by_week(TimeScope(week_scope), skip_child_scopes)
+                total_notes_count += added_notes
 
         new_note_rows = self.filtered_query \
             .filter(Note.time_scope_id == scope) \
@@ -169,8 +182,13 @@ class NoteStapler:
         if scope.is_quarter():
             self._add_by_quarter(scope)
         elif scope.is_week():
+            # Add notes in reverse order, because _collapse_scope_tree() reasons
+            self._add_by_quarter(scope.get_parent(), skip_child_scopes=True)
             self._add_by_week(scope)
         elif scope.is_day():
+            # Add notes in reverse order, because _collapse_scope_tree() reasons
+            self._add_by_quarter(scope.get_parent().get_parent(), skip_child_scopes=True)
+            self._add_by_week(scope.get_parent(), skip_child_scopes=True)
             self._add_by_day(scope)
         else:
             raise ValueError(f"TimeScope has unknown type: {repr(scope)}")
