@@ -161,6 +161,8 @@ def fetch_tasks_by_domain(
     for (task,) in task_rows:
         domains = ['']
         if task.category is not None and task.category.strip():
+            # NB: No double-ampersands supported, because…
+            #     too lazy to figure out how to share code with `notes_v2.add.tokenize_domain_ids()`
             domains = [d.strip() for d in task.category.strip().split('&')]
 
         for d in domains:
