@@ -81,14 +81,44 @@ def _dot_radius_and_styling(
     return dot_radius, f'style="fill: hsl({_domain_hue(domain_id0)}, 80%, 40%); fill-opacity: {dot_opacity:.2f}"'
 
 
-@functools.lru_cache
+def tooltip_cache(key, generate_fn):
+    if not hasattr(current_app, 'tooltip_cache_dict'):
+        current_app.tooltip_cache_dict = {}
+
+    if key not in current_app.tooltip_cache_dict:
+        current_app.tooltip_cache_dict[key] = generate_fn()
+
+    return current_app.tooltip_cache_dict[key]
+
+
 def _domain_ids_tooltip(
+        db_session: Session | None,
         note: Note,
+        do_sort_domain_ids: bool = True,
 ):
     """
     Returns a formatted list of domain_ids, suitable for an `svg * > title`
     """
-    return escape('\n'.join(note.get_domain_ids())) or "[no domains]"
+    def sort_domain_ids(domain_ids: Tuple[str]):
+        sorted_domain_rows = db_session.execute(
+            select(NoteDomain.domain_id)
+            .where(NoteDomain.domain_id.in_(domain_ids))
+            .group_by(NoteDomain.domain_id)
+            .order_by(func.count(NoteDomain.note_id).asc())
+        ).all()
+
+        for (domain_id,) in sorted_domain_rows:
+            yield domain_id
+
+    domain_ids = tuple(sorted(note.get_domain_ids()))
+    if not do_sort_domain_ids:
+        return escape('\n'.join(domain_ids)) or "[no domains]"
+
+    def generate_fn():
+        sorted_domains = sort_domain_ids(domain_ids)
+        return escape('\n'.join(sorted_domains)) or "[no domains]"
+
+    return tooltip_cache(domain_ids, generate_fn)
 
 
 def render_day_svg(
@@ -165,7 +195,7 @@ def render_day_svg(
                 hour_offset / 3600 * height_factor,
                 dot_radius,
                 dot_styling,
-                _domain_ids_tooltip(note),
+                _domain_ids_tooltip(db_session, note),
             )
 
     return (
@@ -307,7 +337,7 @@ def render_week_svg(
             dot_radius,
             dot_styling,
             f'tracker-note-id="{note.note_id}"',
-            _domain_ids_tooltip(note),
+            _domain_ids_tooltip(db_session, note),
         )
 
     def draw_note_dots() -> Iterable[str]:
