@@ -87,10 +87,13 @@ def update_task(session, task_id, form_data):
 
     # Key on `-time_scope_id` to identify valid linkages
     form_tl_ids = [key[3:-14] for (key, value) in form_data.items(multi=True) if key[-14:] == "-time_scope_id"]
-    form_tl_times = set([form_data[f'tl-{form_tl_id}-time_scope_id'] for form_tl_id in form_tl_ids])
-    if len(form_tl_ids) != len(form_tl_times):
-        print(f"ERROR: set of form TLs, {form_tl_times}")
-        raise ValueError("Found a duplicate form time, erroring")
+    form_tl_times = [form_data[f'tl-{form_tl_id}-time_scope_id'] for form_tl_id in form_tl_ids]
+    if len(form_tl_ids) != len(set(form_tl_times)):
+        duplicate_tl_times = list(form_tl_times)
+        for tl_time in set(form_tl_times):
+            duplicate_tl_times.remove(tl_time)
+
+        raise ValueError(f"Found several TaskLinkages with duplicate time_scope_id's, erroring: {duplicate_tl_times}")
 
     for form_tl_id in form_tl_ids:
         tl_ts_raw = form_data[f'tl-{form_tl_id}-time_scope_id']
