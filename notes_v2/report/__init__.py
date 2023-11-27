@@ -245,7 +245,7 @@ def render_matching_notes(
                 ".do_render_svg_day",
                 **src_kwargs,
             )
-            return f'<img class="day-svg-external" src="{src}" />'
+            return f'<img class="day-svg-external" src="{src}" width="960px" height="96px" />'
 
         if disable_caching:
             return render_day_svg(db_session, domains, day_scope, day_dict_notes)
@@ -287,7 +287,11 @@ def render_matching_notes(
                     domain=domains,
                     single_page="true",
                 )
-                return f'<a href="{link_href}"><img class="week-svg-external" src="{image_src}" /></a>'
+                return (
+                    f'<a href="{link_href}">'
+                    f'<img class="week-svg-external" src="{image_src}" width="1080px" height="480px" />'
+                    f'</a>'
+                )
 
         if disable_caching:
             return render_week_svg(db_session, domains, week_scope, week_dict)
