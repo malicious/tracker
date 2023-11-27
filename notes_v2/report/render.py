@@ -15,8 +15,12 @@ from notes_v2.time_scope import TimeScope
 
 default_dot_render_offset = 0
 
+# This is based on the number of notes in a query,
+# where the query takes like 10+ seconds to render.
+max_cache_size = 25_000
 
-@functools.lru_cache
+
+@functools.lru_cache(maxsize=max_cache_size)
 def _domain_hue(d: str) -> str:
     domain_hash = hashlib.sha256(d.encode('utf-8')).hexdigest()
     domain_hash_int = int(domain_hash[0:4], 16)
@@ -25,7 +29,7 @@ def _domain_hue(d: str) -> str:
     return f"{color_h:.2f}"
 
 
-@functools.lru_cache
+@functools.lru_cache(maxsize=max_cache_size)
 def domain_to_css_color(d: str) -> str:
     """
     Map the domain string to a visually-distinct CSS color.
@@ -39,7 +43,7 @@ def domain_to_css_color(d: str) -> str:
     return f"color: hsl({_domain_hue(d)}, 80%, 40%);"
 
 
-@functools.lru_cache
+@functools.lru_cache(maxsize=max_cache_size)
 def _dot_radius_and_styling(
         db_session: Session,
         domain_ids: Tuple[str],

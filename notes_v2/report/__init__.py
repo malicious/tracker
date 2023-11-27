@@ -1,8 +1,7 @@
 import functools
 import json
-from collections import namedtuple
 from datetime import datetime, timedelta
-from typing import Tuple
+from typing import Tuple, List
 
 from flask import current_app, render_template, url_for
 from markupsafe import Markup, escape
@@ -17,8 +16,12 @@ from notes_v2.time_scope import TimeScope
 from . import gather, render
 from .render import standalone_render_day_svg, standalone_render_week_svg
 
+# This is based on the number of notes in a query,
+# where the query takes like 10+ seconds to render.
+max_cache_size = 25_000
 
-@functools.lru_cache(maxsize=100_000)
+
+@functools.lru_cache(maxsize=max_cache_size)
 def _domain_to_html_link(
     domain_id: str,
     scope_ids: Tuple[str],
