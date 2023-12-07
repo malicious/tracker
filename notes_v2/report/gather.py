@@ -1,5 +1,5 @@
 from datetime import datetime
-from typing import Dict, List
+from typing import Dict, List, Iterable
 
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload, query
@@ -22,7 +22,7 @@ class NoteStapler:
     def __init__(
             self,
             db_session: Session,
-            domains_filter: List[str],
+            domains_filter: Iterable[str],
             week_promotion_threshold: int,
             quarter_promotion_threshold: int,
     ):
@@ -236,8 +236,8 @@ class NoteStapler:
 
 def notes_json_tree(
         db_session: Session,
-        domain_ids: List[str],
-        scope_ids: List[str],
+        domain_ids: Iterable[str],
+        scope_ids: Iterable[str],
         disable_scope_collapse: bool = False,
 ):
     week_promotion_threshold: int = 9
