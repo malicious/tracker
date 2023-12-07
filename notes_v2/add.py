@@ -10,7 +10,16 @@ from sqlalchemy.exc import IntegrityError, PendingRollbackError
 
 from notes_v2.models import Note, NoteDomain
 
-_valid_csv_fields = ['created_at', 'sort_time', 'time_scope_id', 'domains', 'source', 'desc', 'detailed_desc']
+_valid_csv_fields = [
+    'created_at',
+    'sort_time',
+    'desc',
+    'detailed_desc',
+    'domains',
+    'time_scope_id',
+    'source',
+    'metadata',
+]
 
 logger = logging.getLogger(__name__)
 logger.setLevel(logging.DEBUG)
@@ -81,11 +90,22 @@ def one_from_csv(
     if not csv_entry:
         return None
 
+    # Backfill older content that only has `source` field, and not `metadata`
+    if not csv_entry.get('metadata'):
+        if csv_entry.get('source'):
+            csv_entry['metadata'] = f"- source: {csv_entry.get('source')}"
+
+    if 'source' in csv_entry:
+        del csv_entry['source']
+
+    # Parse the `domains` field a little specially.
     encoded_domain_ids = None
     if csv_entry.get('domains'):
         encoded_domain_ids = csv_entry['domains']
         del csv_entry['domains']
 
+    # Finally, upsert the new note.
+    # NB Now that we have `import_source` tracking, it's probably okay to skip the checking.
     target_note = None
     if expect_duplicates:
         try:
@@ -148,13 +168,16 @@ def all_from_csv(
             if (entry_index + 1) % 1000 == 0:
                 logger.info(f"Imported {entry_index:7_} entries so far")
 
-        except (KeyError, IntegrityError):
-            if "todo" in csv_entry["domains"]:
+        except (KeyError, IntegrityError) as e:
+            if (
+                    "domains" in csv_entry
+                    and "todo" in csv_entry.get("domains")
+            ):
                 times_todo_ignored += 1
                 continue
 
             logger.warning('\n'.join([
-                "Couldn't import CSV row: ",
+                f"Couldn't import CSV row, {e}: ",
                 json.dumps(csv_entry, indent=2, ensure_ascii=False),
                 '',
             ]))

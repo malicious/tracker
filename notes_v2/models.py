@@ -31,16 +31,16 @@ class Note(Base):
     time_scope_id = Column(String(20), nullable=False, index=True)
     sort_time = Column(DateTime)
 
-    source = Column(String)
+    note_metadata = Column(String, name='metadata')
 
     desc = Column(String, nullable=False)
     detailed_desc = Column(String)
     created_at = Column(DateTime)
 
     __table_args__ = (
-        UniqueConstraint('time_scope_id', 'sort_time', 'source', 'desc', 'detailed_desc', 'created_at'),
+        UniqueConstraint('time_scope_id', 'sort_time', 'metadata', 'desc', 'detailed_desc', 'created_at'),
         Index("import-notes-index-1", 'time_scope_id', 'desc'),
-        Index("import-notes-index-2", 'time_scope_id', 'sort_time', 'source', 'desc', 'detailed_desc'),
+        Index("import-notes-index-2", 'time_scope_id', 'sort_time', 'metadata', 'desc', 'detailed_desc'),
     )
 
     domains = relationship('NoteDomain', backref='Note')
@@ -64,9 +64,12 @@ class Note(Base):
             if getattr(self, datetime_field) is not None:
                 response_dict[datetime_field] = str(getattr(self, datetime_field))
 
-        for field in ['source', 'detailed_desc']:
+        for field in ['detailed_desc']:
             if getattr(self, field) is not None:
                 response_dict[field] = getattr(self, field)
+
+        if getattr(self, 'note_metadata') is not None:
+            response_dict['metadata'] = getattr(self, 'note_metadata')
 
         if include_domains:
             if self.domains:
@@ -76,6 +79,9 @@ class Note(Base):
 
     @classmethod
     def from_dict(cls, serialized: Dict):
+        if serialized.get('metadata'):
+            serialized['note_metadata'] = serialized.get('metadata')
+
         # Remove entries that have an empty string value, because that's how the CSV package works
         for field in list(serialized.keys()):
             if not serialized[field]:
