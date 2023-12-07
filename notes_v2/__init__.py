@@ -2,7 +2,6 @@ import hashlib
 import os
 import re
 from datetime import datetime
-from json import JSONEncoder
 
 import click
 import sqlalchemy
@@ -10,7 +9,7 @@ from flask import Blueprint, redirect, request, url_for
 from flask.cli import with_appcontext
 from flask.json.provider import DefaultJSONProvider
 from markupsafe import escape
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker, Session
 from sqlalchemy.pool import NullPool
 
 from notes_v2 import add, report
@@ -19,7 +18,7 @@ from notes_v2.time_scope import TimeScope
 # noinspection PyUnresolvedReferences
 from . import models
 
-db_session = None
+db_session: Session | None = None
 
 
 def load_models(current_db_path: str):
@@ -55,16 +54,16 @@ def load_models_pytest():
     Base.query = db_session.query_property()
 
 
-def strtobool(val):
+def strtobool(val) -> bool:
     """
     Formerly distutils.util.strtobool(), deprecated in Python 3.10
     """
     if val is None or val.lower() in ('none',):
-        return None
+        return False
     elif val.lower() in ('y', 'yes', 't', 'true', 'on', '1'):
-        return 1
+        return True
     elif val.lower() in ('n', 'no', 'f', 'false', 'off', '0'):
-        return 0
+        return False
     else:
         raise ValueError(f"unrecognized bool-value {val}")
 
