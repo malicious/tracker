@@ -146,7 +146,7 @@ def all_from_csv(
             one_from_csv(session, csv_entry, expect_duplicates)
 
             if (entry_index + 1) % 1000 == 0:
-                logger.info(f"Imported {entry_index + 1:7_} entries so far, up to {import_source}")
+                logger.info(f"Imported {entry_index:7_} entries so far")
 
         except (KeyError, IntegrityError):
             if "todo" in csv_entry["domains"]:
