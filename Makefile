@@ -16,7 +16,7 @@ reload_files := $(subst $(eval ) ,:,$(reload_patterns))
 serve:
 	source $(activate_script) \
   && flask --app $(flask_app) run \
-           --debug --port 7528 --with-threads \
+           --debug --port 7529 --with-threads \
            --extra-files $(reload_files)
 
 
