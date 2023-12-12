@@ -2,6 +2,7 @@ import json
 from datetime import datetime
 from typing import Dict
 
+from markupsafe import escape
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint, Date
 from sqlalchemy.orm import relationship, declarative_base
 
@@ -38,8 +39,9 @@ class Task(Base):
 
         return response_dict
 
-    def as_json(self) -> str:
-        return json.dumps(self.as_json_dict(), indent=2, ensure_ascii=False)
+    def as_json(self, do_escape: bool = True) -> str:
+        json_str = json.dumps(self.as_json_dict(), indent=2, ensure_ascii=False)
+        return escape(json_str)
 
     def linkage_at(self, requested_scope_id: str, create_if_none: bool = True):
         requested_scope = datetime.strptime(requested_scope_id, '%G-ww%V.%u').date()
