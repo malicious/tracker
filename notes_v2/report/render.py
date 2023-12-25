@@ -355,8 +355,8 @@ def render_week_svg(
 
     return (
         '<svg xmlns="http://www.w3.org/2000/svg" '
-        f'width="{9 * col_width_and_right_margin}" '
-        f'height="{24 * row_height}">'
+        f'width="{9 * col_width_and_right_margin}px" '
+        f'height="{24 * row_height}px">'
         # Dump all background boxes into one group, because otherwise
         # there are so many that it slows down browser tools.
         + ('\n' + initial_indent_str + additional_indent_str)

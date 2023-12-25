@@ -292,7 +292,7 @@ def render_matching_notes(
                 )
                 return (
                     f'<a href="{link_href}">'
-                    f'<img class="week-svg-external" src="{image_src}" width="1080px" height="480px" />'
+                    f'<img class="week-svg-external" src="{image_src}" width="1008px" height="480px" />'
                     f'</a>'
                 )
 
