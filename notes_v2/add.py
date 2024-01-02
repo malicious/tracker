@@ -122,6 +122,10 @@ def one_from_csv(
             session.rollback()
             raise
 
+        except KeyError:
+            logger.warning(csv_entry)
+            raise
+
         if inexact_match_exists:
             matchmaker_dict = dict(csv_entry)
             for field in ['sort_time', 'created_at']:
