@@ -450,7 +450,9 @@ def render_note_domains(
             )
             .join(NoteDomain, NoteDomain.note_id == Note.note_id)
             .group_by(NoteDomain.domain_id)
-            .order_by(func.max(Note.sort_time).desc())
+            .order_by(
+                func.max(Note.time_scope_id).desc(),
+                func.max(Note.sort_time).desc())
         )
 
         rows = session.execute(query).all()
