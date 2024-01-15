@@ -239,7 +239,7 @@ def render_matching_notes(
         if not render_inline:
             src_kwargs = {
                 'day_scope': day_scope,
-                'domains': domains,
+                'domain': domains,
             }
             if disable_caching:
                 src_kwargs['disable_caching'] = "true"
