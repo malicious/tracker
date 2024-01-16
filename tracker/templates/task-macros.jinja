@@ -228,8 +228,10 @@ input.not-saved:hover, textarea.not-saved:hover {
 
 {% set task_edit_js %}
 // https://stackoverflow.com/a/39502645
-function toTimeScopeId(d) {
-  {# TODO: check that this is correct for Sundays, too #}
+function toTimeScopeId(d0) {
+  // Clone the Date object, since we modify it for math reasons
+  d = new Date(d0);
+
   var dayOfWeek = (d.getDay() + 6) % 7 + 1;
 
   d.setDate(d.getDate() - dayOfWeek + 3);
