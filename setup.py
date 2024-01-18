@@ -21,6 +21,7 @@ setup(name='tracker',
       packages=packages,
       python_requires='>=3',
       extras_require={
+          'prod': ['hypercorn'],
           'markdown': ['markdown-it-py'],
       },
 )

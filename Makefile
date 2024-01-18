@@ -15,6 +15,14 @@ reload_files := $(subst $(eval ) ,:,$(reload_patterns))
 .PHONY: serve
 serve:
 	source $(activate_script) \
+  && hypercorn tracker.app_prod:app \
+  --bind 127.0.0.1:7529 \
+  --workers 4 \
+  --reload
+
+.PHONY: serve-debug
+serve-debug:
+	source $(activate_script) \
   && flask --app $(flask_app) run \
            --debug --port 7529 --with-threads \
            --extra-files $(reload_files)
