@@ -218,15 +218,24 @@ def render_day_svg(
     )
 
 
-def standalone_render_day_svg(db_session, domains, day_scope, disable_caching):
+def standalone_render_day_svg(
+        db_session: Session,
+        domain_ids: Iterable[str],
+        day_scope: str,
+        disable_caching: bool,
+):
     week_scope = day_scope.get_parent()
     quarter_scope = week_scope.get_parent()
 
-    quarter_notes = notes_json_tree(db_session, domains, [day_scope])[quarter_scope]
+    quarter_notes = notes_json_tree(
+        db_session,
+        domain_ids,
+        [day_scope],
+    )[quarter_scope]
     week_notes = quarter_notes[week_scope]
     day_notes = week_notes[day_scope]
 
-    svg_text = render_day_svg(db_session, domains, day_scope, day_notes['notes'])
+    svg_text = render_day_svg(db_session, domain_ids, day_scope, day_notes['notes'])
     response = Response(svg_text, mimetype='image/svg+xml')
     if not disable_caching:
         response.cache_control.max_age = 31536000
