@@ -133,6 +133,12 @@ def render_matching_notes(
         single_page: bool,
 ):
     render_kwargs = {}
+    url_kwargs = {
+        'domain': domains,
+        'scope': scope_ids,
+    }
+    if single_page:
+        url_kwargs['single_page'] = single_page
 
     title_words = [f'domain={d}' for d in domains]
     title_words.extend([f'scope={ts}' for ts in scope_ids])
@@ -140,12 +146,9 @@ def render_matching_notes(
     render_kwargs['page_title'] = escape('/notes?' + '&'.join(title_words) + '  ')
 
     def as_week_header(week_scope: TimeScope) -> str:
-        scope_url = url_for(
-            ".do_render_matching_notes",
-            scope=week_scope,
-            domain=domains,
-            single_page=single_page,
-        )
+        scope_kwargs = dict(url_kwargs)
+        scope_kwargs['scope'] = week_scope
+        scope_url = url_for(".do_render_matching_notes", **scope_kwargs)
 
         range: List[str] = week_scope.get_child_scopes()
         def as_words(day_scope_index):
@@ -160,12 +163,9 @@ def render_matching_notes(
     render_kwargs['as_week_header'] = as_week_header
 
     def as_quarter_header(quarter_scope: TimeScope) -> str:
-        scope_url = url_for(
-            ".do_render_matching_notes",
-            scope=quarter_scope,
-            domain=domains,
-            single_page=single_page,
-        )
+        scope_kwargs = dict(url_kwargs)
+        scope_kwargs['scope'] = quarter_scope
+        scope_url = url_for(".do_render_matching_notes", **scope_kwargs)
         return (
             f'<a href="{scope_url}" id="{quarter_scope}">'
             f'quarter: {quarter_scope}'
@@ -279,17 +279,15 @@ def render_matching_notes(
                 )
                 return f'<img class="week-svg-external" src="{src}" />'
             else:
+                link_kwargs = dict(url_kwargs)
+                link_kwargs['single_page'] = 'true'
+
                 image_src = url_for(
                     ".do_render_svg_week",
                     week_scope=week_scope,
                     domain=domains,
                 )
-                link_href = url_for(
-                    ".do_render_matching_notes",
-                    scope=scope_ids,
-                    domain=domains,
-                    single_page="true",
-                )
+                link_href = url_for(".do_render_matching_notes", **link_kwargs)
                 return (
                     f'<a href="{link_href}">'
                     f'<img class="week-svg-external" src="{image_src}" width="1008px" height="480px" />'
@@ -308,8 +306,10 @@ def render_matching_notes(
     # If this is limited to one scope, link to prev/next scopes as well.
     if len(scope_ids) == 1:
         def _scope_to_html_link(scope_id: str) -> str:
+            scope_kwargs = dict(url_kwargs)
+            scope_kwargs['scope'] = scope_id
             return '<a href="{}">{}</a>'.format(
-                url_for(".do_render_matching_notes", scope=scope_id, domain=domains, single_page=single_page),
+                url_for(".do_render_matching_notes", **scope_kwargs),
                 scope_id)
 
         scope_id0 = TimeScope(list(scope_ids)[0])

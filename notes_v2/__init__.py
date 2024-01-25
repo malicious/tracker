@@ -147,38 +147,35 @@ def _register_endpoints(app):
     @notes_v2_bp.route("/notes")
     def do_render_matching_notes():
         page_scopes = tuple(escape(arg) for arg in request.args.getlist('scope'))
-        page_domains = tuple(request.args.getlist('domain'))
         single_page = strtobool(request.args.get('single_page'))
 
+        url_kwargs = {
+            'domain': tuple(request.args.getlist('domain')),
+        }
+        if single_page:
+            url_kwargs['single_page'] = single_page
+        if disable_scope_collapse:
+            url_kwargs['disable_scope_collapse'] = disable_scope_collapse
+
         if page_scopes == ('week',):
-            this_week = datetime.now().strftime("%G-ww%V")
-            return redirect(url_for(
-                ".do_render_matching_notes",
-                domain=page_domains,
-                scope=this_week,
-                single_page=single_page,
-            ))
+            url_kwargs['scope'] = datetime.now().strftime("%G-ww%V")
+            return redirect(url_for(".do_render_matching_notes", **url_kwargs))
         elif page_scopes == ('day',):
-            this_day = datetime.now().strftime("%G-ww%V.%u")
-            return redirect(url_for(
-                ".do_render_matching_notes",
-                domain=page_domains,
-                scope=this_day,
-                single_page=single_page,
-            ))
+            url_kwargs['scope'] = datetime.now().strftime("%G-ww%V.%u")
+            return redirect(url_for(".do_render_matching_notes", **url_kwargs))
         # Year-scopes get broken up into four quarters
         elif len(page_scopes) == 1:
             m = re.fullmatch(r'\d\d\d\d', page_scopes[0])
             if m:
-                new_scopes = [escape(f"{m[0]}—Q{quarter}") for quarter in range(1,5)]
-                return redirect(url_for(
-                    ".do_render_matching_notes",
-                    domain=page_domains,
-                    scope=new_scopes,
-                    single_page=single_page,
-                ))
+                url_kwargs['scope'] = [escape(f"{m[0]}—Q{quarter}") for quarter in range(1,5)]
+                return redirect(url_for(".do_render_matching_notes", **url_kwargs))
 
-        return report.render_matching_notes(db_session, page_domains, page_scopes, single_page)
+        return report.render_matching_notes(
+            db_session,
+            url_kwargs['domain'],
+            page_scopes,
+            single_page,
+        )
 
     @notes_v2_bp.route("/note-domains")
     def do_render_note_domains():

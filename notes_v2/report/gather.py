@@ -33,10 +33,11 @@ class NoteStapler:
             domains_filter_sql = [NoteDomain.domain_id.like(d + "%") for d in domains_filter]
 
         # TODO: Combining domain and scope filtering doesn't work, but it should
+        # TODO: Notes with no domains set are not returned by this
         self.filtered_query = (
             select(Note)
             .join(NoteDomain, Note.note_id == NoteDomain.note_id)
-            .filter(or_(*domains_filter_sql))
+            .where(or_(*domains_filter_sql))
             .options(joinedload(Note.domains))
             .group_by(Note)
         )
@@ -122,6 +123,7 @@ class NoteStapler:
             .filter(Note.time_scope_id == scope) \
             .order_by(Note.sort_time.asc())
         new_notes = list(n for (n,) in self.session.execute(new_note_rows).unique().all())
+        print(f"Rendering {len(new_notes)} new notes for {scope}")
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
         notes_list.extend(new_notes)
@@ -142,6 +144,7 @@ class NoteStapler:
             .filter(Note.time_scope_id == scope) \
             .order_by(Note.time_scope_id.asc())
         new_notes = list(n for (n,) in self.session.execute(new_note_rows).unique().all())
+        print(f"Rendering {len(new_notes)} new notes for {scope}")
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
         notes_list.extend(new_notes)
@@ -168,6 +171,7 @@ class NoteStapler:
             .filter(Note.time_scope_id == scope) \
             .order_by(Note.time_scope_id.asc())
         new_notes = list(n for (n,) in self.session.execute(new_note_rows).unique().all())
+        print(f"Rendering {len(new_notes)} new notes for {scope}")
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
         notes_list.extend(new_notes)
@@ -246,6 +250,7 @@ def notes_json_tree(
         week_promotion_threshold = 0
         quarter_promotion_threshold = 0
 
+    print(f"Stapling: {domain_ids} x {scope_ids}")
     ns = NoteStapler(
         db_session,
         domain_ids,
