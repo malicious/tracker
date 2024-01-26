@@ -4,13 +4,13 @@ from collections import defaultdict
 from datetime import datetime, timedelta
 from typing import Iterable, Optional
 
-from flask import render_template, url_for
-from sqlalchemy import func, or_, select
-from sqlalchemy.orm import Session
+from flask import render_template, url_for, make_response
 from markupsafe import escape
+from sqlalchemy import or_, select, and_, func
+from sqlalchemy.orm import Session
 
-from tasks_v2.time_scope import TimeScope, TimeScopeUtils
 from tasks_v2.models import Task, TaskLinkage
+from tasks_v2.time_scope import TimeScope, TimeScopeUtils
 
 
 def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
@@ -316,33 +316,131 @@ def edit_tasks_all(
     return render_template('tasks-all.html', **render_kwargs)
 
 
+def _construct_fancy_timedelta(created_at: datetime, current_time: datetime):
+    """
+    Compute a nice-looking string to explain `created_at`
+
+    TODO: Rename `created_at` to something accurate
+    """
+    if current_time < created_at:
+        return ""
+
+    years_delta = current_time.year - created_at.year
+    if years_delta <= 0:
+        years_delta_str = ""
+    else:
+        current_time = current_time.replace(year=created_at.year)
+        # Make sure the final "ago" string is always positive
+        if current_time < created_at:
+            years_delta -= 1
+            current_time = current_time.replace(year=created_at.year + 1)
+
+        years_delta_str = f"{years_delta} years "
+
+    # and months
+    months_delta = current_time.month - created_at.month
+    if current_time.year > created_at.year:
+        months_delta += 12 * (current_time.year - created_at.year)
+        current_time = current_time.replace(year=created_at.year)
+
+    # fixup: for more than a few years, don't bother listing months or days
+    if years_delta >= 2:
+        return f"{years_delta_str}ago"
+    else:
+        months_delta += years_delta * 12
+        years_delta_str = ""
+        years_delta = 0
+
+    if months_delta <= 0:
+        months_delta_str = ""
+    else:
+        try:
+            current_time = current_time.replace(month=created_at.month)
+            if current_time < created_at:
+                months_delta -= 1
+                if created_at.month == 12:
+                    current_time = current_time.replace(year=created_at.year + 1, month=1)
+                else:
+                    current_time = current_time.replace(month=created_at.month + 1)
+
+            months_delta_str = f"{months_delta} months "
+        except ValueError:
+            # ValueError: day is out of range for month
+            months_delta += 1
+            months_delta_str = ""
+
+    # fixup: for more than a few months, don't bother listing days
+    if months_delta >= 3:
+        return f"{months_delta_str}ago"
+
+    # anything left is days
+    current_time = current_time.replace(month=current_time.month + months_delta)
+    sub_months_delta = current_time - created_at
+    if sub_months_delta.days == 0:
+        # Don't comment if something is "due today", because that overwhelms mixtral-instruct
+        return ""
+
+    return f"{sub_months_delta.days} days ago"
+
+
 def tasks_as_prompt(
         db_session: Session,
+        include_detailed_resolutions: bool = False,
 ):
     render_time_dt = datetime.utcnow()
     future_tasks_cutoff = render_time_dt + timedelta(days=91)
 
+    usefulest_linkage = (
+        select(Task.task_id, func.min(TaskLinkage.time_scope).label('earliest_unresolved_linkage'))
+        .where(and_(TaskLinkage.resolution == None,
+                    TaskLinkage.task_id == Task.task_id))
+        .group_by(Task.task_id)
+        .subquery()
+    )
+
     query = (
-        select(Task)
-        .join(TaskLinkage, Task.task_id == TaskLinkage.task_id)
-        .filter(TaskLinkage.resolution == None)
+        select(Task, usefulest_linkage.c.earliest_unresolved_linkage)
+        .join(usefulest_linkage, Task.task_id == usefulest_linkage.c.task_id)
         .filter(TaskLinkage.time_scope < future_tasks_cutoff)
         .order_by(Task.category)
+        .group_by(Task.task_id)
     )
     task_rows = db_session.execute(query).all()
 
     final_markdown_descs = []
 
-    for (task,) in task_rows:
-        maybe_category = f", of type {task.category}" if task.category else ""
+    for (task, usefulest_time_scope) in task_rows:
+        maybe_category = f", in category \"{task.category}\"" if task.category else ""
 
-        # TODO: use subquery to add latest un-completed TL
-        maybe_overdue = f", due {task.linkages}"
+        usefulest_ts_dt = datetime(
+            year=usefulest_time_scope.year,
+            month=usefulest_time_scope.month,
+            day=usefulest_time_scope.day,
+        )
+        fancy_timedelta = _construct_fancy_timedelta(usefulest_ts_dt, render_time_dt)
+        maybe_overdue = f", due {fancy_timedelta}"
 
-        s = f"- {task.desc}{maybe_category}"
+        s = f"- {task.desc}{maybe_category}{maybe_overdue}"
         final_markdown_descs.append(s)
 
-    return "<br />".join(final_markdown_descs)
+        # And add detail from all sub-linkages, if any:
+        if include_detailed_resolutions:
+            for tl in task.linkages:
+                if tl.detailed_resolution:
+                    # Apparently web input gives newlines as `\r\n`, hopefully that's not browser-specific
+                    short_res = re.sub(r'<!-- .* -->\r\n', '', tl.detailed_resolution)
+                    short_res_lines = short_res.split('\r\n')
+
+                    if short_res_lines and short_res_lines[0]:
+                        final_markdown_descs.append("  - " + short_res_lines[0])
+                        for line in short_res_lines[1:]:
+                            if line.strip():
+                                final_markdown_descs.append("    " + line)
+
+    result_text = "\n".join(final_markdown_descs)
+    response = make_response(result_text, 200)
+    response.mimetype = "text/plain"
+    return response
 
 
 def edit_tasks_in_scope(
