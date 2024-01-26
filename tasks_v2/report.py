@@ -316,6 +316,35 @@ def edit_tasks_all(
     return render_template('tasks-all.html', **render_kwargs)
 
 
+def tasks_as_prompt(
+        db_session: Session,
+):
+    render_time_dt = datetime.utcnow()
+    future_tasks_cutoff = render_time_dt + timedelta(days=91)
+
+    query = (
+        select(Task)
+        .join(TaskLinkage, Task.task_id == TaskLinkage.task_id)
+        .filter(TaskLinkage.resolution == None)
+        .filter(TaskLinkage.time_scope < future_tasks_cutoff)
+        .order_by(Task.category)
+    )
+    task_rows = db_session.execute(query).all()
+
+    final_markdown_descs = []
+
+    for (task,) in task_rows:
+        maybe_category = f", of type {task.category}" if task.category else ""
+
+        # TODO: use subquery to add latest un-completed TL
+        maybe_overdue = f", due {task.linkages}"
+
+        s = f"- {task.desc}{maybe_category}"
+        final_markdown_descs.append(s)
+
+    return "<br />".join(final_markdown_descs)
+
+
 def edit_tasks_in_scope(
         db_session: Session,
         page_scope: TimeScope,

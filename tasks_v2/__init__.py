@@ -51,6 +51,10 @@ def _register_endpoints(app: Flask):
         hide_future = request.args.get('hide_future')
         return report.edit_tasks_all(db_session, show_resolved=show_resolved, hide_future=hide_future)
 
+    @tasks_v2_bp.route("/tasks.as-prompt")
+    def do_tasks_as_prompt():
+        return report.tasks_as_prompt(db_session)
+
     @tasks_v2_bp.route("/tasks.in-scope/<scope_id>")
     def do_edit_tasks_in_scope(scope_id):
         if scope_id == 'week':
