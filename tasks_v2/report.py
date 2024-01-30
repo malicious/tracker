@@ -418,6 +418,9 @@ def tasks_as_prompt(
     final_markdown_descs = []
 
     for (task, usefulest_time_scope) in task_rows:
+        # Filter out contents of any markdown links
+        filtered_desc = re.sub(r'(\[.*\])\(.*\)', r'\1', task.desc)
+
         maybe_category = f", in category \"{task.category}\"" if task.category else ""
 
         usefulest_ts_dt = datetime(
@@ -428,7 +431,7 @@ def tasks_as_prompt(
         fancy_timedelta = _construct_fancy_timedelta(usefulest_ts_dt, render_time_dt)
         maybe_overdue = f", due {fancy_timedelta}" if fancy_timedelta else ""
 
-        s = f"- {task.desc}{maybe_category}{maybe_overdue}"
+        s = f"- {filtered_desc}{maybe_category}{maybe_overdue}"
         final_markdown_descs.append(s)
 
         # And add detail from all sub-linkages, if any:
