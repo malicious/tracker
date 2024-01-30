@@ -374,7 +374,15 @@ def _construct_fancy_timedelta(created_at: datetime, current_time: datetime):
         return f"{months_delta_str}ago"
 
     # anything left is days
-    current_time = current_time.replace(month=current_time.month + months_delta)
+    new_month = current_time.month + months_delta
+    if new_month > 12:
+        current_time = current_time.replace(
+            year=current_time.year + 1,
+            month=new_month - 12,
+        )
+    else:
+        current_time = current_time.replace(month=new_month)
+
     sub_months_delta = current_time - created_at
     if sub_months_delta.days == 0:
         # Don't comment if something is "due today", because that overwhelms mixtral-instruct
