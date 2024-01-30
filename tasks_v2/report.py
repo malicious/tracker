@@ -426,7 +426,7 @@ def tasks_as_prompt(
             day=usefulest_time_scope.day,
         )
         fancy_timedelta = _construct_fancy_timedelta(usefulest_ts_dt, render_time_dt)
-        maybe_overdue = f", due {fancy_timedelta}"
+        maybe_overdue = f", due {fancy_timedelta}" if fancy_timedelta else ""
 
         s = f"- {task.desc}{maybe_category}{maybe_overdue}"
         final_markdown_descs.append(s)
