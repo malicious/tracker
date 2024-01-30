@@ -316,79 +316,37 @@ def edit_tasks_all(
     return render_template('tasks-all.html', **render_kwargs)
 
 
-def _construct_fancy_timedelta(created_at: datetime, current_time: datetime):
-    """
-    Compute a nice-looking string to explain `created_at`
+def _construct_textual_timedelta(
+        tasklinkage_dt: datetime,
+        reference_dt: datetime,
+) -> str | None:
+    years_delta = reference_dt.year - tasklinkage_dt.year
 
-    TODO: Rename `created_at` to something accurate
-    """
-    if current_time < created_at:
-        return ""
-
-    years_delta = current_time.year - created_at.year
-    if years_delta <= 0:
-        years_delta_str = ""
-    else:
-        current_time = current_time.replace(year=created_at.year)
-        # Make sure the final "ago" string is always positive
-        if current_time < created_at:
-            years_delta -= 1
-            current_time = current_time.replace(year=created_at.year + 1)
-
-        years_delta_str = f"{years_delta} years "
-
-    # and months
-    months_delta = current_time.month - created_at.month
-    if current_time.year > created_at.year:
-        months_delta += 12 * (current_time.year - created_at.year)
-        current_time = current_time.replace(year=created_at.year)
-
-    # fixup: for more than a few years, don't bother listing months or days
     if years_delta >= 2:
-        return f"{years_delta_str}ago"
-    else:
-        months_delta += years_delta * 12
-        years_delta_str = ""
-        years_delta = 0
+        return f"{years_delta} years ago"
+    elif years_delta <= -2:
+        return f"in {-years_delta} years"
 
-    if months_delta <= 0:
-        months_delta_str = ""
-    else:
-        try:
-            current_time = current_time.replace(month=created_at.month)
-            if current_time < created_at:
-                months_delta -= 1
-                if created_at.month == 12:
-                    current_time = current_time.replace(year=created_at.year + 1, month=1)
-                else:
-                    current_time = current_time.replace(month=created_at.month + 1)
+    # if years isn't granular enough, dump it into a months number
+    months_delta = reference_dt.month - tasklinkage_dt.month
+    months_delta += years_delta * 12
 
-            months_delta_str = f"{months_delta} months "
-        except ValueError:
-            # ValueError: day is out of range for month
-            months_delta += 1
-            months_delta_str = ""
-
-    # fixup: for more than a few months, don't bother listing days
     if months_delta >= 3:
-        return f"{months_delta_str}ago"
+        return f"{months_delta} months ago"
+    elif months_delta <= -3:
+        return f"in {-months_delta} months"
 
     # anything left is days
-    new_month = current_time.month + months_delta
-    if new_month > 12:
-        current_time = current_time.replace(
-            year=current_time.year + 1,
-            month=new_month - 12,
-        )
-    else:
-        current_time = current_time.replace(month=new_month)
+    days_delta = reference_dt - tasklinkage_dt
 
-    sub_months_delta = current_time - created_at
-    if sub_months_delta.days == 0:
-        # Don't comment if something is "due today", because that overwhelms mixtral-instruct
-        return ""
+    if days_delta.days >= 1:
+        return f"{days_delta.days} days ago"
+    elif days_delta.days <= -1:
+        return f"in {-days_delta.days} days"
 
-    return f"{sub_months_delta.days} days ago"
+    # otherwise it's due today; don't print anything because LLM's interpret
+    # "today" to mean "this is very important"
+    return None
 
 
 def tasks_as_prompt(
@@ -428,7 +386,7 @@ def tasks_as_prompt(
             month=usefulest_time_scope.month,
             day=usefulest_time_scope.day,
         )
-        fancy_timedelta = _construct_fancy_timedelta(usefulest_ts_dt, render_time_dt)
+        fancy_timedelta = _construct_textual_timedelta(usefulest_ts_dt, render_time_dt)
         maybe_overdue = f", due {fancy_timedelta}" if fancy_timedelta else ""
 
         s = f"- {filtered_desc}{maybe_category}{maybe_overdue}"
