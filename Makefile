@@ -12,16 +12,23 @@ reload_files := $(subst $(eval ) ,:,$(reload_patterns))
 
 .DEFAULT_GOAL := serve
 
-.PHONY: serve
-serve:
+.PHONY: serve-uvicorn
+serve-uvicorn:
+	source $(activate_script) \
+  && uvicorn tracker.app_prod:asgi_app \
+  --port 7529 \
+  --reload
+
+.PHONY: serve-hypercorn
+serve-hypercorn:
 	source $(activate_script) \
   && hypercorn tracker.app_prod:app \
   --bind 127.0.0.1:7529 \
   --workers 4 \
   --reload
 
-.PHONY: serve-debug
-serve-debug:
+.PHONY: serve
+serve:
 	source $(activate_script) \
   && flask --app $(flask_app) run \
            --debug --port 7529 --with-threads \
