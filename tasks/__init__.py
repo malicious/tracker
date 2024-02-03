@@ -7,7 +7,7 @@ from markupsafe import escape
 from sqlalchemy import select
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from tasks_v2.time_scope import TimeScope
+from tasks.time_scope import TimeScope
 # noinspection PyUnresolvedReferences
 from . import models, report, update
 from .models import Base, Task
@@ -117,7 +117,7 @@ def _register_rest_endpoints(app: Flask):
     def create_task():
         t = update.create_task(db_session, request.form)
         # Pick a random category for the purposes of making a link.
-        # TODO: Make this code less brittle by sharing it with the stuff in tasks_v2/report.py,
+        # TODO: Make this code less brittle by sharing it with the stuff in tasks/report.py,
         #       and also wherever that Django-derived sanitization code is.
         domains = ['']
         if t.category is not None and t.category.strip():

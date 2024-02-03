@@ -2,7 +2,7 @@ from datetime import date, datetime
 
 import pytest
 
-from tasks_v2.time_scope import TimeScope, TimeScopeUtils
+from tasks.time_scope import TimeScope, TimeScopeUtils
 
 
 def test_create():

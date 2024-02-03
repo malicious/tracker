@@ -2,8 +2,8 @@ from datetime import date, datetime
 
 import pytest
 
-from tasks_v2 import Task
-from tasks_v2.models import TaskLinkage
+from tasks import Task
+from tasks.models import TaskLinkage
 
 
 def test_task_constructor():

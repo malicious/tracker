@@ -2,7 +2,7 @@ from datetime import datetime
 
 from dateutil import parser
 
-from tasks_v2.models import Task, TaskLinkage
+from tasks.models import Task, TaskLinkage
 
 
 def _update_task_only(task, form_data):
