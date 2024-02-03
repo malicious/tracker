@@ -35,6 +35,6 @@ def note_v2_session(test_app) -> Session:
 @pytest.fixture(scope="function", autouse=True)
 def tasks_db() -> Session:
     tasks.database.load_database_models('')
-    yield tasks.database.db_session
-    tasks.database.db_session.remove()
-    tasks.database.db_session = None
+    yield tasks.database.get_db()
+    tasks.database.get_db().remove()
+    tasks.database._db_session = None

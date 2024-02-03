@@ -1,9 +1,13 @@
 import sqlalchemy
-from sqlalchemy.orm import scoped_session, sessionmaker
+from sqlalchemy.orm import scoped_session, sessionmaker, Session
 
 from tasks.database_models import Base
 
-db_session = None
+_db_session: Session = None
+
+
+def get_db() -> Session:
+    return _db_session
 
 
 def migrate_v2_models(db_path: str, v2_db_path: str) -> None:
@@ -26,9 +30,9 @@ def load_database_models(db_path: str) -> None:
     Base.metadata.create_all(bind=engine)
 
     # Create a Session object and bind it to the declarative_base
-    global db_session
-    db_session = scoped_session(sessionmaker(autocommit=False,
+    global _db_session
+    _db_session = scoped_session(sessionmaker(autocommit=False,
                                              autoflush=False,
                                              bind=engine))
 
-    Base.query = db_session.query_property()
+    Base.query = _db_session.query_property()
