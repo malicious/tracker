@@ -3,7 +3,7 @@ from datetime import date, datetime
 import pytest
 
 from tasks import Task
-from tasks.models import TaskLinkage
+from tasks.database_models import TaskLinkage
 
 
 def test_task_constructor():

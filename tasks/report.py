@@ -9,7 +9,7 @@ from markupsafe import escape
 from sqlalchemy import or_, select, and_, func
 from sqlalchemy.orm import Session
 
-from tasks.models import Task, TaskLinkage
+from tasks.database_models import Task, TaskLinkage
 from tasks.time_scope import TimeScope, TimeScopeUtils
 
 

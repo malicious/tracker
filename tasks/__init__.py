@@ -1,4 +1,4 @@
 from tasks.time_scope import TimeScope
 # noinspection PyUnresolvedReferences
-from . import models, report, update
-from .models import Base, Task
+from . import database_models, report, update
+from .database_models import Base, Task
