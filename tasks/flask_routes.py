@@ -4,8 +4,10 @@ from flask import Flask, Blueprint, request, redirect, url_for, abort
 from markupsafe import escape
 from sqlalchemy import select
 
-from tasks import report, TimeScope, Task, update
-from tasks.database import db_session
+from . import report, update
+from .database import db_session
+from .database_models import Task
+from .time_scope import TimeScope
 
 
 def _register_endpoints(app: Flask):

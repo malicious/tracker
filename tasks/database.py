@@ -1,7 +1,7 @@
 import sqlalchemy
 from sqlalchemy.orm import scoped_session, sessionmaker
 
-from tasks import Base
+from tasks.database_models import Base
 
 db_session = None
 
