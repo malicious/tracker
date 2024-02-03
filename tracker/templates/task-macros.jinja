@@ -3,10 +3,22 @@
 {%- macro task_edit_header(t) -%}
 <div class="task-edit-task-only">
   <div>
-    <label>task_id</label>
-    <span>{{t.task_id}}</span>
-    <a href="{{url_for("tasks-v2.do_edit_one_task", task_id=t.task_id)}}">[edit task]</a>
+    <label></label>
     <button class="clone" formaction="{{url_for("tasks-v2-rest.create_task")}}">clone task</button>
+  </div>
+  <div>
+    <label>task_id</label>
+    <a href="{{url_for("tasks-v2.do_edit_one_task", task_id=t.task_id)}}">
+      <span>{{t.task_id}}</span>
+    </a>
+  </div>
+  <div
+  {%- if not t.import_source %}
+    style="display: none;"
+  {% endif -%}
+  >
+    <label>import_source</label>
+    <input class="import-source" name="import-source" placeholder="" value="{{t.import_source}}" oninput="highlightOnHeaderInput(event)">
   </div>
   <div>
     <label>category</label>
@@ -15,6 +27,10 @@
   <div>
     <label>desc</label>
     <textarea class="desc" name="task-desc" oninput="highlightOnHeaderInput(event)">{{t.desc}}</textarea>
+  </div>
+  <div>
+    <label>desc_for_llm</label>
+    <textarea class="desc-for-llm" name="task-desc-for-llm" placeholder="None" oninput="highlightOnHeaderInput(event)">{{t.desc_for_llm if t.desc_for_llm}}</textarea>
   </div>
   <div>
     <label>time_estimate</label>
