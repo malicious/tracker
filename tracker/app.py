@@ -8,6 +8,7 @@ from markupsafe import Markup, escape
 
 import notes_v2
 import tasks
+import tasks.flask
 
 logging.basicConfig()
 
@@ -24,7 +25,7 @@ def create_app(settings_overrides: Dict = {}):
             pass
 
     notes_v2.init_app(app)
-    tasks.init_app(app)
+    tasks.flask.init_app(app)
 
     try:
         from markdown_it import MarkdownIt

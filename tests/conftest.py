@@ -3,6 +3,7 @@ from sqlalchemy.orm import Session
 
 import notes_v2
 import tasks
+import tasks.flask
 from tracker.app import create_app
 
 
@@ -32,7 +33,7 @@ def note_v2_session(test_app) -> Session:
 
 @pytest.fixture(scope="function", autouse=True)
 def task_v2_session() -> Session:
-    tasks.load_v2_models('')
-    yield tasks.db_session
-    tasks.db_session.remove()
-    tasks.db_session = None
+    tasks.flask.load_v2_models('')
+    yield tasks.flask.db_session
+    tasks.flask.db_session.remove()
+    tasks.flask.db_session = None
