@@ -13,7 +13,11 @@ class Task(Base):
     __tablename__ = 'Tasks'
 
     task_id = Column(Integer, primary_key=True, nullable=False)
+    import_source = Column(String, primary_key=True, nullable=True)
+
     desc = Column(String, nullable=False)
+    desc_for_llm = Column(String)
+
     category = Column(String)
     time_estimate = Column(Float)
 
