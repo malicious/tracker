@@ -1,29 +1,34 @@
+import logging
 from datetime import datetime
 
 from dateutil import parser
 
 from tasks.database_models import Task, TaskLinkage
 
+logger = logging.getLogger(__name__)
+
+
+def _attribute_renamer(form_data_attribute: str):
+    return form_data_attribute.replace('-', '_')
+
 
 def _update_task_only(task, form_data):
     # First, check if any of the Task data was updated
-    for attribute in ['category', 'desc', 'time_estimate']:
-        if f'task-{attribute}' not in form_data:
+    for form_data_attribute in ['desc', 'desc-for-llm', 'category', 'time_estimate']:
+        attribute = _attribute_renamer(form_data_attribute)
+        if f'task-{form_data_attribute}' not in form_data:
             raise ValueError(f"Couldn't find {task}.{attribute} in HTTP form data")
 
         # If the value's empty, we're probably trying to clear it
-        if not form_data[f'task-{attribute}']:
+        if not form_data[f'task-{form_data_attribute}']:
             if getattr(task, attribute):
-                print(f"DEBUG: clearing {task}.{attribute} to None")
+                logger.debug(f"clearing {task}.{attribute} to None")
             setattr(task, attribute, None)
 
         # If it's different, try setting it
-        elif form_data[f'task-{attribute}'] != getattr(task, attribute):
-            print(f"DEBUG: updating {task}.{attribute} to {form_data[f'task-{attribute}']}")
-            setattr(task, attribute, form_data[f'task-{attribute}'])
-
-        # Finally, delete from the map, because we expect that map to be cleared
-        #del form_data[f'task-{attribute}']
+        elif form_data[f'task-{form_data_attribute}'] != getattr(task, attribute):
+            logger.debug(f"updating {task}.{attribute} to {form_data[f'task-{form_data_attribute}']}")
+            setattr(task, attribute, form_data[f'task-{form_data_attribute}'])
 
 
 def _update_linkage_only(tl, tl_ts, form_data):
@@ -34,31 +39,30 @@ def _update_linkage_only(tl, tl_ts, form_data):
 
         if not form_data[f'tl-{tl_ts}-{field}']:
             if getattr(tl, field):
-                print(f"DEBUG: clearing {tl}.{field} to None")
+                logger.debug(f"clearing {tl}.{field} to None")
             setattr(tl, field, None)
 
         # If it's different, try setting it
         elif form_data[f'tl-{tl_ts}-{field}'] != getattr(tl, field):
             if field == 'time_scope_id' and str(tl.time_scope_id) != form_data[f'tl-{tl_ts}-{field}']:
                 raise ValueError(f"Can't change time_scope_id yet")
-            # TODO: check that created_at is valid and not None at import time
             if field == 'created_at' and form_data[f'tl-{tl_ts}-{field}'] == 'None':
                 tl.created_at = None
             elif field == 'created_at':
                 new_value = parser.parse(form_data[f'tl-{tl_ts}-{field}'])
                 if new_value != tl.created_at:
-                    print(f"DEBUG: updating {tl}.{field} to {new_value}")
                     if getattr(tl, field):
-                        print(f"       was: {getattr(tl, field)} (delta of {new_value - getattr(tl, field)})")
+                        logger.debug(
+                            f"updating {tl}.{field} to {new_value}\n"
+                            f"       was: {getattr(tl, field)} (delta of {new_value - getattr(tl, field)})")
                     else:
-                        print(f"       was: {getattr(tl, field)}")
+                        logger.debug(
+                            f"updating {tl}.{field} to {new_value}\n"
+                            f"       was: {getattr(tl, field)}")
                     setattr(tl, field, new_value)
                 del new_value
             elif getattr(tl, field) != form_data[f'tl-{tl_ts}-{field}']:
                 setattr(tl, field, form_data[f'tl-{tl_ts}-{field}'])
-
-        # Finally, delete from the map, because we expect that map to be cleared
-        #del form_data[f'tl-{tl_ts}-{field}']
 
 
 def create_task(session, form_data):
@@ -113,11 +117,11 @@ def update_task(session, task_id, form_data):
         if tl in existing_tls:
             existing_tls.remove(tl)
         else:
-            print(f"DEBUG: added new tl {tl}")
+            logger.info(f"added new tl {tl}")
         del tl
 
     if existing_tls:
-        print(f"DEBUG: {len(existing_tls)} linkages to be removed, {existing_tls}")
+        logger.info(f"{len(existing_tls)} linkages to be removed, {existing_tls}")
     for tl in existing_tls:
         session.delete(tl)
 
