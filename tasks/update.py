@@ -49,7 +49,7 @@ def _update_task_only(
     # We explicitly specify import_source because in SQLite, primary key's can't/shouldn't be NULL.
     # And there's a very tortured path from UI data to database, so just set it here.
     if not task.import_source:
-        logger.info(f"re-setting {task}.import_source to {repr(default_import_source)}"
+        logger.info(f"re-setting {task}.import_source to {repr(default_import_source)} "
                     f"instead of {repr(task.import_source)}")
         task.import_source = default_import_source
 
@@ -76,12 +76,12 @@ def _update_linkage_only(tl, tl_ts, form_data):
                 if new_value != tl.created_at:
                     if getattr(tl, field):
                         logger.debug(
-                            f"updating {tl}.{field} to {new_value}\n"
-                            f"       was: {getattr(tl, field)} (delta of {new_value - getattr(tl, field)})")
+                            f"updating {tl}.{field} to {new_value}, "
+                            f"was: {getattr(tl, field)} (delta of {new_value - getattr(tl, field)})")
                     else:
                         logger.debug(
-                            f"updating {tl}.{field} to {new_value}\n"
-                            f"       was: {getattr(tl, field)}")
+                            f"updating {tl}.{field} to {new_value}, "
+                            f"was: {getattr(tl, field)}")
                     setattr(tl, field, new_value)
                 del new_value
             elif getattr(tl, field) != form_data[f'tl-{tl_ts}-{field}']:
