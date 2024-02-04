@@ -12,14 +12,20 @@ Base = declarative_base()
 class Task(Base):
     __tablename__ = 'Tasks'
 
-    task_id = Column(Integer, primary_key=True, nullable=False)
-    import_source = Column(String, primary_key=True, nullable=True)
+    task_id = Column(Integer, primary_key=True, nullable=False,
+                     server_default="SELECT MAX(1, MAX(task_id)) FROM Tasks")
+    import_source = Column(String, primary_key=True, nullable=True,
+                           server_default='')
 
     desc = Column(String, nullable=False)
     desc_for_llm = Column(String)
 
     category = Column(String)
     time_estimate = Column(Float)
+
+    __tableargs__ = (
+        UniqueConstraint('task_id', 'import_source')
+    )
 
     linkages = relationship('TaskLinkage', backref='task')
 
