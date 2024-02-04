@@ -27,7 +27,8 @@ def try_migrate_v2_models(db_path: str, v2_db_path: str) -> None:
         return
 
     if not os.path.exists(v2_db_path):
-        raise RuntimeError(f"Cannot import Tasks from non-existent file: {v2_db_path}")
+        # No need to migrate, just continue and let Flask create the database
+        return
 
     c_src_conn = sqlite3.connect(v2_db_path)
     # Providing a row_factory lets us index cells by column name
