@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict
 
 from markupsafe import escape
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint, Date
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint, Date, text
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -12,23 +12,39 @@ Base = declarative_base()
 class Task(Base):
     __tablename__ = 'Tasks'
 
-    task_id = Column(Integer, primary_key=True, nullable=False)
+    task_id = Column(Integer, primary_key=True, nullable=False,
+                     default=text("IFNULL((SELECT MAX(task_id) FROM Tasks) + 1, 1)"))
+    import_source = Column(String, primary_key=True, nullable=False, default='')
+
     desc = Column(String, nullable=False)
+    desc_for_llm = Column(String)
+
     category = Column(String)
     time_estimate = Column(Float)
 
-    linkages = relationship('TaskLinkage', backref='task')
+    linkages = relationship(
+        'TaskLinkage',
+        primaryjoin=(
+            "and_(Task.task_id == TaskLinkage.task_id, "
+            "Task.import_source == TaskLinkage.import_source)"
+        ),
+        backref='task',
+    )
 
     def __repr__(self):
-        return f"<Task#{self.task_id}>"
+        maybe_import_source = f"{self.import_source}/"
+        if not self.import_source:
+            maybe_import_source = ""
+        return f"<Task {maybe_import_source}t#{self.task_id}>"
 
     def as_json_dict(self, include_linkages: bool = True) -> Dict:
         response_dict = {
             'task_id': self.task_id,
+            'import_source': self.import_source,
             'desc': self.desc,
         }
 
-        for field in ['category', 'time_estimate']:
+        for field in ['desc_for_llm', 'category', 'time_estimate']:
             if getattr(self, field) is not None:
                 response_dict[field] = getattr(self, field)
 
@@ -46,14 +62,22 @@ class Task(Base):
     def linkage_at(self, requested_scope_id: str, create_if_none: bool = True):
         requested_scope = datetime.strptime(requested_scope_id, '%G-ww%V.%u').date()
 
-        linkage = TaskLinkage.query \
-            .filter_by(task_id=self.task_id, time_scope=requested_scope) \
+        linkage = (
+            TaskLinkage.query
+            .filter_by(
+                task_id=self.task_id,
+                import_source=self.import_source,
+                time_scope=requested_scope)
             .one_or_none()
+        )
         if linkage:
             return linkage
 
         if create_if_none:
-            linkage = TaskLinkage(task_id=self.task_id, time_scope=requested_scope)
+            linkage = TaskLinkage(
+                task_id=self.task_id,
+                import_source=self.import_source,
+                time_scope=requested_scope)
             linkage.created_at = datetime.now()
             return linkage
 
@@ -66,7 +90,8 @@ class Task(Base):
 class TaskLinkage(Base):
     __tablename__ = 'TaskLinkages'
 
-    task_id = Column(Integer, ForeignKey("Tasks.task_id"), primary_key=True, nullable=False)
+    task_id = Column(Integer, ForeignKey(Task.task_id), primary_key=True, nullable=False)
+    import_source = Column(String, ForeignKey(Task.import_source), primary_key=True, nullable=False)
     time_scope = Column(Date, primary_key=True, nullable=False)
 
     # Note that timestamps are always promoted to microsecond precision, for storage consistency.
@@ -78,7 +103,7 @@ class TaskLinkage(Base):
     detailed_resolution = Column(String)
 
     __table_args__ = (
-        UniqueConstraint('task_id', 'time_scope'),
+        UniqueConstraint('task_id', 'import_source', 'time_scope'),
     )
 
     @property
@@ -93,20 +118,24 @@ class TaskLinkage(Base):
         self.time_scope = datetime.strptime(value, '%G-ww%V.%u').date()
 
     def __repr__(self):
-        return f"<TaskLinkage#{self.task_id}/{self.time_scope_id}>"
+        maybe_import_source = f"{self.import_source}/"
+        if not self.import_source:
+            maybe_import_source = ""
+        return f"<TaskLinkage {maybe_import_source}t#{self.task_id}/{self.time_scope_id}>"
 
     def as_json_dict(self) -> Dict:
         """
         Turn into a dict object, for easy JSON printing
 
-        Skips task_id, cause we assume we're getting called by a Task
+        Skips task_id and import_source, cause we assume we're getting called by a Task
         """
-        response_dict = {}
+        response_dict = {
+            'time_scope_id': self.time_scope_id,
+            'created_at': str(self.created_at),
+        }
 
-        if self.created_at is not None:
-            response_dict['created_at'] = str(self.created_at)
-
-        for field in ['time_scope_id', 'resolution', 'detailed_resolution', 'time_elapsed']:
+        # Check optional fields separately
+        for field in ['time_elapsed', 'resolution', 'detailed_resolution']:
             if getattr(self, field) is not None:
                 response_dict[field] = getattr(self, field)
 

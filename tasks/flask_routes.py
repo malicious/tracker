@@ -1,45 +1,13 @@
-import os
 from datetime import datetime
 
-import sqlalchemy
-from flask import Flask, Blueprint, abort, redirect, request, url_for
+from flask import Flask, Blueprint, request, redirect, url_for, abort
 from markupsafe import escape
 from sqlalchemy import select
-from sqlalchemy.orm import scoped_session, sessionmaker
 
-from tasks_v2.time_scope import TimeScope
-# noinspection PyUnresolvedReferences
-from . import models, report, update
-from .models import Base, Task
-
-db_session = None
-
-
-def init_app(app: Flask):
-    if not app.config['TESTING']:
-        load_v2_models(os.path.abspath(os.path.join(app.instance_path, 'tasks-v2.db')))
-
-    _register_endpoints(app)
-    _register_rest_endpoints(app)
-
-
-def load_v2_models(current_db_path: str):
-    engine = sqlalchemy.create_engine(
-        'sqlite:///' + current_db_path,
-        connect_args={
-            "check_same_thread": False,
-        }
-    )
-
-    Base.metadata.create_all(bind=engine)
-
-    # Create a Session object and bind it to the declarative_base
-    global db_session
-    db_session = scoped_session(sessionmaker(autocommit=False,
-                                             autoflush=False,
-                                             bind=engine))
-
-    Base.query = db_session.query_property()
+from . import report, update
+from .database import get_db
+from .database_models import Task
+from .time_scope import TimeScope
 
 
 def _register_endpoints(app: Flask):
@@ -49,11 +17,11 @@ def _register_endpoints(app: Flask):
     def edit_tasks():
         show_resolved = request.args.get('show_resolved')
         hide_future = request.args.get('hide_future')
-        return report.edit_tasks_all(db_session, show_resolved=show_resolved, hide_future=hide_future)
+        return report.edit_tasks_all(get_db(), show_resolved=show_resolved, hide_future=hide_future)
 
     @tasks_v2_bp.route("/tasks.as-prompt")
     def do_tasks_as_prompt():
-        return report.tasks_as_prompt(db_session)
+        return report.tasks_as_prompt(get_db())
 
     @tasks_v2_bp.route("/tasks.in-scope/<scope_id>")
     def do_edit_tasks_in_scope(scope_id):
@@ -68,10 +36,10 @@ def _register_endpoints(app: Flask):
         scope = TimeScope(scope_id)
         scope.get_type()
 
-        return report.edit_tasks_in_scope(db_session, page_scope=scope)
+        return report.edit_tasks_in_scope(get_db(), page_scope=scope)
 
     def _do_edit_one_task(task_id: int):
-        task = db_session.execute(
+        task = get_db().execute(
             select(Task)
             .where(Task.task_id == task_id)
         ).scalar_one_or_none()
@@ -115,9 +83,9 @@ def _register_rest_endpoints(app: Flask):
 
     @tasks_v2_rest_bp.route("/tasks", methods=['post'])
     def create_task():
-        t = update.create_task(db_session, request.form)
+        t = update.create_task(get_db(), request.form)
         # Pick a random category for the purposes of making a link.
-        # TODO: Make this code less brittle by sharing it with the stuff in tasks_v2/report.py,
+        # TODO: Make this code less brittle by sharing it with the stuff in tasks/report.py,
         #       and also wherever that Django-derived sanitization code is.
         domains = ['']
         if t.category is not None and t.category.strip():
@@ -145,7 +113,7 @@ def _register_rest_endpoints(app: Flask):
                 "ok": "this was an async request with JS enabled, here's your vaunted output",
             }
 
-        update.update_task(db_session, task_id, request.form)
+        update.update_task(get_db(), task_id, request.form)
         return redirect(f"{request.referrer}#{request.form['backlink']}")
 
     @tasks_v2_rest_bp.route("/tasks/<int:task_id>/<linkage_scope>/edit", methods=['post'])
@@ -160,7 +128,7 @@ def _register_rest_endpoints(app: Flask):
                 "ok": f"this was an async request with JS enabled, see {task_id} and {linkage_scope}",
             }
 
-        update.update_task(db_session, task_id, request.form)
+        update.update_task(get_db(), task_id, request.form)
         return redirect(f"{request.referrer}#{request.form['backlink']}")
 
     app.register_blueprint(tasks_v2_rest_bp, url_prefix='/v2')

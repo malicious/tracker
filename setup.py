@@ -6,7 +6,6 @@ from setuptools import setup
 packages = [
     'tracker',
     'notes_v2',
-    'tasks_v2',
 ]
 
 requirements = [
@@ -16,7 +15,7 @@ requirements = [
 ]
 
 setup(name='tracker',
-      version='1.3',
+      version='1.5',
       install_requires=requirements,
       packages=packages,
       python_requires='>=3',

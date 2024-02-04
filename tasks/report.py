@@ -9,8 +9,8 @@ from markupsafe import escape
 from sqlalchemy import or_, select, and_, func
 from sqlalchemy.orm import Session
 
-from tasks_v2.models import Task, TaskLinkage
-from tasks_v2.time_scope import TimeScope, TimeScopeUtils
+from .database_models import Task, TaskLinkage
+from .time_scope import TimeScope, TimeScopeUtils
 
 
 def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
@@ -27,20 +27,22 @@ def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
             tl_exact = list(matching_linkages)[0]
 
     if tl_exact and tl_exact.resolution:
-        return '<summary class="task-resolved">\n' + \
-               f'<span class="resolution">({tl_exact.resolution}) </span>' + \
-               response_html + '\n' + \
-               '</summary>'
+        return \
+                '<summary class="task-resolved">\n' + \
+                f'<span class="resolution">({tl_exact.resolution}) </span>' + \
+                response_html + '\n' + \
+                '</summary>'
 
     # Otherwise, do our best to guess at additional info
     short_scope_str = t.linkages[0].time_scope_id.strftime("%G-ww%V.%u")
     if short_scope_str[0:5] == ref_scope[0:5]:
         short_scope_str = short_scope_str[5:]
 
-    return '<summary class="task">' + \
-           f'<span class="time-scope">{short_scope_str}</span>' + \
-           response_html + '\n' + \
-           '</summary>'
+    return \
+            '<summary class="task">' + \
+            f'<span class="time-scope">{short_scope_str}</span>' + \
+            response_html + '\n' + \
+            '</summary>'
 
 
 def _to_aio(t) -> Iterable[str]:
@@ -145,8 +147,8 @@ def generate_tasks_by_scope(db_session: Session, scope_id: str):
 
 
 def fetch_tasks_by_domain(
-    db_session: Session,
-    query_limiter,
+        db_session: Session,
+        query_limiter,
 ):
     # Fetch the final list of tasks; duplicate according to domain-ish splits.
     tasks_by_domain = defaultdict(set)
@@ -196,7 +198,7 @@ def render_scope(task_date, section_date):
 
     # Scale the colors from grey to reddish
     color_intensity = min(max_task_age, max(days_old, 0)) / 100.0
-    color_rgb = (200 +  25 * color_intensity,
+    color_rgb = (200 + 25 * color_intensity,
                  200 - 100 * color_intensity,
                  200 - 100 * color_intensity)
 
@@ -357,27 +359,34 @@ def tasks_as_prompt(
     future_tasks_cutoff = render_time_dt + timedelta(days=91)
 
     usefulest_linkage = (
-        select(Task.task_id, func.min(TaskLinkage.time_scope).label('earliest_unresolved_linkage'))
+        select(Task.task_id, Task.import_source, func.min(TaskLinkage.time_scope).label('earliest_unresolved_linkage'))
         .where(and_(TaskLinkage.resolution == None,
-                    TaskLinkage.task_id == Task.task_id))
-        .group_by(Task.task_id)
+                    TaskLinkage.task_id == Task.task_id,
+                    TaskLinkage.import_source == Task.import_source))
+        .group_by(Task.task_id, Task.import_source)
         .subquery()
     )
 
     query = (
         select(Task, usefulest_linkage.c.earliest_unresolved_linkage)
-        .join(usefulest_linkage, Task.task_id == usefulest_linkage.c.task_id)
+        .join(usefulest_linkage,
+              and_(Task.task_id == usefulest_linkage.c.task_id,
+                   Task.import_source == usefulest_linkage.c.import_source))
         .filter(TaskLinkage.time_scope < future_tasks_cutoff)
         .order_by(Task.category)
-        .group_by(Task.task_id)
+        .group_by(Task.task_id, Task.import_source)
     )
     task_rows = db_session.execute(query).all()
 
     final_markdown_descs = []
 
+    task: Task
+    usefulest_time_scope: TimeScope
     for (task, usefulest_time_scope) in task_rows:
-        # Filter out contents of any markdown links
-        filtered_desc = re.sub(r'(\[.*\])\(.*\)', r'\1', task.desc)
+        desc_for_llm = task.desc_for_llm
+        if not desc_for_llm:
+            # Filter out destination info for any markdown links
+            desc_for_llm = re.sub(r'(\[.*\])\(.*\)', r'\1', task.desc)
 
         maybe_category = f", in category \"{task.category}\"" if task.category else ""
 
@@ -389,7 +398,7 @@ def tasks_as_prompt(
         fancy_timedelta = _construct_textual_timedelta(usefulest_ts_dt, render_time_dt)
         maybe_overdue = f", due {fancy_timedelta}" if fancy_timedelta else ""
 
-        s = f"- {filtered_desc}{maybe_category}{maybe_overdue}"
+        s = f"- {desc_for_llm}{maybe_category}{maybe_overdue}"
         final_markdown_descs.append(s)
 
         # And add detail from all sub-linkages, if any:
@@ -427,10 +436,12 @@ def edit_tasks_in_scope(
     render_kwargs['to_aio'] = to_aio
 
     prev_scope = TimeScopeUtils.prev_scope(page_scope)
-    render_kwargs['prev_scope'] = f'<a href="{url_for(".do_edit_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
+    render_kwargs['prev_scope'] = \
+        f'<a href="{url_for(".do_edit_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
 
     next_scope = TimeScopeUtils.next_scope(page_scope)
-    render_kwargs['next_scope'] = f'<a href="{url_for(".do_edit_tasks_in_scope", scope_id=next_scope)}">{next_scope}</a>'
+    render_kwargs['next_scope'] = \
+        f'<a href="{url_for(".do_edit_tasks_in_scope", scope_id=next_scope)}">{next_scope}</a>'
 
     return render_template('tasks-in-scope.html', **render_kwargs)
 
