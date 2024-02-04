@@ -13,11 +13,8 @@ class Task(Base):
     __tablename__ = 'Tasks'
 
     task_id = Column(Integer, primary_key=True, nullable=False,
-                     # server_default=text("(SELECT MAX(1, MAX(task_id)) FROM Tasks)"),
-                     # default=select(func.max(1, func.max(task_id_table)) + 1),
-                     default=text("IFNULL((SELECT MAX(task_id) FROM Tasks) + 1, 1)"),
-                     )
-    import_source = Column(String, primary_key=True, nullable=False)
+                     default=text("IFNULL((SELECT MAX(task_id) FROM Tasks) + 1, 1)"))
+    import_source = Column(String, primary_key=True, nullable=False, default='')
 
     desc = Column(String, nullable=False)
     desc_for_llm = Column(String)
@@ -35,15 +32,19 @@ class Task(Base):
     )
 
     def __repr__(self):
-        return f"<Task#{self.task_id}>"
+        maybe_import_source = f"{self.import_source}/"
+        if not self.import_source:
+            maybe_import_source = ""
+        return f"<Task {maybe_import_source}t#{self.task_id}>"
 
     def as_json_dict(self, include_linkages: bool = True) -> Dict:
         response_dict = {
             'task_id': self.task_id,
+            'import_source': self.import_source,
             'desc': self.desc,
         }
 
-        for field in ['category', 'time_estimate']:
+        for field in ['desc_for_llm', 'category', 'time_estimate']:
             if getattr(self, field) is not None:
                 response_dict[field] = getattr(self, field)
 
@@ -61,14 +62,22 @@ class Task(Base):
     def linkage_at(self, requested_scope_id: str, create_if_none: bool = True):
         requested_scope = datetime.strptime(requested_scope_id, '%G-ww%V.%u').date()
 
-        linkage = TaskLinkage.query \
-            .filter_by(task_id=self.task_id, time_scope=requested_scope) \
+        linkage = (
+            TaskLinkage.query
+            .filter_by(
+                task_id=self.task_id,
+                import_source=self.import_source,
+                time_scope=requested_scope)
             .one_or_none()
+        )
         if linkage:
             return linkage
 
         if create_if_none:
-            linkage = TaskLinkage(task_id=self.task_id, time_scope=requested_scope)
+            linkage = TaskLinkage(
+                task_id=self.task_id,
+                import_source=self.import_source,
+                time_scope=requested_scope)
             linkage.created_at = datetime.now()
             return linkage
 
@@ -109,20 +118,24 @@ class TaskLinkage(Base):
         self.time_scope = datetime.strptime(value, '%G-ww%V.%u').date()
 
     def __repr__(self):
-        return f"<TaskLinkage#{self.task_id}/{self.time_scope_id}>"
+        maybe_import_source = f"{self.import_source}/"
+        if not self.import_source:
+            maybe_import_source = ""
+        return f"<TaskLinkage {maybe_import_source}t#{self.task_id}/{self.time_scope_id}>"
 
     def as_json_dict(self) -> Dict:
         """
         Turn into a dict object, for easy JSON printing
 
-        Skips task_id, cause we assume we're getting called by a Task
+        Skips task_id and import_source, cause we assume we're getting called by a Task
         """
-        response_dict = {}
+        response_dict = {
+            'time_scope_id': self.time_scope_id,
+            'created_at': str(self.created_at),
+        }
 
-        if self.created_at is not None:
-            response_dict['created_at'] = str(self.created_at)
-
-        for field in ['time_scope_id', 'resolution', 'detailed_resolution', 'time_elapsed']:
+        # Check optional fields separately
+        for field in ['time_elapsed', 'resolution', 'detailed_resolution']:
             if getattr(self, field) is not None:
                 response_dict[field] = getattr(self, field)
 

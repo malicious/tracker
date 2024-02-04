@@ -45,7 +45,11 @@ def test_create_basic(tasks_db):
     tasks_db.add(t)
     tasks_db.flush()
 
-    tl = TaskLinkage(task_id=t.task_id, time_scope=date(2021, 5, 23))
+    tl = TaskLinkage(
+        task_id=t.task_id,
+        import_source=t.import_source,
+        time_scope=date(2021, 5, 23),
+    )
     tl.created_at = datetime.now()
     tasks_db.add(tl)
     tasks_db.commit()
