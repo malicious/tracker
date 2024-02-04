@@ -13,7 +13,11 @@ def get_db() -> Session:
     return _db_session
 
 
-def try_migrate_v2_models(db_path: str, v2_db_path: str) -> None:
+def try_migrate_v2_models(
+        db_path: str,
+        v2_db_path: str,
+        default_import_source: str = '',
+) -> None:
     """
     Add two sqlalchemy.String columns: `import_source` and `desc_for_llm`.
 
@@ -43,7 +47,7 @@ def try_migrate_v2_models(db_path: str, v2_db_path: str) -> None:
         c_dst.executescript('''
         CREATE TABLE IF NOT EXISTS "Tasks" (
             task_id INTEGER NOT NULL,
-            import_source VARCHAR,
+            import_source VARCHAR NOT NULL,
             "desc" VARCHAR NOT NULL,
             desc_for_llm VARCHAR,
             category VARCHAR,
@@ -52,14 +56,16 @@ def try_migrate_v2_models(db_path: str, v2_db_path: str) -> None:
         );
         CREATE TABLE IF NOT EXISTS "TaskLinkages" (
             task_id INTEGER NOT NULL,
+            import_source VARCHAR NOT NULL,
             time_scope DATE NOT NULL,
             created_at DATETIME NOT NULL,
             time_elapsed FLOAT,
             resolution VARCHAR,
             detailed_resolution VARCHAR,
-            PRIMARY KEY (task_id, time_scope),
-            UNIQUE (task_id, time_scope),
-            FOREIGN KEY(task_id) REFERENCES "Tasks" (task_id)
+            PRIMARY KEY (task_id, import_source, time_scope),
+            UNIQUE (task_id, import_source, time_scope),
+            FOREIGN KEY(task_id) REFERENCES "Tasks" (task_id),
+            FOREIGN KEY(import_source) REFERENCES "Tasks" (import_source)
         );
         ''')
 
@@ -68,7 +74,7 @@ def try_migrate_v2_models(db_path: str, v2_db_path: str) -> None:
                 'INSERT OR IGNORE INTO Tasks VALUES (?,?,?,?,?,?)',
                 (
                     task_row['task_id'],
-                    '',  # import_source
+                    default_import_source,
                     task_row['desc'],
                     None,  # desc_for_llm
                     task_row['category'],
@@ -77,9 +83,10 @@ def try_migrate_v2_models(db_path: str, v2_db_path: str) -> None:
 
         for tl_row in c_src.execute('SELECT * FROM TaskLinkages'):
             c_dst.execute(
-                'INSERT OR IGNORE INTO TaskLinkages VALUES (?,?,?,?,?,?)',
+                'INSERT OR IGNORE INTO TaskLinkages VALUES (?,?,?,?,?,?,?)',
                 (
                     tl_row['task_id'],
+                    default_import_source,
                     tl_row['time_scope'],
                     tl_row['created_at'],
                     tl_row['time_elapsed'],

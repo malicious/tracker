@@ -54,7 +54,15 @@ def _update_task_only(
         task.import_source = default_import_source
 
 
-def _update_linkage_only(tl, tl_ts, form_data):
+def _update_linkage_only(
+        tl: TaskLinkage,
+        tl_ts: str,
+        form_data,
+        parent_import_source: str,
+):
+    """
+    This function is called on any creation or modification through the web UI.
+    """
     # Update fields
     for field in ['created_at', 'time_elapsed', 'resolution', 'detailed_resolution']:
         if f'tl-{tl_ts}-{field}' not in form_data:
@@ -86,6 +94,9 @@ def _update_linkage_only(tl, tl_ts, form_data):
                 del new_value
             elif getattr(tl, field) != form_data[f'tl-{tl_ts}-{field}']:
                 setattr(tl, field, form_data[f'tl-{tl_ts}-{field}'])
+
+    # And propagate the Task.import_source, if needed
+    tl.import_source = parent_import_source
 
 
 def create_task(session, form_data):
@@ -133,7 +144,7 @@ def update_task(session, task_id, form_data):
         if not tl:
             tl = TaskLinkage(task_id=task_id, time_scope=tl_ts)
 
-        _update_linkage_only(tl, form_tl_id, form_data)
+        _update_linkage_only(tl, form_tl_id, form_data, task.import_source)
 
         session.add(tl)
 

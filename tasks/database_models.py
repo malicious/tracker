@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict
 
 from markupsafe import escape
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint, Date, text, select, func
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint, Date, text
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -25,7 +25,14 @@ class Task(Base):
     category = Column(String)
     time_estimate = Column(Float)
 
-    linkages = relationship('TaskLinkage', backref='task')
+    linkages = relationship(
+        'TaskLinkage',
+        primaryjoin=(
+            "and_(Task.task_id == TaskLinkage.task_id, "
+            "Task.import_source == TaskLinkage.import_source)"
+        ),
+        backref='task',
+    )
 
     def __repr__(self):
         return f"<Task#{self.task_id}>"
@@ -74,7 +81,8 @@ class Task(Base):
 class TaskLinkage(Base):
     __tablename__ = 'TaskLinkages'
 
-    task_id = Column(Integer, ForeignKey("Tasks.task_id"), primary_key=True, nullable=False)
+    task_id = Column(Integer, ForeignKey(Task.task_id), primary_key=True, nullable=False)
+    import_source = Column(String, ForeignKey(Task.import_source), primary_key=True, nullable=False)
     time_scope = Column(Date, primary_key=True, nullable=False)
 
     # Note that timestamps are always promoted to microsecond precision, for storage consistency.
@@ -86,7 +94,7 @@ class TaskLinkage(Base):
     detailed_resolution = Column(String)
 
     __table_args__ = (
-        UniqueConstraint('task_id', 'time_scope'),
+        UniqueConstraint('task_id', 'import_source', 'time_scope'),
     )
 
     @property
