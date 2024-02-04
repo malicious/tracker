@@ -88,7 +88,9 @@ def generate_tasks_by_scope(db_session: Session, scope_id: str):
     if m:
         scope = datetime.strptime(scope_id, "%G-ww%V.%u").date()
         tasks = Task.query \
-            .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+            .join(TaskLinkage,
+                  and_(Task.task_id == TaskLinkage.task_id,
+                       Task.import_source == TaskLinkage.import_source)) \
             .filter(TaskLinkage.time_scope == scope) \
             .order_by(TaskLinkage.time_scope, Task.category) \
             .all()
@@ -106,7 +108,9 @@ def generate_tasks_by_scope(db_session: Session, scope_id: str):
             day_scope_id = f"{scope_id}.{day}"
             day_scope = datetime.strptime(day_scope_id, "%G-ww%V.%u").date()
             tasks = Task.query \
-                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .join(TaskLinkage,
+                      and_(Task.task_id == TaskLinkage.task_id,
+                           Task.import_source == TaskLinkage.import_source)) \
                 .filter(TaskLinkage.time_scope == day_scope) \
                 .order_by(TaskLinkage.time_scope, Task.category) \
                 .all()
@@ -132,7 +136,9 @@ def generate_tasks_by_scope(db_session: Session, scope_id: str):
         current_day_start = quarter_start_date
         while current_day_start < quarter_end_date:
             tasks = Task.query \
-                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .join(TaskLinkage,
+                      and_(Task.task_id == TaskLinkage.task_id,
+                           Task.import_source == TaskLinkage.import_source)) \
                 .filter(TaskLinkage.time_scope == current_day_start.date()) \
                 .order_by(TaskLinkage.time_scope, Task.category) \
                 .all()
@@ -295,14 +301,18 @@ def edit_tasks_all(
 
         elif hide_future:
             return query \
-                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .join(TaskLinkage,
+                      and_(Task.task_id == TaskLinkage.task_id,
+                           Task.import_source == TaskLinkage.import_source)) \
                 .filter(or_(TaskLinkage.resolution == None,
                             TaskLinkage.created_at > recent_tasks_cutoff)) \
                 .filter(TaskLinkage.time_scope < future_tasks_cutoff)
 
         else:
             return query \
-                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .join(TaskLinkage,
+                      and_(Task.task_id == TaskLinkage.task_id,
+                           Task.import_source == TaskLinkage.import_source)) \
                 .filter(or_(TaskLinkage.resolution == None,
                             TaskLinkage.created_at > recent_tasks_cutoff))
 
