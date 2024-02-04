@@ -8,7 +8,7 @@
   </div>
   <div>
     <label>task_id</label>
-    <a href="{{url_for("tasks-v2.do_edit_one_task", task_id=t.task_id)}}">
+    <a href="{{url_for("tasks-v2.do_edit_matching_task_ids", task_id=t.task_id)}}">
       <span>{{t.task_id}}</span>
     </a>
   </div>

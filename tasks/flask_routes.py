@@ -38,19 +38,19 @@ def _register_endpoints(app: Flask):
 
         return report.edit_tasks_in_scope(get_db(), page_scope=scope)
 
-    def _do_edit_one_task(task_id: int):
-        task = get_db().execute(
+    def _do_edit_matching_tasks(task_id: int):
+        tasks = get_db().execute(
             select(Task)
             .where(Task.task_id == task_id)
-        ).scalar_one_or_none()
-        if not task:
+        ).scalars()
+        if not tasks:
             abort(404)
 
         # DEBUG: pass in several tasks, so we can pretend we're a list
-        return report.edit_tasks_simple(task, task, task)
+        return report.edit_tasks_simple(*tasks)
 
     @tasks_v2_bp.route("/tasks/<task_id>")
-    def do_edit_one_task(task_id):
+    def do_edit_matching_task_ids(task_id):
         '''
         Temporary endpoint; ultimately, we want this endpoint to be for individual tasks
 
@@ -66,12 +66,12 @@ def _register_endpoints(app: Flask):
         except ValueError:
             pass
 
-        return _do_edit_one_task(task_id)
+        return _do_edit_matching_tasks(task_id)
 
     @tasks_v2_bp.route("/task/<int:task_id>")
     def do_edit_one_task_legacy(task_id):
         return redirect(
-            location=url_for('.do_edit_one_task', scope_or_id=task_id),
+            location=url_for('.do_edit_matching_task_ids', scope_or_id=task_id),
             code=301,
         )
 
