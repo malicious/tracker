@@ -51,12 +51,20 @@
 {%- macro task_add_header() -%}
 <div class="task-edit-task-only">
   <div>
+    <label>import_source</label>
+    <input class="import-source" name="task-import_source" placeholder="None" oninput="highlightOnHeaderInput(event)">
+  </div>
+  <div>
     <label>category</label>
     <input class="category" name="task-category" placeholder="None" oninput="highlightOnHeaderInput(event)">
   </div>
   <div class="not-saved">
     <label>desc</label>
     <textarea class="desc" name="task-desc" oninput="highlightOnHeaderInput(event)"></textarea>
+  </div>
+  <div>
+    <label>desc_for_llm</label>
+    <textarea class="desc-for-llm" name="task-desc_for_llm" placeholder="None" oninput="highlightOnHeaderInput(event)"></textarea>
   </div>
   <div>
     <label>time_estimate</label>

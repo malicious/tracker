@@ -3,7 +3,7 @@ from datetime import datetime
 from typing import Dict
 
 from markupsafe import escape
-from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint, Date
+from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint, Date, text, select, func
 from sqlalchemy.orm import relationship, declarative_base
 
 Base = declarative_base()
@@ -13,7 +13,10 @@ class Task(Base):
     __tablename__ = 'Tasks'
 
     task_id = Column(Integer, primary_key=True, nullable=False,
-                     server_default="SELECT MAX(1, MAX(task_id)) FROM Tasks")
+                     # server_default=text("(SELECT MAX(1, MAX(task_id)) FROM Tasks)"),
+                     # default=select(func.max(1, func.max(task_id_table)) + 1),
+                     default=text("IFNULL((SELECT MAX(task_id) FROM Tasks) + 1, 1)"),
+                     )
     import_source = Column(String, primary_key=True, nullable=False)
 
     desc = Column(String, nullable=False)
