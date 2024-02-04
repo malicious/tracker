@@ -18,11 +18,15 @@
   {% endif -%}
   >
     <label>import_source</label>
-    <input class="import-source" name="import-source" placeholder="" value="{{t.import_source}}" oninput="highlightOnHeaderInput(event)">
+    <input class="import-source" name="task-import_source" placeholder="None" value="{{
+      t.import_source
+    }}" oninput="highlightOnHeaderInput(event)">
   </div>
   <div>
     <label>category</label>
-    <input class="category" name="task-category" placeholder="None" value="{{t.category if t.category}}" oninput="highlightOnHeaderInput(event)">
+    <input class="category" name="task-category" placeholder="None" value="{{
+      t.category if t.category
+    }}" oninput="highlightOnHeaderInput(event)">
   </div>
   <div>
     <label>desc</label>
@@ -30,7 +34,9 @@
   </div>
   <div>
     <label>desc_for_llm</label>
-    <textarea class="desc-for-llm" name="task-desc-for-llm" placeholder="None" oninput="highlightOnHeaderInput(event)">{{t.desc_for_llm if t.desc_for_llm}}</textarea>
+    <textarea class="desc-for-llm" name="task-desc_for_llm" placeholder="None" oninput="highlightOnHeaderInput(event)">{{
+      t.desc_for_llm if t.desc_for_llm
+    }}</textarea>
   </div>
   <div>
     <label>time_estimate</label>

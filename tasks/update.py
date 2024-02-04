@@ -6,15 +6,31 @@ from dateutil import parser
 from tasks.database_models import Task, TaskLinkage
 
 logger = logging.getLogger(__name__)
+logger.setLevel(logging.DEBUG)
 
 
-def _attribute_renamer(form_data_attribute: str):
-    return form_data_attribute.replace('-', '_')
+def _attribute_renamer(form_data_attribute: str) -> str:
+    # Fyi this function used to translate the names, but we can put underscores
+    # into HTML5 form data. For now, this is something like a typing function,
+    # and should be replaced with Pydantic.
+    #
+    # return form_data_attribute.replace('-', '_')
+    return form_data_attribute
 
 
-def _update_task_only(task, form_data):
+def _update_task_only(
+        task: Task,
+        form_data,
+        default_import_source: str = '',
+):
+    """
+    This function is called on creation on any Task through the web UI.
+
+    It translates web form data into Tasks, and also sanitizes that output,
+    since I can't figure out `NULL` and `None` and `"None"`.
+    """
     # First, check if any of the Task data was updated
-    for form_data_attribute in ['desc', 'desc-for-llm', 'category', 'time_estimate']:
+    for form_data_attribute in ['desc', 'desc_for_llm', 'category', 'import_source', 'time_estimate']:
         attribute = _attribute_renamer(form_data_attribute)
         if f'task-{form_data_attribute}' not in form_data:
             raise ValueError(f"Couldn't find {task}.{attribute} in HTTP form data")
@@ -29,6 +45,13 @@ def _update_task_only(task, form_data):
         elif form_data[f'task-{form_data_attribute}'] != getattr(task, attribute):
             logger.debug(f"updating {task}.{attribute} to {form_data[f'task-{form_data_attribute}']}")
             setattr(task, attribute, form_data[f'task-{form_data_attribute}'])
+
+    # We explicitly specify import_source because in SQLite, primary key's can't/shouldn't be NULL.
+    # And there's a very tortured path from UI data to database, so just set it here.
+    if not task.import_source:
+        logger.info(f"re-setting {task}.import_source to {repr(default_import_source)}"
+                    f"instead of {repr(task.import_source)}")
+        task.import_source = default_import_source
 
 
 def _update_linkage_only(tl, tl_ts, form_data):
