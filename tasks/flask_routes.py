@@ -15,13 +15,20 @@ def _register_endpoints(app: Flask):
 
     @tasks_v2_bp.route("/tasks")
     def edit_tasks():
-        show_resolved = request.args.get('show_resolved')
-        hide_future = request.args.get('hide_future')
-        return report.edit_tasks_all(get_db(), show_resolved=show_resolved, hide_future=hide_future)
+        return report.edit_tasks_all(
+            get_db(),
+            show_resolved=request.args.get('show_resolved'),
+            hide_future=request.args.get('hide_future'),
+        )
 
     @tasks_v2_bp.route("/tasks.as-prompt")
     def do_tasks_as_prompt():
-        return report.tasks_as_prompt(get_db())
+        return report.tasks_as_prompt(
+            get_db(),
+            hide_future=request.args.get('hide_future'),
+            hide_past=request.args.get('hide_past'),
+            include_detailed_resolutions=request.args.get('include_detailed_resolutions'),
+        )
 
     @tasks_v2_bp.route("/tasks.in-scope/<scope_id>")
     def do_edit_tasks_in_scope(scope_id):

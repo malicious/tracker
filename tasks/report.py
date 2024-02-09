@@ -353,14 +353,25 @@ def _construct_textual_timedelta(
 
 def tasks_as_prompt(
         db_session: Session,
+        hide_future: bool = False,
+        hide_past: bool = False,
         include_detailed_resolutions: bool = False,
 ):
     render_time_dt = datetime.utcnow()
     future_tasks_cutoff = render_time_dt + timedelta(days=91)
+    past_tasks_cutoff = render_time_dt - timedelta(days=366)
 
-    usefulest_linkage = (
+    additional_filters = [
+        TaskLinkage.resolution == None,
+    ]
+    if hide_past:
+        additional_filters.append(TaskLinkage.time_scope > past_tasks_cutoff)
+    if hide_future:
+        additional_filters.append(TaskLinkage.time_scope < future_tasks_cutoff)
+
+    tasks_by_usefulest_linkage = (
         select(Task.task_id, Task.import_source, func.min(TaskLinkage.time_scope).label('earliest_unresolved_linkage'))
-        .where(and_(TaskLinkage.resolution == None,
+        .where(and_(*additional_filters,
                     TaskLinkage.task_id == Task.task_id,
                     TaskLinkage.import_source == Task.import_source))
         .group_by(Task.task_id, Task.import_source)
@@ -368,11 +379,11 @@ def tasks_as_prompt(
     )
 
     query = (
-        select(Task, usefulest_linkage.c.earliest_unresolved_linkage)
-        .join(usefulest_linkage,
-              and_(Task.task_id == usefulest_linkage.c.task_id,
-                   Task.import_source == usefulest_linkage.c.import_source))
-        .filter(TaskLinkage.time_scope < future_tasks_cutoff)
+        select(Task,
+               tasks_by_usefulest_linkage.c.earliest_unresolved_linkage)
+        .join(tasks_by_usefulest_linkage,
+              and_(Task.task_id == tasks_by_usefulest_linkage.c.task_id,
+                   Task.import_source == tasks_by_usefulest_linkage.c.import_source))
         .order_by(Task.category)
         .group_by(Task.task_id, Task.import_source)
     )
