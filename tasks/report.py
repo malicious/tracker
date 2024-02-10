@@ -396,10 +396,18 @@ def tasks_as_prompt(
     task: Task
     usefulest_time_scope: TimeScope
     for (task, usefulest_time_scope) in task_rows:
-        desc_for_llm = task.desc_for_llm
-        if not desc_for_llm:
-            # Filter out destination info for any markdown links
-            desc_for_llm = re.sub(r'(\[.*\])\(.*\)', r'\1', task.desc)
+        output_desc = task.desc
+        # Use the override if it exists
+        if task.desc_for_llm is not None:
+            output_desc = task.desc_for_llm
+
+            # Sometimes the override is a non-NULL string,
+            # which indicates we should skip it for LLM output.
+            if not task.desc_for_llm:
+                continue
+
+        # Filter out destination info for any markdown links
+        output_desc = re.sub(r'(\[.*\])\(.*\)', r'\1', output_desc)
 
         maybe_category = f", in category \"{task.category}\"" if task.category else ""
 
@@ -411,7 +419,7 @@ def tasks_as_prompt(
         fancy_timedelta = _construct_textual_timedelta(usefulest_ts_dt, render_time_dt)
         maybe_overdue = f", due {fancy_timedelta}" if fancy_timedelta else ""
 
-        s = f"- {desc_for_llm}{maybe_category}{maybe_overdue}"
+        s = f"- {output_desc}{maybe_category}{maybe_overdue}"
         final_markdown_descs.append(s)
 
         # And add detail from all sub-linkages, if any:
