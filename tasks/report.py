@@ -1,3 +1,4 @@
+import json
 import operator
 import re
 from collections import defaultdict
@@ -356,6 +357,7 @@ def tasks_as_prompt(
         hide_future: bool = False,
         hide_past: bool = False,
         include_detailed_resolutions: bool = False,
+        output_as_json: bool = False,
 ):
     render_time_dt = datetime.utcnow()
     future_tasks_cutoff = render_time_dt + timedelta(days=91)
@@ -427,6 +429,12 @@ def tasks_as_prompt(
                                 final_markdown_descs.append("    " + line)
 
     result_text = "\n".join(final_markdown_descs)
+    if output_as_json:
+        # Format the output specially so it can get parsed directly into llama.cpp
+        response = make_response(json.dumps(result_text), 200)
+        response.mimetype = "application/json"
+        return response
+
     response = make_response(result_text, 200)
     response.mimetype = "text/plain"
     return response
