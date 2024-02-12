@@ -3,6 +3,7 @@ import operator
 import re
 from collections import defaultdict
 from datetime import datetime, timedelta
+from textwrap import indent
 from typing import Iterable, Optional
 
 from flask import render_template, url_for, make_response
@@ -420,6 +421,13 @@ def tasks_as_prompt(
         maybe_overdue = f", due {fancy_timedelta}" if fancy_timedelta else ""
 
         s = f"- {output_desc}{maybe_category}{maybe_overdue}"
+        if "\n" in output_desc:
+            maybe_overdue = f"due {fancy_timedelta}, " if fancy_timedelta else ""
+            maybe_category = f"in category \"{task.category}\", " if task.category else ""
+            # indent the desc text, but need that initial markdown unordered list mark
+            indented_output_desc = indent(output_desc, '  ')
+            s = f"- {maybe_category}{maybe_overdue}{indented_output_desc[2:]}"
+
         final_markdown_descs.append(s)
 
         # And add detail from all sub-linkages, if any:
