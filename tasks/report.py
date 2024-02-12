@@ -407,8 +407,8 @@ def tasks_as_prompt(
             if not task.desc_for_llm:
                 continue
 
-        # Filter out destination info for any markdown links
-        output_desc = re.sub(r'(\[.*\])\(.*\)', r'\1', output_desc)
+        # Filter out link info for any markdown links
+        output_desc = re.sub(r'\[(.*)\]\(.*\)', r'\1', output_desc)
 
         maybe_category = f", in category \"{task.category}\"" if task.category else ""
 
