@@ -402,9 +402,9 @@ def tasks_as_prompt(
         if task.desc_for_llm is not None:
             output_desc = task.desc_for_llm
 
-            # Sometimes the override is a non-NULL string,
+            # Sometimes the override is an empty string,
             # which indicates we should skip it for LLM output.
-            if not task.desc_for_llm:
+            if not task.desc_for_llm.strip():
                 continue
 
         # Filter out link info for any markdown links
