@@ -15,13 +15,20 @@ def _register_endpoints(app: Flask):
 
     @tasks_v2_bp.route("/tasks")
     def edit_tasks():
-        show_resolved = request.args.get('show_resolved')
-        hide_future = request.args.get('hide_future')
-        return report.edit_tasks_all(get_db(), show_resolved=show_resolved, hide_future=hide_future)
+        return report.edit_tasks_all(
+            get_db(),
+            show_resolved=request.args.get('show_resolved'),
+            hide_future=request.args.get('hide_future'),
+        )
 
     @tasks_v2_bp.route("/tasks.as-prompt")
     def do_tasks_as_prompt():
-        return report.tasks_as_prompt(get_db())
+        return report.tasks_as_prompt(
+            get_db(),
+            hide_future=request.args.get('hide_future'),
+            hide_past=request.args.get('hide_past'),
+            include_detailed_resolutions=request.args.get('include_detailed_resolutions'),
+        )
 
     @tasks_v2_bp.route("/tasks.in-scope/<scope_id>")
     def do_edit_tasks_in_scope(scope_id):
@@ -38,19 +45,19 @@ def _register_endpoints(app: Flask):
 
         return report.edit_tasks_in_scope(get_db(), page_scope=scope)
 
-    def _do_edit_one_task(task_id: int):
-        task = get_db().execute(
+    def _do_edit_matching_tasks(task_id: int):
+        tasks = get_db().execute(
             select(Task)
             .where(Task.task_id == task_id)
-        ).scalar_one_or_none()
-        if not task:
+        ).scalars()
+        if not tasks:
             abort(404)
 
         # DEBUG: pass in several tasks, so we can pretend we're a list
-        return report.edit_tasks_simple(task, task, task)
+        return report.edit_tasks_simple(*tasks)
 
     @tasks_v2_bp.route("/tasks/<task_id>")
-    def do_edit_one_task(task_id):
+    def do_edit_matching_task_ids(task_id):
         '''
         Temporary endpoint; ultimately, we want this endpoint to be for individual tasks
 
@@ -66,12 +73,12 @@ def _register_endpoints(app: Flask):
         except ValueError:
             pass
 
-        return _do_edit_one_task(task_id)
+        return _do_edit_matching_tasks(task_id)
 
     @tasks_v2_bp.route("/task/<int:task_id>")
     def do_edit_one_task_legacy(task_id):
         return redirect(
-            location=url_for('.do_edit_one_task', scope_or_id=task_id),
+            location=url_for('.do_edit_matching_task_ids', scope_or_id=task_id),
             code=301,
         )
 

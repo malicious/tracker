@@ -1,7 +1,9 @@
+import json
 import operator
 import re
 from collections import defaultdict
 from datetime import datetime, timedelta
+from textwrap import indent
 from typing import Iterable, Optional
 
 from flask import render_template, url_for, make_response
@@ -88,7 +90,9 @@ def generate_tasks_by_scope(db_session: Session, scope_id: str):
     if m:
         scope = datetime.strptime(scope_id, "%G-ww%V.%u").date()
         tasks = Task.query \
-            .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+            .join(TaskLinkage,
+                  and_(Task.task_id == TaskLinkage.task_id,
+                       Task.import_source == TaskLinkage.import_source)) \
             .filter(TaskLinkage.time_scope == scope) \
             .order_by(TaskLinkage.time_scope, Task.category) \
             .all()
@@ -106,7 +110,9 @@ def generate_tasks_by_scope(db_session: Session, scope_id: str):
             day_scope_id = f"{scope_id}.{day}"
             day_scope = datetime.strptime(day_scope_id, "%G-ww%V.%u").date()
             tasks = Task.query \
-                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .join(TaskLinkage,
+                      and_(Task.task_id == TaskLinkage.task_id,
+                           Task.import_source == TaskLinkage.import_source)) \
                 .filter(TaskLinkage.time_scope == day_scope) \
                 .order_by(TaskLinkage.time_scope, Task.category) \
                 .all()
@@ -132,7 +138,9 @@ def generate_tasks_by_scope(db_session: Session, scope_id: str):
         current_day_start = quarter_start_date
         while current_day_start < quarter_end_date:
             tasks = Task.query \
-                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .join(TaskLinkage,
+                      and_(Task.task_id == TaskLinkage.task_id,
+                           Task.import_source == TaskLinkage.import_source)) \
                 .filter(TaskLinkage.time_scope == current_day_start.date()) \
                 .order_by(TaskLinkage.time_scope, Task.category) \
                 .all()
@@ -295,14 +303,18 @@ def edit_tasks_all(
 
         elif hide_future:
             return query \
-                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .join(TaskLinkage,
+                      and_(Task.task_id == TaskLinkage.task_id,
+                           Task.import_source == TaskLinkage.import_source)) \
                 .filter(or_(TaskLinkage.resolution == None,
                             TaskLinkage.created_at > recent_tasks_cutoff)) \
                 .filter(TaskLinkage.time_scope < future_tasks_cutoff)
 
         else:
             return query \
-                .join(TaskLinkage, Task.task_id == TaskLinkage.task_id) \
+                .join(TaskLinkage,
+                      and_(Task.task_id == TaskLinkage.task_id,
+                           Task.import_source == TaskLinkage.import_source)) \
                 .filter(or_(TaskLinkage.resolution == None,
                             TaskLinkage.created_at > recent_tasks_cutoff))
 
@@ -353,14 +365,26 @@ def _construct_textual_timedelta(
 
 def tasks_as_prompt(
         db_session: Session,
+        hide_future: bool = False,
+        hide_past: bool = False,
         include_detailed_resolutions: bool = False,
+        output_as_json: bool = False,
 ):
     render_time_dt = datetime.utcnow()
     future_tasks_cutoff = render_time_dt + timedelta(days=91)
+    past_tasks_cutoff = render_time_dt - timedelta(days=366)
 
-    usefulest_linkage = (
+    additional_filters = [
+        TaskLinkage.resolution == None,
+    ]
+    if hide_past:
+        additional_filters.append(TaskLinkage.time_scope > past_tasks_cutoff)
+    if hide_future:
+        additional_filters.append(TaskLinkage.time_scope < future_tasks_cutoff)
+
+    tasks_by_usefulest_linkage = (
         select(Task.task_id, Task.import_source, func.min(TaskLinkage.time_scope).label('earliest_unresolved_linkage'))
-        .where(and_(TaskLinkage.resolution == None,
+        .where(and_(*additional_filters,
                     TaskLinkage.task_id == Task.task_id,
                     TaskLinkage.import_source == Task.import_source))
         .group_by(Task.task_id, Task.import_source)
@@ -368,12 +392,12 @@ def tasks_as_prompt(
     )
 
     query = (
-        select(Task, usefulest_linkage.c.earliest_unresolved_linkage)
-        .join(usefulest_linkage,
-              and_(Task.task_id == usefulest_linkage.c.task_id,
-                   Task.import_source == usefulest_linkage.c.import_source))
-        .filter(TaskLinkage.time_scope < future_tasks_cutoff)
-        .order_by(Task.category)
+        select(Task,
+               tasks_by_usefulest_linkage.c.earliest_unresolved_linkage)
+        .join(tasks_by_usefulest_linkage,
+              and_(Task.task_id == tasks_by_usefulest_linkage.c.task_id,
+                   Task.import_source == tasks_by_usefulest_linkage.c.import_source))
+        .order_by(tasks_by_usefulest_linkage.c.earliest_unresolved_linkage)
         .group_by(Task.task_id, Task.import_source)
     )
     task_rows = db_session.execute(query).all()
@@ -383,10 +407,18 @@ def tasks_as_prompt(
     task: Task
     usefulest_time_scope: TimeScope
     for (task, usefulest_time_scope) in task_rows:
-        desc_for_llm = task.desc_for_llm
-        if not desc_for_llm:
-            # Filter out destination info for any markdown links
-            desc_for_llm = re.sub(r'(\[.*\])\(.*\)', r'\1', task.desc)
+        output_desc = task.desc
+        # Use the override if it exists
+        if task.desc_for_llm is not None:
+            output_desc = task.desc_for_llm
+
+            # Sometimes the override is an empty string,
+            # which indicates we should skip it for LLM output.
+            if not task.desc_for_llm.strip():
+                continue
+
+        # Filter out link info for any markdown links
+        output_desc = re.sub(r'\[(.*)\]\(.*\)', r'\1', output_desc)
 
         maybe_category = f", in category \"{task.category}\"" if task.category else ""
 
@@ -398,7 +430,14 @@ def tasks_as_prompt(
         fancy_timedelta = _construct_textual_timedelta(usefulest_ts_dt, render_time_dt)
         maybe_overdue = f", due {fancy_timedelta}" if fancy_timedelta else ""
 
-        s = f"- {desc_for_llm}{maybe_category}{maybe_overdue}"
+        s = f"- {output_desc}{maybe_category}{maybe_overdue}"
+        if "\n" in output_desc:
+            maybe_overdue = f"due {fancy_timedelta}, " if fancy_timedelta else ""
+            maybe_category = f"in category \"{task.category}\", " if task.category else ""
+            # indent the desc text, but need that initial markdown unordered list mark
+            indented_output_desc = indent(output_desc, '  ')
+            s = f"- {maybe_category}{maybe_overdue}{indented_output_desc[2:]}"
+
         final_markdown_descs.append(s)
 
         # And add detail from all sub-linkages, if any:
@@ -416,6 +455,12 @@ def tasks_as_prompt(
                                 final_markdown_descs.append("    " + line)
 
     result_text = "\n".join(final_markdown_descs)
+    if output_as_json:
+        # Format the output specially so it can get parsed directly into llama.cpp
+        response = make_response(json.dumps(result_text), 200)
+        response.mimetype = "application/json"
+        return response
+
     response = make_response(result_text, 200)
     response.mimetype = "text/plain"
     return response
