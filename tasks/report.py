@@ -387,7 +387,7 @@ def tasks_as_prompt(
         .join(tasks_by_usefulest_linkage,
               and_(Task.task_id == tasks_by_usefulest_linkage.c.task_id,
                    Task.import_source == tasks_by_usefulest_linkage.c.import_source))
-        .order_by(tasks_by_usefulest_linkage.c.earliest_unresolved_linkage)
+        .order_by(func.random())
         .group_by(Task.task_id, Task.import_source)
     )
     task_rows = db_session.execute(query).all()
