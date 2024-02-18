@@ -408,7 +408,7 @@ def tasks_as_prompt(
                 continue
 
         # Filter out link info for any markdown links
-        output_desc = re.sub(r'\[(.*)\]\(.*\)', r'\1', output_desc)
+        output_desc = re.sub(r'\[(.*?)\]\(.*\)', r'\1', output_desc)
 
         maybe_category = f", in category \"{task.category}\"" if task.category else ""
 
