@@ -21,7 +21,7 @@ setup(name='tracker',
       python_requires='>=3',
       extras_require={
           'prod': ['hypercorn'],
-          'uvicorn': ['asgiref', 'uvicorn', 'uvloop'],
+          'uvicorn': ['asgiref', 'uvicorn', 'uvloop', 'watchfiles'],
           'markdown': ['markdown-it-py'],
       },
 )
