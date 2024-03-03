@@ -115,13 +115,6 @@ def one_from_csv(
                 .exists()
             ).scalar()
 
-        # TODO: Handle this properly, don't just do whatever the error message says.
-        #       This happened from having duplicate/identical entries right before?
-        except PendingRollbackError:
-            logger.warning(csv_entry)
-            session.rollback()
-            raise
-
         except KeyError:
             logger.warning(csv_entry)
             raise
@@ -171,6 +164,22 @@ def all_from_csv(
 
             if (entry_index + 1) % 1000 == 0:
                 logger.info(f"Imported {entry_index + 1:7_} entries so far")
+
+        except parser.ParserError as e:
+            if print_details:
+                logger.warning(e)
+
+            times_import_failed += 1
+            continue
+
+        # TODO: Handle this properly, don't just do whatever the error message says.
+        #       This happened from having duplicate/identical entries right before?
+        except PendingRollbackError:
+            logger.warning(csv_entry)
+            session.rollback()
+
+            # Instead of re-raising the exception, end import and expect user to re-run
+            return
 
         except (KeyError, IntegrityError) as e:
             if (
