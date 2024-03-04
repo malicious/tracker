@@ -1,5 +1,6 @@
 import json
 import logging
+import sqlite3
 
 from sqlalchemy import select, func, delete
 
@@ -98,13 +99,79 @@ def import_from(
         sqlite_db_path: str,
         default_import_source: str | None,
         override_import_source: str | None,
+        tasks_db: TasksDB | None = None,
 ):
-    print(f"import_from({sqlite_db_path}, {default_import_source}, {override_import_source})")
+    logger.debug(f"import_from({sqlite_db_path}, {default_import_source}, {override_import_source})")
+    if tasks_db is None:
+        tasks_db = get_db()
 
 
 def export_to(
         sqlite_db_path: str,
         default_import_source: str | None,
         override_import_source: str | None,
+        tasks_db: TasksDB | None = None,
 ):
-    print(f"export_to({sqlite_db_path}, {default_import_source}, {override_import_source})")
+    """
+    Opens `sqlite_db_path` with raw sqlite, and feed SQLAlchemy objects into it.
+    """
+    logger.debug(f"export_to({sqlite_db_path}, {default_import_source}, {override_import_source})")
+    if tasks_db is None:
+        tasks_db = get_db()
+
+    conn_dst = sqlite3.connect(sqlite_db_path)
+    conn_dst.row_factory = sqlite3.Row
+
+    with conn_dst:
+        dest_db = conn_dst.cursor()
+        dest_db.execute('PRAGMA journal_mode=wal')
+
+        #region Tasks export
+        dest_db.execute(
+            'CREATE TABLE IF NOT EXISTS "Tasks" ('
+            '    task_id INTEGER NOT NULL,'
+            '    import_source VARCHAR NOT NULL,'
+            '    "desc" VARCHAR NOT NULL,'
+            '    desc_for_llm VARCHAR,'
+            '    category VARCHAR,'
+            '    time_estimate FLOAT,'
+            '    PRIMARY KEY (task_id, import_source)'
+            ')'
+        )
+
+        count = -1
+        for count, t in enumerate(tasks_db.query(Task).all()):
+            dest_db.execute(
+                'INSERT OR IGNORE INTO Tasks VALUES (?,?,?,?,?,?)',
+                (t.task_id, t.import_source, t.desc, t.desc_for_llm, t.category, t.time_estimate)
+            )
+
+        logger.info(f"Exported {count} Tasks to {sqlite_db_path}")
+        #endregion
+
+        #region TaskLinkages export
+        dest_db.execute(
+            'CREATE TABLE IF NOT EXISTS "TaskLinkages" ('
+            '    task_id INTEGER NOT NULL,'
+            '    import_source VARCHAR NOT NULL,'
+            '    time_scope DATE NOT NULL,'
+            '    created_at DATETIME NOT NULL,'
+            '    time_elapsed FLOAT,'
+            '    resolution VARCHAR,'
+            '    detailed_resolution VARCHAR,'
+            '    PRIMARY KEY (task_id, import_source, time_scope),'
+            '    UNIQUE (task_id, import_source, time_scope),'
+            '    FOREIGN KEY(task_id) REFERENCES "Tasks" (task_id),'
+            '    FOREIGN KEY(import_source) REFERENCES "Tasks" (import_source)'
+            ')'
+        )
+
+        count = -1
+        for count, tl in enumerate(tasks_db.query(TaskLinkage).all()):
+            dest_db.execute(
+                'INSERT OR IGNORE INTO TaskLinkages VALUES (?,?,?,?,?,?,?)',
+                (tl.task_id, tl.import_source, tl.time_scope, tl.created_at, tl.time_elapsed, tl.resolution, tl.detailed_resolution)
+            )
+
+        logger.info(f"Exported {count} TaskLinkages to {sqlite_db_path}")
+        #endregion
