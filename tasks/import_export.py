@@ -98,18 +98,64 @@ def delete_import_source(
 
 def import_from(
         sqlite_db_path: str,
-        default_import_source: str | None,
-        override_import_source: str | None,
+        sql_like_filter: str,
+        import_source_mapper: Callable[[str], str],
         tasks_db: TasksDB | None = None,
 ):
-    logger.debug(f"import_from({sqlite_db_path}, {default_import_source}, {override_import_source})")
+    logger.debug(f"import_from({sqlite_db_path}, {import_source_mapper})")
     if tasks_db is None:
         tasks_db = get_db()
+
+    # Add a bunch of converters so we don't have to do our own datetime parsing
+    sqlite3.register_converter('DATETIME', sqlite3.converters['TIMESTAMP'])
+    conn_src = sqlite3.connect(sqlite_db_path, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn_src.row_factory = sqlite3.Row
+
+    with conn_src:
+        src_db = conn_src.cursor()
+
+        # region Tasks import
+        for task_row in src_db.execute(
+                'SELECT * FROM Tasks '
+                'WHERE import_source LIKE ?',
+                (sql_like_filter,)
+        ):
+            new_task = Task(
+                task_id=task_row['task_id'],
+                import_source=import_source_mapper(task_row['import_source']),
+                desc=task_row['desc'],
+                desc_for_llm=task_row['desc_for_llm'],
+                category=task_row['category'],
+                time_estimate=task_row['time_estimate'],
+            )
+            tasks_db.add(new_task)
+        # endregion
+
+        # region TaskLinkages import
+        # Bulk import all the TaskLinkages at once, rather than trying to map directly to Tasks.
+        for tl_row in src_db.execute(
+                'SELECT * FROM TaskLinkages '
+                'WHERE import_source LIKE ?',
+                (sql_like_filter,)
+        ):
+            new_tl = TaskLinkage(
+                task_id=tl_row['task_id'],
+                import_source=import_source_mapper(tl_row['import_source']),
+                time_scope=tl_row['time_scope'],
+                created_at=tl_row['created_at'],
+                time_elapsed=tl_row['time_elapsed'],
+                resolution=tl_row['resolution'],
+                detailed_resolution=tl_row['detailed_resolution'],
+            )
+            tasks_db.add(new_tl)
+        # endregion
+
+        tasks_db.commit()
 
 
 def export_to(
         sqlite_db_path: str,
-        import_source_mapper: Callable[[str], str] = lambda x: x,
+        import_source_mapper: Callable[[str], str],
         tasks_db: TasksDB | None = None,
 ):
     """
@@ -120,7 +166,6 @@ def export_to(
         tasks_db = get_db()
 
     conn_dst = sqlite3.connect(sqlite_db_path)
-    conn_dst.row_factory = sqlite3.Row
 
     with conn_dst:
         dest_db = conn_dst.cursor()
