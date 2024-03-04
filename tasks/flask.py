@@ -63,6 +63,24 @@ def init_app(app: Flask) -> None:
     @click.argument('sqlite_db_path')
     @with_appcontext
     def t3_export(sqlite_db_path, default_import_source, override_import_source):
-        return import_export.export_to(sqlite_db_path, default_import_source, override_import_source)
+        used_mappings = {}
+        def import_source_mapper(real_import_source: str) -> str:
+            mapped_import_source = real_import_source
+            if not mapped_import_source:
+                mapped_import_source = default_import_source
+            if override_import_source:
+                mapped_import_source = override_import_source
+
+            # If we generated a new mapping, record it for debugging
+            if mapped_import_source != real_import_source:
+                nonlocal used_mappings
+                if real_import_source not in used_mappings:
+                    print(f"New import_source mapping: {repr(real_import_source)} => {repr(mapped_import_source)}")
+
+                used_mappings[real_import_source] = mapped_import_source
+
+            return mapped_import_source
+
+        return import_export.export_to(sqlite_db_path, import_source_mapper)
 
     app.cli.add_command(t3_export)

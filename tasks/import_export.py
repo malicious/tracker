@@ -1,6 +1,7 @@
 import json
 import logging
 import sqlite3
+from typing import Callable
 
 from sqlalchemy import select, func, delete
 
@@ -108,14 +109,13 @@ def import_from(
 
 def export_to(
         sqlite_db_path: str,
-        default_import_source: str | None,
-        override_import_source: str | None,
+        import_source_mapper: Callable[[str], str] = lambda x: x,
         tasks_db: TasksDB | None = None,
 ):
     """
     Opens `sqlite_db_path` with raw sqlite, and feed SQLAlchemy objects into it.
     """
-    logger.debug(f"export_to({sqlite_db_path}, {default_import_source}, {override_import_source})")
+    logger.debug(f"export_to({sqlite_db_path}, {import_source_mapper})")
     if tasks_db is None:
         tasks_db = get_db()
 
@@ -126,7 +126,7 @@ def export_to(
         dest_db = conn_dst.cursor()
         dest_db.execute('PRAGMA journal_mode=wal')
 
-        #region Tasks export
+        # region Tasks export
         dest_db.execute(
             'CREATE TABLE IF NOT EXISTS "Tasks" ('
             '    task_id INTEGER NOT NULL,'
@@ -143,13 +143,13 @@ def export_to(
         for count, t in enumerate(tasks_db.query(Task).all()):
             dest_db.execute(
                 'INSERT OR IGNORE INTO Tasks VALUES (?,?,?,?,?,?)',
-                (t.task_id, t.import_source, t.desc, t.desc_for_llm, t.category, t.time_estimate)
+                (t.task_id, import_source_mapper(t.import_source), t.desc, t.desc_for_llm, t.category, t.time_estimate)
             )
 
         logger.info(f"Exported {count} Tasks to {sqlite_db_path}")
-        #endregion
+        # endregion
 
-        #region TaskLinkages export
+        # region TaskLinkages export
         dest_db.execute(
             'CREATE TABLE IF NOT EXISTS "TaskLinkages" ('
             '    task_id INTEGER NOT NULL,'
@@ -170,8 +170,9 @@ def export_to(
         for count, tl in enumerate(tasks_db.query(TaskLinkage).all()):
             dest_db.execute(
                 'INSERT OR IGNORE INTO TaskLinkages VALUES (?,?,?,?,?,?,?)',
-                (tl.task_id, tl.import_source, tl.time_scope, tl.created_at, tl.time_elapsed, tl.resolution, tl.detailed_resolution)
+                (tl.task_id, import_source_mapper(tl.import_source), tl.time_scope, tl.created_at, tl.time_elapsed,
+                 tl.resolution, tl.detailed_resolution)
             )
 
         logger.info(f"Exported {count} TaskLinkages to {sqlite_db_path}")
-        #endregion
+        # endregion
