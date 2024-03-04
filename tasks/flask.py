@@ -26,18 +26,24 @@ def init_app(app: Flask) -> None:
     _register_rest_endpoints(app)
 
     @click.command('t3/list', help='List import sources in the tasks database')
-    @click.option('--sql-ilike-expr', default='%', show_default=True)
+    @click.option('--filter',
+                  default='%',
+                  show_default=True,
+                  help='SQL LIKE expression to filter import_sources')
     @with_appcontext
-    def t3_list(sql_ilike_expr):
-        return import_export.list_import_sources(sql_ilike_expr)
+    def t3_list(filter):
+        return import_export.list_import_sources(filter)
 
     app.cli.add_command(t3_list)
 
     @click.command('t3/delete', help='Delete all tasks matching the given import source')
-    @click.option('--sql-ilike-expr', default='%', show_default=True)
+    @click.option('--filter',
+                  default='%',
+                  show_default=True,
+                  help='SQL LIKE expression to filter import_sources')
     @with_appcontext
-    def t3_delete(sql_ilike_expr):
-        return import_export.delete_import_source(sql_ilike_expr)
+    def t3_delete(filter):
+        return import_export.delete_import_source(filter)
 
     app.cli.add_command(t3_delete)
 
