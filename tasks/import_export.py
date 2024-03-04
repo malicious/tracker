@@ -120,14 +120,10 @@ def import_from(
                 'WHERE import_source LIKE ?',
                 (sql_like_filter,)
         ):
-            new_task = Task(
-                task_id=task_row['task_id'],
-                import_source=import_source_mapper(task_row['import_source']),
-                desc=task_row['desc'],
-                desc_for_llm=task_row['desc_for_llm'],
-                category=task_row['category'],
-                time_estimate=task_row['time_estimate'],
-            )
+            fields = dict(task_row)
+            fields['import_source'] = import_source_mapper(task_row['import_source'])
+
+            new_task = Task(**fields)
             tasks_db.add(new_task)
         # endregion
 
@@ -138,15 +134,10 @@ def import_from(
                 'WHERE import_source LIKE ?',
                 (sql_like_filter,)
         ):
-            new_tl = TaskLinkage(
-                task_id=tl_row['task_id'],
-                import_source=import_source_mapper(tl_row['import_source']),
-                time_scope=tl_row['time_scope'],
-                created_at=tl_row['created_at'],
-                time_elapsed=tl_row['time_elapsed'],
-                resolution=tl_row['resolution'],
-                detailed_resolution=tl_row['detailed_resolution'],
-            )
+            fields = dict(tl_row)
+            fields['import_source'] = import_source_mapper(tl_row['import_source'])
+
+            new_tl = TaskLinkage(**fields)
             tasks_db.add(new_tl)
         # endregion
 
