@@ -52,11 +52,15 @@ def init_app(app: Flask) -> None:
                   default='%',
                   show_default=True,
                   help='SQL LIKE expression to filter import_sources')
+    @click.option('--use-bulk-import',
+                  default=False,
+                  show_default=True,
+                  help='If specified, we SQL COMMIT new tasks all at once instead of one at a time')
     @click.option('--default-import-source')
     @click.option('--override-import-source')
     @click.argument('sqlite_db_path')
     @with_appcontext
-    def t3_import(sqlite_db_path, filter, default_import_source, override_import_source):
+    def t3_import(sqlite_db_path, filter, use_bulk_import, default_import_source, override_import_source):
         used_mappings = {}
 
         def import_source_mapper(real_import_source: str) -> str:
@@ -76,7 +80,10 @@ def init_app(app: Flask) -> None:
 
             return mapped_import_source
 
-        return import_export.import_from(sqlite_db_path, filter, import_source_mapper)
+        if use_bulk_import:
+            return import_export.bulk_import_from(sqlite_db_path, filter, import_source_mapper)
+        else:
+            return import_export.careful_import_from(sqlite_db_path, filter, import_source_mapper)
 
     app.cli.add_command(t3_import)
 

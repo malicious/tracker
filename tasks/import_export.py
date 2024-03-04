@@ -96,13 +96,13 @@ def delete_import_source(
     return True
 
 
-def import_from(
+def bulk_import_from(
         sqlite_db_path: str,
         sql_like_filter: str,
         import_source_mapper: Callable[[str], str],
         tasks_db: TasksDB | None = None,
 ):
-    logger.debug(f"import_from({sqlite_db_path}, {import_source_mapper})")
+    logger.debug(f"bulk_import_from({sqlite_db_path}, {import_source_mapper})")
     if tasks_db is None:
         tasks_db = get_db()
 
@@ -142,6 +142,50 @@ def import_from(
         # endregion
 
         tasks_db.commit()
+
+
+def careful_import_from(
+        sqlite_db_path: str,
+        sql_like_filter: str,
+        import_source_mapper: Callable[[str], str],
+        tasks_db: TasksDB | None = None,
+):
+    logger.debug(f"careful_import_from({sqlite_db_path}, {import_source_mapper})")
+    if tasks_db is None:
+        tasks_db = get_db()
+
+    sqlite3.register_converter('DATETIME', sqlite3.converters['TIMESTAMP'])
+    conn_src = sqlite3.connect(sqlite_db_path, detect_types=sqlite3.PARSE_DECLTYPES)
+    conn_src.row_factory = sqlite3.Row
+
+    with conn_src:
+        task_cursor = conn_src.cursor()
+        tl_cursor = conn_src.cursor()
+
+        for task_row in task_cursor.execute(
+                'SELECT * FROM Tasks '
+                'WHERE import_source LIKE ?',
+                (sql_like_filter,)
+        ):
+            task_fields = dict(task_row)
+            task_fields['import_source'] = import_source_mapper(task_row['import_source'])
+
+            new_task = Task(**task_fields)
+            tasks_db.add(new_task)
+
+            for tl_row in tl_cursor.execute(
+                    'SELECT * FROM TaskLinkages '
+                    'WHERE task_id = ? AND import_source = ?',
+                    (task_row['task_id'], task_row['import_source'])
+            ):
+                tl_fields = dict(tl_row)
+                tl_fields['import_source'] = import_source_mapper(tl_row['import_source'])
+
+                new_tl = TaskLinkage(**tl_fields)
+                tasks_db.add(new_tl)
+
+            # Import and commit each Task one at a time
+            tasks_db.commit()
 
 
 def export_to(
