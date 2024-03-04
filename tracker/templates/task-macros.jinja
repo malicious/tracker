@@ -16,7 +16,7 @@
     <label>import_source</label>
     <input class="import-source" name="task-import_source" placeholder="None" value="{{
       t.import_source
-    }}" oninput="highlightOnHeaderInput(event)">
+    }}" readonly="readonly">
   </div>
   <div>
     <label>category</label>
@@ -192,6 +192,9 @@
   display: inline-block;
   text-align: right;
   min-width: 9em;
+}
+.task-edit-task-only .import-source {
+  border: 0;
 }
 .task-edit-task-only textarea {
   vertical-align: top;

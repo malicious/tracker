@@ -2,7 +2,9 @@ import logging
 from datetime import datetime
 
 from dateutil import parser
+from sqlalchemy import select
 
+from tasks.database import TasksDB
 from tasks.database_models import Task, TaskLinkage
 
 logger = logging.getLogger(__name__)
@@ -110,10 +112,14 @@ def create_task(session, form_data):
     return task
 
 
-def update_task(session, task_id, form_data):
-    task: Task = Task.query \
-        .filter_by(task_id=task_id) \
-        .one()
+def update_task(session: TasksDB, task_id, form_data):
+    # TODO: As-is, if this field was edited, we don't know what the original entry was.
+    #       For now, make this field read-only in the web form.
+    provided_import_source = form_data['task-import_source']
+    task: Task = session.execute(
+        select(Task)
+        .filter_by(task_id=task_id, import_source=provided_import_source)
+    ).scalar_one()
 
     _update_task_only(task, form_data)
 
@@ -139,10 +145,10 @@ def update_task(session, task_id, form_data):
 
         # Check if TL even exists
         tl: TaskLinkage = TaskLinkage.query \
-            .filter_by(task_id=task_id, time_scope=tl_ts) \
+            .filter_by(task_id=task_id, import_source=provided_import_source, time_scope=tl_ts) \
             .one_or_none()
         if not tl:
-            tl = TaskLinkage(task_id=task_id, time_scope=tl_ts)
+            tl = TaskLinkage(task_id=task_id, import_source=provided_import_source, time_scope=tl_ts)
 
         _update_linkage_only(tl, form_tl_id, form_data, task.import_source)
 
