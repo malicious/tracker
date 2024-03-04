@@ -66,15 +66,25 @@ def delete_import_source(
     if tasks_db is None:
         tasks_db = get_db()
 
-    linkage_count = tasks_db.query(TaskLinkage) \
-        .where(TaskLinkage.import_source.like(sql_like_filter)) \
-        .count()
-    logger.info(f"TaskLinkages matching {repr(sql_like_filter)}: {linkage_count}")
-
     task_count = tasks_db.query(Task) \
         .where(Task.import_source.like(sql_like_filter)) \
         .count()
-    logger.info(f"Tasks matching {repr(sql_like_filter)}: {task_count}")
+    print(f"Tasks matching {repr(sql_like_filter)}: {task_count}")
+
+    total_task_count = tasks_db.query(Task).count()
+    percentage_task_count = f"\033[1m{100.0 * task_count / total_task_count:.02f}%\033[0m"
+    print(f"Total count is {total_task_count}, filter matches {percentage_task_count} of Tasks")
+    print()
+
+    linkage_count = tasks_db.query(TaskLinkage) \
+        .where(TaskLinkage.import_source.like(sql_like_filter)) \
+        .count()
+    print(f"TaskLinkages matching {repr(sql_like_filter)}: {linkage_count}")
+
+    total_linkage_count = tasks_db.query(TaskLinkage).count()
+    percentage_linkage_count = f"\033[1m{100.0 * linkage_count / total_linkage_count:.02f}%\033[0m"
+    print(f"Total count is {total_linkage_count}, filter matches {percentage_linkage_count} of TaskLinkages")
+    print()
 
     confirmation = input(f"Type {repr(sql_like_filter)} to confirm deletion: ")
     if confirmation != sql_like_filter:
