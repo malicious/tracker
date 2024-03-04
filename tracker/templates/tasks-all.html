@@ -475,8 +475,9 @@
   {%- endif %}{# domain #}
 
   {%- for task in domain_tasks %}
-    {%- set task_unique_id = "{}-{}".format(
+    {%- set task_unique_id = "{}-{}-{}".format(
               task.task_id,
+              task.import_source,
               '-'.join(domain.split()),
     ) -%}
     {{- render_task(task, task_unique_id) }}

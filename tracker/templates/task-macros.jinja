@@ -12,11 +12,7 @@
       <span>{{t.task_id}}</span>
     </a>
   </div>
-  <div
-  {%- if not t.import_source %}
-    style="display: none;"
-  {% endif -%}
-  >
+  <div>
     <label>import_source</label>
     <input class="import-source" name="task-import_source" placeholder="None" value="{{
       t.import_source
