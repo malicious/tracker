@@ -52,6 +52,10 @@
 
 {%- macro task_add_header() -%}
 <div class="task-edit-task-only">
+  <div style="display: none;">
+    <label>original_import_source</label>
+    <input class="import-source" name="task-original_import_source" placeholder="None" readonly="readonly">
+  </div>
   <div>
     <label>import_source</label>
     <input class="import-source" name="task-import_source" placeholder="None" oninput="highlightOnHeaderInput(event)">
