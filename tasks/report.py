@@ -6,7 +6,7 @@ from typing import Iterable, Optional
 
 from flask import render_template, url_for, make_response
 from markupsafe import escape
-from sqlalchemy import or_, select, and_, func
+from sqlalchemy import or_, select, and_, func, exists
 from sqlalchemy.orm import Session
 
 from .database_models import Task, TaskLinkage
@@ -70,6 +70,11 @@ def to_aio(t):
 
 
 def report_one_task(task_id, return_bare_dict=False):
+    """
+    NB This intentionally lists tasks across all `import_source`s, since we don't have an API to filter them
+
+    TODO: Actually this breaks with multiple tasks, because `.one_or_none()`
+    """
     task: Task = Task.query \
         .filter(Task.task_id == task_id) \
         .one_or_none()
@@ -221,7 +226,7 @@ def render_scope(task_date, section_date):
     )
 
 
-def compute_ignoring_scope(todays_date):
+def compute_ignoring_scope(db_session, todays_date):
     """
     Provides enough info for Jinja template to render the task
 
@@ -257,10 +262,15 @@ def compute_ignoring_scope(todays_date):
         return printed_scope_id[5:]
 
     def _compute(t):
-        # TODO: import the db session and use exists()/scalar()
-        open_linkages_exist = TaskLinkage.query \
-            .filter_by(task_id=t.task_id, resolution=None) \
-            .all()
+        open_linkages_exist = db_session.scalar(
+            exists()
+            .where(
+                TaskLinkage.task_id.is_(t.task_id),
+                TaskLinkage.import_source.is_(t.import_source),
+                TaskLinkage.resolution.is_(None),
+            )
+            .select()
+        )
         # If every linkage is closed, just return the "last" resolution
         if not open_linkages_exist:
             return '', t.linkages[-1].resolution, False
@@ -319,7 +329,7 @@ def edit_tasks_all(
     render_kwargs['tasks_by_domain'] = fetch_tasks_by_domain(db_session, query_limiter)
 
     todays_date = render_scope_dt.date()
-    render_kwargs['compute_render_info_for'] = compute_ignoring_scope(todays_date)
+    render_kwargs['compute_render_info_for'] = compute_ignoring_scope(db_session, todays_date)
 
     render_kwargs['to_summary_html'] = to_summary_html
 
