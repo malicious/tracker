@@ -11,8 +11,8 @@ from markupsafe import escape
 from sqlalchemy import or_, select, and_, func
 from sqlalchemy.orm import Session
 
-from .database_models import Task, TaskLinkage
-from .time_scope import TimeScope, TimeScopeUtils
+from tasks.database_models import Task, TaskLinkage
+from tasks.time_scope import TimeScope, TimeScopeUtils
 
 
 def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
