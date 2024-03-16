@@ -1,15 +1,17 @@
 import os
 import sqlite3
+from typing import TypeAlias
 
 import sqlalchemy
 from sqlalchemy.orm import scoped_session, sessionmaker, Session
 
 from tasks.database_models import Base
 
-_db_session: Session = None
+TasksDB: TypeAlias = Session
+_db_session: TasksDB = None
 
 
-def get_db() -> Session:
+def get_db() -> TasksDB:
     return _db_session
 
 

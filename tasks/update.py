@@ -2,7 +2,9 @@ import logging
 from datetime import datetime
 
 from dateutil import parser
+from sqlalchemy import select
 
+from tasks.database import TasksDB
 from tasks.database_models import Task, TaskLinkage
 
 logger = logging.getLogger(__name__)
@@ -110,10 +112,16 @@ def create_task(session, form_data):
     return task
 
 
-def update_task(session, task_id, form_data):
-    task: Task = Task.query \
-        .filter_by(task_id=task_id) \
-        .one()
+def update_task(session: TasksDB, task_id, form_data):
+    # TODO: As-is, if this field was edited, we don't know what the original entry was.
+    #       For now, make this field read-only in the web form.
+    # TODO: If we move this to an `import_source` space with identical task_id's,
+    #       we'll clobber the existing task. Which is fine, I guess.
+    original_import_source = form_data['task-original_import_source']
+    task: Task = session.execute(
+        select(Task)
+        .filter_by(task_id=task_id, import_source=original_import_source)
+    ).scalar_one()
 
     _update_task_only(task, form_data)
 
@@ -121,7 +129,7 @@ def update_task(session, task_id, form_data):
     session.flush()
 
     # Update the entire set of linkages, and ensure they match the ones stored in Task
-    existing_tls = list(task.linkages)
+    existing_tls = {tl.time_scope: tl for tl in task.linkages}
 
     # Key on `-time_scope_id` to identify valid linkages
     form_tl_ids = [key[3:-14] for (key, value) in form_data.items(multi=True) if key[-14:] == "-time_scope_id"]
@@ -139,24 +147,23 @@ def update_task(session, task_id, form_data):
 
         # Check if TL even exists
         tl: TaskLinkage = TaskLinkage.query \
-            .filter_by(task_id=task_id, time_scope=tl_ts) \
+            .filter_by(task_id=task_id, import_source=original_import_source, time_scope=tl_ts) \
             .one_or_none()
         if not tl:
-            tl = TaskLinkage(task_id=task_id, time_scope=tl_ts)
+            tl = TaskLinkage(task_id=task_id, import_source=original_import_source, time_scope=tl_ts)
+            logger.debug(f"Constructing new TaskLinkage: {tl}")
+        else:
+            existing_tls[tl_ts] = tl
+            logger.debug(f"Has existing TaskLinkage: {tl}")
 
         _update_linkage_only(tl, form_tl_id, form_data, task.import_source)
-
         session.add(tl)
 
-        if tl in existing_tls:
-            existing_tls.remove(tl)
-        else:
-            logger.info(f"added new tl {tl}")
+        if tl_ts in existing_tls:
+            del existing_tls[tl_ts]
         del tl
 
-    if existing_tls:
-        logger.info(f"{len(existing_tls)} linkages to be removed, {existing_tls}")
-    for tl in existing_tls:
+    for tl in existing_tls.values():
         session.delete(tl)
 
     # Done, commit everything

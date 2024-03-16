@@ -12,11 +12,13 @@
       <span>{{t.task_id}}</span>
     </a>
   </div>
-  <div
-  {%- if not t.import_source %}
-    style="display: none;"
-  {% endif -%}
-  >
+  <div style="display: none;">{# TODO: Show/hide this depending on whether the value was modified #}
+    <label>original_import_source</label>
+    <input class="import-source" name="task-original_import_source" placeholder="None" value="{{
+      t.import_source
+    }}" readonly="readonly">
+  </div>
+  <div>
     <label>import_source</label>
     <input class="import-source" name="task-import_source" placeholder="None" value="{{
       t.import_source
@@ -50,6 +52,10 @@
 
 {%- macro task_add_header() -%}
 <div class="task-edit-task-only">
+  <div style="display: none;">
+    <label>original_import_source</label>
+    <input class="import-source" name="task-original_import_source" placeholder="None" readonly="readonly">
+  </div>
   <div>
     <label>import_source</label>
     <input class="import-source" name="task-import_source" placeholder="None" oninput="highlightOnHeaderInput(event)">
