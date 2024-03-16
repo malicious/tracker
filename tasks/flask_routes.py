@@ -4,7 +4,6 @@ from flask import Flask, Blueprint, request, redirect, url_for, abort
 from markupsafe import escape
 from sqlalchemy import select
 
-import tasks.report.llm
 from . import report, update
 from .database import get_db
 from .database_models import Task
@@ -24,7 +23,7 @@ def _register_endpoints(app: Flask):
 
     @tasks_v2_bp.route("/tasks.as-prompt")
     def do_tasks_as_prompt():
-        return tasks.report.llm.tasks_as_prompt(
+        return report.tasks_as_prompt(
             get_db(),
             hide_future=request.args.get('hide_future'),
             hide_past=request.args.get('hide_past'),
