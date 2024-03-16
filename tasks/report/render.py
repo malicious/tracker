@@ -1,10 +1,11 @@
+from dataclasses import dataclass
 from datetime import timedelta
-from typing import Iterable
+from typing import Iterable, Callable
 
 from markupsafe import escape
 from sqlalchemy import exists
 
-from tasks.database_models import TaskLinkage
+from tasks.database_models import TaskLinkage, Task
 
 
 def _to_aio(t) -> Iterable[str]:
@@ -60,7 +61,14 @@ def render_scope(task_date, section_date):
     )
 
 
-def compute_ignoring_scope(db_session, todays_date):
+@dataclass
+class TaskRenderInfo:
+    scope_to_print: str
+    resolution_to_print: str | None
+    is_future_task: bool
+
+
+def make_renderer(db_session, todays_date) -> Callable[[Task], TaskRenderInfo]:
     """
     Provides enough info for Jinja template to render the task
 
@@ -95,7 +103,7 @@ def compute_ignoring_scope(db_session, todays_date):
 
         return printed_scope_id[5:]
 
-    def _compute(t):
+    def _compute(t: Task) -> TaskRenderInfo:
         open_linkages_exist = db_session.scalar(
             exists()
             .where(
@@ -107,17 +115,17 @@ def compute_ignoring_scope(db_session, todays_date):
         )
         # If every linkage is closed, just return the "last" resolution
         if not open_linkages_exist:
-            return '', t.linkages[-1].resolution, False
+            return TaskRenderInfo('', t.linkages[-1].resolution, False)
 
         # By this point multiple linkages exist, but at least one is open
         latest_open = [tl for tl in t.linkages if not tl.resolution][-1]
         if latest_open.time_scope - todays_date > timedelta(days=3):
-            return minimize_vs_today(latest_open.time_scope_id), None, True
+            return TaskRenderInfo(minimize_vs_today(latest_open.time_scope_id), None, True)
         elif latest_open.time_scope > todays_date:
-            return minimize_vs_today(latest_open.time_scope_id), None, False
+            return TaskRenderInfo(minimize_vs_today(latest_open.time_scope_id), None, False)
         else:
             # TODO: past-tasks are the only ones that get their scope shrunken
             rendered_scope = render_scope(latest_open.time_scope, todays_date)
-            return rendered_scope, None, False
+            return TaskRenderInfo(rendered_scope, None, False)
 
     return _compute

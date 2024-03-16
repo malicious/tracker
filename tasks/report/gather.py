@@ -9,7 +9,7 @@ from sqlalchemy import or_, select, and_
 from sqlalchemy.orm import Session
 
 from tasks.database_models import Task, TaskLinkage
-from tasks.report.render import to_aio, compute_ignoring_scope
+from tasks.report.render import to_aio, make_renderer
 from tasks.time_scope import TimeScope, TimeScopeUtils
 
 
@@ -213,7 +213,7 @@ def edit_tasks_all(
     render_kwargs['tasks_by_domain'] = fetch_tasks_by_domain(db_session, query_limiter)
 
     todays_date = render_scope_dt.date()
-    render_kwargs['compute_render_info_for'] = compute_ignoring_scope(db_session, todays_date)
+    render_kwargs['compute_task_render_info'] = make_renderer(db_session, todays_date)
 
     render_kwargs['to_summary_html'] = to_summary_html
 

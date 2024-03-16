@@ -365,19 +365,19 @@
 {#- ================================================================= -#}
 
 {%- macro render_task(t, unique_id) %}
-{%- set scope_to_print, resolution_to_print, is_future_task = compute_render_info_for(t) %}
+{%- set info = compute_task_render_info(t) %}
 <div class="task-and-details" id="task-{{unique_id}}">
   <label for="toggle-edit-{{unique_id}}" class="toggle-edit">
     <div class="task-only
-      {%- if resolution_to_print %} resolved {% endif -%}
-      {%- if is_future_task %} future {% endif -%}
+      {%- if info.resolution_to_print %} resolved {% endif -%}
+      {%- if info.is_future_task %} future {% endif -%}
     ">
-      {%- if resolution_to_print %}
-      <div class="task-resolution">({{ resolution_to_print }}) </div>
+      {%- if info.resolution_to_print %}
+      <div class="task-resolution">({{ info.resolution_to_print }}) </div>
       {%- endif %}
-      {%- if scope_to_print %}
+      {%- if info.scope_to_print %}
       <div class="scope">
-        {{ scope_to_print | safe }}
+        {{ info.scope_to_print | safe }}
       </div>
       {%- endif %}
       <div class="desc">
