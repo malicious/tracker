@@ -4,6 +4,7 @@ from flask import Flask, Blueprint, request, redirect, url_for, abort
 from markupsafe import escape
 from sqlalchemy import select
 
+import tasks.report.llm
 from . import report, update
 from .database import get_db
 from .database_models import Task
@@ -23,7 +24,7 @@ def _register_endpoints(app: Flask):
 
     @tasks_v2_bp.route("/tasks.as-prompt")
     def do_tasks_as_prompt():
-        return report.tasks_as_prompt(
+        return tasks.report.llm.tasks_as_prompt(
             get_db(),
             hide_future=request.args.get('hide_future'),
             hide_past=request.args.get('hide_past'),
@@ -92,7 +93,7 @@ def _register_rest_endpoints(app: Flask):
     def create_task():
         t = update.create_task(get_db(), request.form)
         # Pick a random category for the purposes of making a link.
-        # TODO: Make this code less brittle by sharing it with the stuff in tasks/report.py,
+        # TODO: Make this code less brittle by sharing it with the stuff in tasks.report,
         #       and also wherever that Django-derived sanitization code is.
         domains = ['']
         if t.category is not None and t.category.strip():

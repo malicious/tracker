@@ -1,18 +1,16 @@
-import json
 import operator
 import re
 from collections import defaultdict
 from datetime import datetime, timedelta
-from textwrap import indent
 from typing import Iterable, Optional
 
-from flask import render_template, url_for, make_response
+from flask import render_template, url_for
 from markupsafe import escape
-from sqlalchemy import or_, select, and_, func, exists
+from sqlalchemy import or_, select, and_, exists
 from sqlalchemy.orm import Session
 
-from .database_models import Task, TaskLinkage
-from .time_scope import TimeScope, TimeScopeUtils
+from tasks.database_models import Task, TaskLinkage
+from tasks.time_scope import TimeScope, TimeScopeUtils
 
 
 def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
@@ -371,109 +369,6 @@ def _construct_textual_timedelta(
     # otherwise it's due today; don't print anything because LLM's interpret
     # "today" to mean "this is very important"
     return None
-
-
-def tasks_as_prompt(
-        db_session: Session,
-        hide_future: bool = False,
-        hide_past: bool = False,
-        include_detailed_resolutions: bool = False,
-        output_as_json: bool = False,
-):
-    render_time_dt = datetime.utcnow()
-    future_tasks_cutoff = render_time_dt + timedelta(days=91)
-    past_tasks_cutoff = render_time_dt - timedelta(days=366)
-
-    additional_filters = [
-        TaskLinkage.resolution == None,
-    ]
-    if hide_past:
-        additional_filters.append(TaskLinkage.time_scope > past_tasks_cutoff)
-    if hide_future:
-        additional_filters.append(TaskLinkage.time_scope < future_tasks_cutoff)
-
-    tasks_by_usefulest_linkage = (
-        select(Task.task_id, Task.import_source, func.min(TaskLinkage.time_scope).label('earliest_unresolved_linkage'))
-        .where(and_(*additional_filters,
-                    TaskLinkage.task_id == Task.task_id,
-                    TaskLinkage.import_source == Task.import_source))
-        .group_by(Task.task_id, Task.import_source)
-        .subquery()
-    )
-
-    query = (
-        select(Task,
-               tasks_by_usefulest_linkage.c.earliest_unresolved_linkage)
-        .join(tasks_by_usefulest_linkage,
-              and_(Task.task_id == tasks_by_usefulest_linkage.c.task_id,
-                   Task.import_source == tasks_by_usefulest_linkage.c.import_source))
-        .order_by(func.random())
-        .group_by(Task.task_id, Task.import_source)
-    )
-    task_rows = db_session.execute(query).all()
-
-    final_markdown_descs = []
-
-    task: Task
-    usefulest_time_scope: TimeScope
-    for (task, usefulest_time_scope) in task_rows:
-        output_desc = task.desc
-        # Use the override if it exists
-        if task.desc_for_llm is not None:
-            output_desc = task.desc_for_llm
-
-            # Sometimes the override is an empty string,
-            # which indicates we should skip it for LLM output.
-            if not task.desc_for_llm.strip():
-                continue
-
-        # Filter out link info for any markdown links
-        output_desc = re.sub(r'\[(.*?)\]\(.*\)', r'\1', output_desc)
-
-        maybe_category = f", in category \"{task.category}\"" if task.category else ""
-
-        usefulest_ts_dt = datetime(
-            year=usefulest_time_scope.year,
-            month=usefulest_time_scope.month,
-            day=usefulest_time_scope.day,
-        )
-        fancy_timedelta = _construct_textual_timedelta(usefulest_ts_dt, render_time_dt)
-        maybe_overdue = f", due {fancy_timedelta}" if fancy_timedelta else ""
-
-        s = f"- {output_desc}{maybe_category}{maybe_overdue}"
-        if "\n" in output_desc:
-            maybe_overdue = f"due {fancy_timedelta}, " if fancy_timedelta else ""
-            maybe_category = f"in category \"{task.category}\", " if task.category else ""
-            # indent the desc text, but need that initial markdown unordered list mark
-            indented_output_desc = indent(output_desc, '  ')
-            s = f"- {maybe_category}{maybe_overdue}{indented_output_desc[2:]}"
-
-        final_markdown_descs.append(s)
-
-        # And add detail from all sub-linkages, if any:
-        if include_detailed_resolutions:
-            for tl in task.linkages:
-                if tl.detailed_resolution:
-                    # Apparently web input gives newlines as `\r\n`, hopefully that's not browser-specific
-                    short_res = re.sub(r'<!-- .* -->\r\n', '', tl.detailed_resolution)
-                    short_res_lines = short_res.split('\r\n')
-
-                    if short_res_lines and short_res_lines[0]:
-                        final_markdown_descs.append("  - " + short_res_lines[0])
-                        for line in short_res_lines[1:]:
-                            if line.strip():
-                                final_markdown_descs.append("    " + line)
-
-    result_text = "\n".join(final_markdown_descs)
-    if output_as_json:
-        # Format the output specially so it can get parsed directly into llama.cpp
-        response = make_response(json.dumps(result_text), 200)
-        response.mimetype = "application/json"
-        return response
-
-    response = make_response(result_text, 200)
-    response.mimetype = "text/plain"
-    return response
 
 
 def edit_tasks_in_scope(
