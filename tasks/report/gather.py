@@ -212,8 +212,14 @@ def edit_tasks_all(
 
     render_kwargs['tasks_by_domain'] = fetch_tasks_by_domain(db_session, query_limiter)
 
+    def is_readonly_import_source(import_source: str):
+        if import_source == '':
+            return False
+
+        return True
+
     todays_date = render_scope_dt.date()
-    render_kwargs['compute_task_render_info'] = make_renderer(db_session, todays_date)
+    render_kwargs['compute_task_render_info'] = make_renderer(db_session, todays_date, is_readonly_import_source)
 
     render_kwargs['to_summary_html'] = to_summary_html
 

@@ -204,6 +204,12 @@
     color: var(--task-future-fg-color);
   }
 
+  .readonly,
+  .readonly .scope,
+  .readonly .task-time {
+    color: var(--task-resolved-fg-color);
+  }
+
   {#- ================================================================= -#}
 
   .bonus-options {
@@ -371,6 +377,7 @@
     <div class="task-only
       {%- if info.resolution_to_print %} resolved {% endif -%}
       {%- if info.is_future_task %} future {% endif -%}
+      {%- if info.is_readonly_import_source %} readonly {% endif -%}
     ">
       {%- if info.resolution_to_print %}
       <div class="task-resolution">({{ info.resolution_to_print }}) </div>

@@ -1,9 +1,10 @@
 from dataclasses import dataclass
-from datetime import timedelta
+from datetime import timedelta, date
 from typing import Iterable, Callable
 
 from markupsafe import escape
 from sqlalchemy import exists
+from sqlalchemy.orm import Session
 
 from tasks.database_models import TaskLinkage, Task
 
@@ -66,9 +67,14 @@ class TaskRenderInfo:
     scope_to_print: str
     resolution_to_print: str | None
     is_future_task: bool
+    is_readonly_import_source: bool
 
 
-def make_renderer(db_session, todays_date) -> Callable[[Task], TaskRenderInfo]:
+def make_renderer(
+        db_session: Session,
+        todays_date: date,
+        is_readonly_import_source: Callable[[str], bool],
+) -> Callable[[Task], TaskRenderInfo]:
     """
     Provides enough info for Jinja template to render the task
 
@@ -115,17 +121,19 @@ def make_renderer(db_session, todays_date) -> Callable[[Task], TaskRenderInfo]:
         )
         # If every linkage is closed, just return the "last" resolution
         if not open_linkages_exist:
-            return TaskRenderInfo('', t.linkages[-1].resolution, False)
+            return TaskRenderInfo('', t.linkages[-1].resolution, False, is_readonly_import_source(t.import_source))
 
         # By this point multiple linkages exist, but at least one is open
         latest_open = [tl for tl in t.linkages if not tl.resolution][-1]
         if latest_open.time_scope - todays_date > timedelta(days=3):
-            return TaskRenderInfo(minimize_vs_today(latest_open.time_scope_id), None, True)
+            return TaskRenderInfo(minimize_vs_today(latest_open.time_scope_id), None, True,
+                                  is_readonly_import_source(t.import_source))
         elif latest_open.time_scope > todays_date:
-            return TaskRenderInfo(minimize_vs_today(latest_open.time_scope_id), None, False)
+            return TaskRenderInfo(minimize_vs_today(latest_open.time_scope_id), None, False,
+                                  is_readonly_import_source(t.import_source))
         else:
             # TODO: past-tasks are the only ones that get their scope shrunken
             rendered_scope = render_scope(latest_open.time_scope, todays_date)
-            return TaskRenderInfo(rendered_scope, None, False)
+            return TaskRenderInfo(rendered_scope, None, False, is_readonly_import_source(t.import_source))
 
     return _compute
