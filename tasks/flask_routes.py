@@ -19,6 +19,7 @@ def _register_endpoints(app: Flask):
             get_db(),
             show_resolved=request.args.get('show_resolved'),
             hide_future=request.args.get('hide_future'),
+            ignore_categories=request.args.get('ignore_categories'),
         )
 
     @tasks_v2_bp.route("/tasks.as-prompt")

@@ -179,6 +179,7 @@ def edit_tasks_all(
         db_session: Session,
         show_resolved: bool,
         hide_future: bool,
+        ignore_categories: bool,
 ):
     render_kwargs = {}
     # Use the server's local time for rendering
@@ -210,7 +211,25 @@ def edit_tasks_all(
                 .filter(or_(TaskLinkage.resolution == None,
                             TaskLinkage.created_at > recent_tasks_cutoff))
 
-    render_kwargs['tasks_by_domain'] = fetch_tasks_by_domain(db_session, query_limiter)
+    if ignore_categories:
+        task_rows = db_session.execute(
+            query_limiter(select(Task))
+        ).all()
+
+        def sort_time(t: Task):
+            """TODO: This should be doable with an SQLAlchemy-level sort."""
+            return (
+                max(map(operator.attrgetter('time_scope'), t.linkages)),
+                t.task_id,
+            )
+
+        tasks = [row[0] for row in task_rows]
+        sorted_tasks = sorted(tasks, key=sort_time, reverse=True)
+
+        render_kwargs['tasks_by_domain'] = {'': sorted_tasks}
+
+    else:
+        render_kwargs['tasks_by_domain'] = fetch_tasks_by_domain(db_session, query_limiter)
 
     def is_readonly_import_source(import_source: str):
         if import_source == '':
