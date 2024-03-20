@@ -449,6 +449,8 @@ def render_note_domains(
                 func.count(Note.note_id),
             )
             .join(NoteDomain, NoteDomain.note_id == Note.note_id)
+            # Filter out any time_scope_ids that contain an emdash, since they mess up the ordering dramatically
+            .filter(func.not_(Note.time_scope_id.contains('—')))
             .group_by(NoteDomain.domain_id)
             .order_by(
                 func.max(Note.time_scope_id).desc(),
