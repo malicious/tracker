@@ -148,13 +148,7 @@ def fetch_tasks_by_domain(
     task_rows = db_session.execute(query).all()
 
     for (task,) in task_rows:
-        domains = ['']
-        if task.category is not None and task.category.strip():
-            # NB: No double-ampersands supported, because…
-            #     too lazy to figure out how to share code with `notes_v2.add.tokenize_domain_ids()`
-            domains = [d.strip() for d in task.category.strip().split('&')]
-
-        for d in domains:
+        for d in task.split_categories():
             tasks_by_domain[d].add(task)
 
     # Create a sorted version of this, for non-jumpy rendering.

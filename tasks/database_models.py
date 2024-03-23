@@ -1,6 +1,6 @@
 import json
 from datetime import datetime
-from typing import Dict
+from typing import Dict, List
 
 from markupsafe import escape
 from sqlalchemy import Column, Integer, String, Float, ForeignKey, DateTime, UniqueConstraint, Date, text
@@ -85,6 +85,15 @@ class Task(Base):
 
     def get_time_elapsed(self):
         return sum([tl.time_elapsed for tl in self.linkages if tl.time_elapsed])
+
+    def split_categories(self) -> List[str]:
+        if self.category is not None and self.category.strip():
+            # NB: No double-ampersands supported, because…
+            #     too lazy to figure out how to share code with `notes_v2.add.tokenize_domain_ids()`
+            return [d.strip() for d in self.category.strip().split('&')]
+
+        # Returns an empty string by default, because of how clients always expect _some_ category.
+        return ['']
 
 
 class TaskLinkage(Base):
