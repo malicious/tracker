@@ -247,39 +247,6 @@ def edit_tasks_all(
     return render_template('tasks-all.html', **render_kwargs)
 
 
-def _construct_textual_timedelta(
-        tasklinkage_dt: datetime,
-        reference_dt: datetime,
-) -> str | None:
-    years_delta = reference_dt.year - tasklinkage_dt.year
-
-    if years_delta >= 2:
-        return f"{years_delta} years ago"
-    elif years_delta <= -2:
-        return f"in {-years_delta} years"
-
-    # if years isn't granular enough, dump it into a months number
-    months_delta = reference_dt.month - tasklinkage_dt.month
-    months_delta += years_delta * 12
-
-    if months_delta >= 3:
-        return f"{months_delta} months ago"
-    elif months_delta <= -3:
-        return f"in {-months_delta} months"
-
-    # anything left is days
-    days_delta = reference_dt - tasklinkage_dt
-
-    if days_delta.days >= 1:
-        return f"{days_delta.days} days ago"
-    elif days_delta.days <= -1:
-        return f"in {-days_delta.days} days"
-
-    # otherwise it's due today; don't print anything because LLM's interpret
-    # "today" to mean "this is very important"
-    return None
-
-
 def edit_tasks_in_scope(
         db_session: Session,
         page_scope: TimeScope,
