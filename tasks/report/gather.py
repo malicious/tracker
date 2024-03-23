@@ -148,7 +148,7 @@ def fetch_tasks_by_domain(
     task_rows = db_session.execute(query).all()
 
     for (task,) in task_rows:
-        for d in task.split_categories():
+        for d in task.split_categories(default=''):
             tasks_by_domain[d].add(task)
 
     # Create a sorted version of this, for non-jumpy rendering.

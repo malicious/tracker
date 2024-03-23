@@ -58,11 +58,19 @@ def _category_for_llm(
         task: Task,
         formatter,
 ):
-        if task.category and not task.desc_for_llm:
-            if "&" in task.category:
-                return formatter(f"categories {task.category}")
-            else:
-                return formatter(f"category {task.category}")
+        # Assume the description already has categories embedded
+        if task.desc_for_llm:
+            return ""
+
+        categories = set()
+        for d in task.split_categories():
+            if d:
+                categories.add(d)
+
+        if len(categories) > 1:
+            return formatter(f"categories {', '.join(categories)}")
+        elif len(categories) == 1:
+            return formatter(f"category {categories.pop()}")
 
         return ""
 

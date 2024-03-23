@@ -93,14 +93,10 @@ def _register_rest_endpoints(app: Flask):
     def create_task():
         t = update.create_task(get_db(), request.form)
         # Pick a random category for the purposes of making a link.
-        # TODO: Make this code less brittle by sharing it with the stuff in tasks.report,
-        #       and also wherever that Django-derived sanitization code is.
-        domains = ['']
-        if t.category is not None and t.category.strip():
-            domains = [d.strip() for d in t.category.strip().split('&')]
+        domain_for_link = next(t.split_categories(), '')
 
-        domain_css_id = '-'.join(domains[0].split())
-        task_backlink = f"task-{t.task_id}-{domain_css_id}"
+        domain_for_link_as_css_id = '-'.join(domain_for_link.split())
+        task_backlink = f"task-{t.task_id}-{domain_for_link_as_css_id}"
         return redirect(f"{request.referrer}#{task_backlink}")
 
     @tasks_v2_rest_bp.route("/tasks/<int:task_id>")
