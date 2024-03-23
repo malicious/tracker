@@ -13,7 +13,7 @@ from sqlalchemy.orm import scoped_session, sessionmaker, Session
 from sqlalchemy.pool import NullPool
 
 from notes_v2 import add, report
-from notes_v2.models import Base, Note
+from notes_v2.models import Base, Note, NoteDomain
 from notes_v2.time_scope import TimeScope
 # noinspection PyUnresolvedReferences
 from . import models
@@ -180,12 +180,16 @@ def _register_endpoints(app):
     @notes_v2_bp.route("/note-domains")
     def do_render_note_domains():
         limit = request.args.get('limit')
+        sql_ilike_filter = request.args.get('filter')
 
         def nd_limiter(query):
             if limit:
-                return query.limit(limit)
-            else:
-                return query
+                query = query.limit(limit)
+            if sql_ilike_filter:
+                full_sql_filter = f"%{sql_ilike_filter}%"
+                query = query.filter(NoteDomain.domain_id.ilike(full_sql_filter))
+
+            return query
 
         return report.render_note_domains(db_session, nd_limiter)
 
