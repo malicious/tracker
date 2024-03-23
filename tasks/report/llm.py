@@ -31,13 +31,23 @@ def _construct_textual_timedelta(
     elif months_delta <= -3:
         return f"in {-months_delta} months"
 
-    # anything left is days
+    # remainders are weeks and days
     days_delta = reference_dt - tasklinkage_dt
 
-    if days_delta.days >= 1:
+    if days_delta.days >= 12:
+        return f"{days_delta.days/7:.0f} weeks ago"
+    elif days_delta.days <= -12:
+        return f"in {-days_delta.days/7:.0f} weeks"
+
+    elif days_delta.days > 1:
         return f"{days_delta.days} days ago"
-    elif days_delta.days <= -1:
+    elif days_delta.days < -1:
         return f"in {-days_delta.days} days"
+
+    elif days_delta.days == 1:
+        return f"yesterday"
+    elif days_delta.days == -1:
+        return f"tomorrow"
 
     # otherwise it's due today; don't print anything because LLM's interpret
     # "today" to mean "this is very important"
