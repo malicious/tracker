@@ -70,7 +70,7 @@ def _category_for_llm(
         if len(categories) > 1:
             return formatter(f"categories {', '.join(categories)}")
         elif len(categories) == 1:
-            return formatter(f"category {categories.pop()}")
+            return formatter(categories.pop())
 
         return ""
 
