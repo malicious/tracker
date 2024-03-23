@@ -54,6 +54,19 @@ def _construct_textual_timedelta(
     return None
 
 
+def _category_for_llm(
+        task: Task,
+        formatter,
+):
+        if task.category and not task.desc_for_llm:
+            if "&" in task.category:
+                return formatter(f"categories {task.category}")
+            else:
+                return formatter(f"category {task.category}")
+
+        return ""
+
+
 def tasks_as_prompt(
         db_session: Session,
         hide_future: bool = False,
@@ -110,13 +123,7 @@ def tasks_as_prompt(
 
         # Filter out link info for any markdown links
         output_desc = re.sub(r'\[(.*?)\]\(.*\)', r'\1', output_desc)
-
-        maybe_category = ""
-        if task.category and not task.desc_for_llm:
-            if "&" in task.category:
-                maybe_category = f", in categories {task.category}"
-            else:
-                maybe_category = f", in category {task.category}"
+        maybe_category = _category_for_llm(task, ", in {}".format)
 
         usefulest_ts_dt = datetime(
             year=usefulest_time_scope.year,
@@ -128,13 +135,7 @@ def tasks_as_prompt(
 
         s = f"- {output_desc}{maybe_category}{maybe_overdue}"
         if "\n" in output_desc:
-            maybe_category = ""
-            if task.category and not task.desc_for_llm:
-                if "&" in task.category:
-                    maybe_category = f"in categories {task.category}, "
-                else:
-                    maybe_category = f"in category {task.category}, "
-
+            maybe_category = _category_for_llm(task, "in {}, ".format)
             maybe_overdue = f"due {fancy_timedelta}, " if fancy_timedelta else ""
             # indent the desc text, but need that initial markdown unordered list mark
             indented_output_desc = indent(output_desc, '  ')
