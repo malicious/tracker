@@ -207,7 +207,8 @@ def edit_tasks_all(
 
     if ignore_categories:
         task_rows = db_session.execute(
-            query_limiter(select(Task))
+            query_limiter(select(Task)
+                          .group_by(Task.task_id, Task.import_source))
         ).all()
 
         def sort_time(t: Task):
