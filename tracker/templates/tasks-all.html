@@ -205,9 +205,13 @@
   }
 
   .readonly,
-  .readonly .scope,
-  .readonly .task-time {
-    color: var(--task-resolved-fg-color);
+  .readonly .task-only {
+    {#- TODO: convert this to something that varies based on hash #}
+    color: #888;
+    background-color: #e8e8f0;
+  }
+  .task-and-details:hover .task-only {
+    background: var(--default-hover-color);
   }
 
   {#- ================================================================= -#}
@@ -372,12 +376,13 @@
 
 {%- macro render_task(t, unique_id) %}
 {%- set info = compute_task_render_info(t) %}
-<div class="task-and-details" id="task-{{unique_id}}">
+<div id="task-{{unique_id}}" class="task-and-details
+      {%- if info.is_readonly_import_source %} readonly {% endif -%}
+">
   <label for="toggle-edit-{{unique_id}}" class="toggle-edit">
     <div class="task-only
       {%- if info.resolution_to_print %} resolved {% endif -%}
       {%- if info.is_future_task %} future {% endif -%}
-      {%- if info.is_readonly_import_source %} readonly {% endif -%}
     ">
       {%- if info.resolution_to_print %}
       <div class="task-resolution">({{ info.resolution_to_print }}) </div>
