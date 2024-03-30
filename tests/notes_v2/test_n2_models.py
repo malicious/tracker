@@ -43,7 +43,6 @@ def test_to_from_json(note_v2_session):
     assert note2.note_id
     assert note2.time_scope_id == note.time_scope_id
     assert note2.sort_time == note.sort_time
-    assert note2.source == note.source
     assert note2.desc == note.desc
     assert note2.detailed_desc == note.detailed_desc
     assert note2.created_at == note.created_at
@@ -52,7 +51,6 @@ def test_to_from_json(note_v2_session):
 def test_to_from_json_with_datetime(note_v2_session):
     note1 = Note(time_scope_id="2000-ww20.2", desc="854509e8")
     note1.sort_time = None
-    note1.source = "note source #68506007"
     note1.detailed_desc = "note detailed_description, but shortened to _desc"
     note1.created_at = datetime.now()
     note_v2_session.add(note1)
@@ -68,7 +66,6 @@ def test_to_from_json_with_datetime(note_v2_session):
     assert note2.note_id
     assert note2.time_scope_id == note1.time_scope_id
     assert note2.sort_time == note1.sort_time
-    assert note2.source == note1.source
     assert note2.desc == note1.desc
     assert note2.detailed_desc == note1.detailed_desc
     assert note2.created_at == note1.created_at
