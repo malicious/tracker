@@ -12,6 +12,7 @@ from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker, Session
 from sqlalchemy.pool import NullPool
 
+import notes_v2.report.note_domains
 from notes_v2 import add, report
 from notes_v2.models import Base, Note, NoteDomain
 from notes_v2.time_scope import TimeScope
@@ -191,7 +192,7 @@ def _register_endpoints(app):
 
             return query
 
-        return report.render_note_domains(db_session, nd_limiter)
+        return notes_v2.report.note_domains.render_note_domains(db_session, nd_limiter)
 
     @notes_v2_bp.route("/svg.day/<day_scope>")
     def do_render_svg_day(day_scope):
@@ -243,6 +244,6 @@ def _register_rest_endpoints(app):
 
     @notes_v2_rest_bp.route("/note-domains")
     def do_get_note_domains():
-        return report.domain_stats(db_session)
+        return notes_v2.report.note_domains.domain_stats(db_session)
 
     app.register_blueprint(notes_v2_rest_bp, url_prefix='/v2')
