@@ -16,9 +16,11 @@ from notes_v2.time_scope import TimeScope
 from . import gather, render
 from .render import standalone_render_day_svg, standalone_render_week_svg
 
-# This is based on the number of notes in a query,
-# where the query takes like 10+ seconds to render.
 max_cache_size = 25_000
+"""
+This is based on the number of notes in a query,
+where the query takes like 10+ seconds to render.
+"""
 
 
 @functools.lru_cache(maxsize=max_cache_size)
@@ -48,13 +50,14 @@ def _render_n2_domains(
         ignore_noisy_domains: bool = False,
 ) -> str:
     def should_display_domain(d: str) -> bool:
-        # Don't render any domains that are an exact match for the page
-        #
-        # Note that for multi-domain pages, this _intentionally_ prints
-        # all domains, even if the note matches exactly. This is
-        # because domains are OR'd together, and it's not intuitive to
-        # have none of the domains printed.
-        #
+        """
+        Don't render any domains that are an exact match for the page
+
+        Note that for multi-domain pages, this _intentionally_ prints
+        all domains, even if the note matches exactly. This is
+        because domains are OR'd together, and it's not intuitive to
+        have none of the domains printed.
+        """
         if domain_ids == (d,):
             return False
 
