@@ -155,8 +155,6 @@ def _register_endpoints(app):
         }
         if single_page:
             url_kwargs['single_page'] = single_page
-        if disable_scope_collapse:
-            url_kwargs['disable_scope_collapse'] = disable_scope_collapse
 
         if page_scopes == ('week',):
             url_kwargs['scope'] = datetime.now().strftime("%G-ww%V")
