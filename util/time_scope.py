@@ -1,7 +1,7 @@
 import re
 from datetime import date, datetime, timedelta
 from enum import Enum
-from typing import Dict, List, Self
+from typing import List, Self
 
 
 class TimeScope(str):
