@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 
 from notes_v2.models import Note, NoteDomain
 from notes_v2.report.gather import notes_json_tree
-from notes_v2.time_scope import TimeScope
+from util import TimeScope
 
 default_dot_render_offset = 0
 
@@ -323,13 +323,13 @@ def render_week_svg(
                 render_column = 0
 
         elif render_if_missing_time:
-            if TimeScope(note.time_scope_id).is_day():
+            if TimeScope(note.time_scope_id).is_day:
                 # just dump the dot in the top row
                 seconds_offset = default_dot_render_offset
                 note_time_scope = datetime.strptime(note.time_scope_id, "%G-ww%V.%u")
                 render_column = note_time_scope.isoweekday()
 
-            elif TimeScope(note.time_scope_id).is_week():
+            elif TimeScope(note.time_scope_id).is_week:
                 seconds_offset = 0
                 render_column = 0
 
