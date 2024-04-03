@@ -85,7 +85,7 @@ def _render_n2_time(
         return TimeScope(n.time_scope_id).as_short_str(reference_scope)
 
     # For same-day notes, just show %H:%M
-    if reference_scope.is_day():
+    if reference_scope.is_day:
         if reference_scope == TimeScopeBuilder.day_scope_from_dt(n.sort_time):
             return n.sort_time.strftime('%H:%M')
 
@@ -292,31 +292,8 @@ def render_matching_notes(
                 scope_id)
 
         scope_id0 = TimeScope(list(scope_ids)[0])
-
-        if scope_id0.is_day:
-            next_dt = datetime.strptime(scope_id0, '%G-ww%V.%u') + timedelta(days=1)
-            render_kwargs['next_scope'] = _scope_to_html_link(TimeScopeBuilder.day_scope_from_dt(next_dt))
-            prev_dt = datetime.strptime(scope_id0, '%G-ww%V.%u') + timedelta(days=-1)
-            render_kwargs['prev_scope'] = _scope_to_html_link(TimeScopeBuilder.day_scope_from_dt(prev_dt))
-
-        elif scope_id0.is_week:
-            next_dt = datetime.strptime(scope_id0 + '.1', '%G-ww%V.%u') + timedelta(days=7)
-            render_kwargs['next_scope'] = _scope_to_html_link(next_dt.strftime('%G-ww%V'))
-            prev_dt = datetime.strptime(scope_id0 + '.1', '%G-ww%V.%u') + timedelta(days=-7)
-            render_kwargs['prev_scope'] = _scope_to_html_link(prev_dt.strftime('%G-ww%V'))
-
-        elif scope_id0.is_quarter:
-            year = int(scope_id0[:4])
-            quarter = int(scope_id0[-1])
-            next_quarter = f"{year}—Q{quarter + 1}"
-            prev_quarter = f"{year}—Q{quarter - 1}"
-            if quarter == 1:
-                prev_quarter = f"{year - 1}—Q4"
-            if quarter == 4:
-                next_quarter = f"{year + 1}—Q1"
-
-            render_kwargs['next_scope'] = _scope_to_html_link(next_quarter)
-            render_kwargs['prev_scope'] = _scope_to_html_link(prev_quarter)
+        render_kwargs['prev_scope'] = _scope_to_html_link(scope_id0.prev)
+        render_kwargs['next_scope'] = _scope_to_html_link(scope_id0.next)
 
     if domains:
         # TODO: Sort domains by length-of-domain_id, for prettier rendering.
