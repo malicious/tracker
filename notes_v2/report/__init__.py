@@ -12,7 +12,7 @@ from notes_v2.report.gather import notes_json_tree
 from notes_v2.report.render import domain_to_css_color, render_day_svg, render_week_svg
 from notes_v2.time_scope import TimeScope
 # noinspection PyUnresolvedReferences
-from . import gather, render
+from . import counts, domains, gather, render
 from .render import standalone_render_day_svg, standalone_render_week_svg
 from .render_utils import _domain_to_html_link
 

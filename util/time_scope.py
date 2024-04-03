@@ -127,6 +127,41 @@ class TimeScope(str):
     def next(self) -> Self:
         return TimeScopeBuilder.next_scope(self)
 
+    @property
+    def parent_week(self) -> Self:
+        if self.is_day:
+            return TimeScopeBuilder.get_parent_scope(self)
+
+        raise ValueError(f"Couldn't find parent_week: {repr(self)}")
+
+    @property
+    def parent_quarter(self) -> Self:
+        if self.is_day:
+            parent_week = TimeScopeBuilder.get_parent_scope(self)
+            parent_quarter = TimeScopeBuilder.get_parent_scope(parent_week)
+            return parent_quarter
+
+        elif self.is_week:
+            return TimeScopeBuilder.get_parent_scope(self)
+
+        raise ValueError(f"Couldn't find parent_quarter: {repr(self)}")
+
+    @property
+    def children(self):
+        yield from TimeScopeBuilder.get_child_scopes(self)
+
+    def as_short_str(self, reference_scope: Self | str) -> str:
+        if reference_scope == self:
+            return ""
+
+        if reference_scope[0:4] != self[0:4]:
+            return self
+
+        return self[5:]
+
+    def as_long_str(self) -> str:
+        return self + self.start.strftime("-%b-%d")
+
 
 class TimeScopeBuilder:
     @staticmethod

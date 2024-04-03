@@ -12,7 +12,7 @@ from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker, Session
 from sqlalchemy.pool import NullPool
 
-import notes_v2.report.domains
+import notes_v2.report
 from notes_v2 import add, report
 from notes_v2.models import Base, Note, NoteDomain
 from notes_v2.time_scope import TimeScope
@@ -192,6 +192,22 @@ def _register_endpoints(app):
 
         return notes_v2.report.domains.render_stats(db_session, nd_limiter)
 
+    @notes_v2_bp.route("/domains/calendar")
+    def do_render_domain_calendar():
+        page_domain_filters = tuple(escape(arg) for arg in request.args.getlist('filter') or [])
+        if not page_domain_filters:
+            return {"error": "Must provide domain filters, because we're not rendering every note"}
+
+        return notes_v2.report.counts.render_calendar(db_session, page_domain_filters)
+
+    @notes_v2_bp.route("/domains/calendar/<string:sql_ilike_filter>")
+    def do_render_one_domain_calendar(sql_ilike_filter: str):
+        page_domain_filter = str(escape(sql_ilike_filter))
+        if not page_domain_filter:
+            return {"error": "Must provide domain filter, because we're not rendering every note"}
+
+        return notes_v2.report.counts.render_one_calendar(db_session, page_domain_filter)
+
     @notes_v2_bp.route("/svg.day/<day_scope>")
     def do_render_svg_day(day_scope):
         return report.standalone_render_day_svg(
@@ -243,5 +259,11 @@ def _register_rest_endpoints(app):
     @notes_v2_rest_bp.route("/domains")
     def do_get_note_domains():
         return notes_v2.report.domains.stats(db_session)
+
+    @notes_v2_rest_bp.route("/domains/calendar")
+    def do_get_note_domains_calendar():
+        page_scopes = tuple(escape(arg) for arg in request.args.getlist('scope') or [])
+        page_domain_filters = tuple(escape(arg) for arg in request.args.getlist('filter') or [])
+        return notes_v2.report.counts.calendar(db_session, page_scopes, page_domain_filters)
 
     app.register_blueprint(notes_v2_rest_bp, url_prefix='/v2')
