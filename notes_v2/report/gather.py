@@ -163,7 +163,7 @@ class NoteStapler:
     ) -> int:
         total_notes_count = 0
         if not skip_child_scopes:
-            for week_scope in scope.child_scopes:
+            for week_scope in scope.children:
                 added_notes = self._add_by_week(TimeScope(week_scope), skip_child_scopes)
                 total_notes_count += added_notes
 

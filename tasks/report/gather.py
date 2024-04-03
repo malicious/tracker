@@ -10,10 +10,10 @@ from sqlalchemy.orm import Session
 
 from tasks.database_models import Task, TaskLinkage
 from tasks.report.render import to_aio, make_renderer
-from tasks.time_scope import TimeScope, TimeScopeUtils
+from util import TimeScope
 
 
-def to_summary_html(t: Task, ref_scope: Optional[TimeScope] = None) -> str:
+def to_summary_html(t: Task, ref_scope: TimeScope | None = None) -> str:
     response_html = ""
     response_html += f'\n<span class="desc">{t.desc}</span>'
     response_html += f'\n<span class="task-id"><a href="{url_for(".get_task", task_id=t.task_id)}">#{t.task_id}</a></span>'
@@ -256,11 +256,11 @@ def edit_tasks_in_scope(
 
     render_kwargs['to_aio'] = to_aio
 
-    prev_scope = TimeScopeUtils.prev_scope(page_scope)
+    prev_scope = page_scope.prev
     render_kwargs['prev_scope'] = \
         f'<a href="{url_for(".do_edit_tasks_in_scope", scope_id=prev_scope)}">{prev_scope}</a>'
 
-    next_scope = TimeScopeUtils.next_scope(page_scope)
+    next_scope = page_scope.next
     render_kwargs['next_scope'] = \
         f'<a href="{url_for(".do_edit_tasks_in_scope", scope_id=next_scope)}">{next_scope}</a>'
 

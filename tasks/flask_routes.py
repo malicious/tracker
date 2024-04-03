@@ -4,10 +4,10 @@ from flask import Flask, Blueprint, request, redirect, url_for, abort
 from markupsafe import escape
 from sqlalchemy import select
 
+from util import TimeScope
 from . import report, update
 from .database import get_db
 from .database_models import Task
-from .time_scope import TimeScope
 
 
 def _register_endpoints(app: Flask):
@@ -40,9 +40,8 @@ def _register_endpoints(app: Flask):
             this_day = datetime.now().strftime("%G-ww%V.%u")
             return redirect(url_for('.do_edit_tasks_in_scope', scope_id=this_day))
 
-        # Try to read the `scope_id` as an actual TimeScope, so we can fail early.
         scope = TimeScope(scope_id)
-        scope.get_type()
+        scope.validate()
 
         return report.edit_tasks_in_scope(get_db(), page_scope=scope)
 
@@ -66,7 +65,7 @@ def _register_endpoints(app: Flask):
         '''
         try:
             parsed_scope = TimeScope(task_id)
-            parsed_scope.get_type()
+            parsed_scope.validate()
             return redirect(
                 location=url_for('.do_edit_tasks_in_scope', scope_id=parsed_scope),
                 code=301,
@@ -114,7 +113,7 @@ def _register_rest_endpoints(app: Flask):
             print(request.json)  # sometimes request.data, need to check with unicode
             return {
                 "date": datetime.now(),
-                "ok": "this was an async request with JS enabled, here's your vaunted output",
+                "ok"  : "this was an async request with JS enabled, here's your vaunted output",
             }
 
         update.update_task(get_db(), task_id, request.form)
@@ -129,7 +128,7 @@ def _register_rest_endpoints(app: Flask):
             print(request.json)
             return {
                 "date": datetime.now(),
-                "ok": f"this was an async request with JS enabled, see {task_id} and {linkage_scope}",
+                "ok"  : f"this was an async request with JS enabled, see {task_id} and {linkage_scope}",
             }
 
         update.update_task(get_db(), task_id, request.form)

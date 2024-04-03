@@ -8,7 +8,7 @@ from sqlalchemy import select, func, and_
 from sqlalchemy.orm import Session
 
 from tasks.database_models import TaskLinkage, Task
-from tasks.time_scope import TimeScope
+from util import TimeScope
 
 
 def _construct_textual_timedelta(

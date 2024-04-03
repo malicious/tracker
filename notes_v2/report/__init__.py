@@ -129,7 +129,7 @@ def render_matching_notes(
         scope_kwargs['scope'] = week_scope
         scope_url = url_for(".do_render_matching_notes", **scope_kwargs)
 
-        range: List[str] = week_scope.get_child_scopes()
+        range: List[str] = list(week_scope.children)
         def as_words(day_scope_index):
             return datetime.strptime(range[day_scope_index], '%G-ww%V.%u').strftime('%b %d')
 
@@ -187,8 +187,8 @@ def render_matching_notes(
 
         if (
             uncacheable_day_scope in scope_ids
-            or uncacheable_day_scope.get_parent() in scope_ids
-            or uncacheable_day_scope.get_parent().get_parent() in scope_ids
+            or uncacheable_day_scope.parent_week in scope_ids
+            or uncacheable_day_scope.parent_quarter in scope_ids
         ):
             return generate_fn()
 

@@ -224,8 +224,8 @@ def standalone_render_day_svg(
         day_scope: str,
         disable_caching: bool,
 ):
-    week_scope = day_scope.get_parent()
-    quarter_scope = week_scope.get_parent()
+    week_scope = day_scope.parent_week
+    quarter_scope = day_scope.parent_quarter
 
     quarter_notes = notes_json_tree(
         db_session,
@@ -382,7 +382,7 @@ def render_week_svg(
 
 
 def standalone_render_week_svg(db_session, domains, week_scope, disable_caching):
-    quarter_scope = week_scope.get_parent()
+    quarter_scope = week_scope.parent_quarter
 
     quarter_notes = notes_json_tree(db_session, domains, [week_scope])[quarter_scope]
     week_notes = quarter_notes[week_scope]

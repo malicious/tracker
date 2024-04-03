@@ -103,10 +103,7 @@ def render_stats(
 
             # If there's too many notes, limit it to the latest quarter scope
             if info.count > max_notes_cutoff:
-                target_scope = info.latest
-                while target_scope.get_parent():
-                    target_scope = target_scope.get_parent()
-
+                target_scope = info.latest.parent_quarter
                 info.domain_id_link = Markup(_domain_to_html_link(
                     info.domain_id,
                     (target_scope,),
