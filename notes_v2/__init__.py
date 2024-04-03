@@ -12,7 +12,7 @@ from markupsafe import escape
 from sqlalchemy.orm import scoped_session, sessionmaker, Session
 from sqlalchemy.pool import NullPool
 
-import notes_v2.report.note_domains
+import notes_v2.report.domains
 from notes_v2 import add, report
 from notes_v2.models import Base, Note, NoteDomain
 from notes_v2.time_scope import TimeScope
@@ -176,8 +176,8 @@ def _register_endpoints(app):
             single_page,
         )
 
-    @notes_v2_bp.route("/note-domains")
-    def do_render_note_domains():
+    @notes_v2_bp.route("/domains")
+    def do_render_domains():
         limit = request.args.get('limit')
         sql_ilike_filter = request.args.get('filter')
 
@@ -190,7 +190,7 @@ def _register_endpoints(app):
 
             return query
 
-        return notes_v2.report.note_domains.render_note_domains(db_session, nd_limiter)
+        return notes_v2.report.domains.render_stats(db_session, nd_limiter)
 
     @notes_v2_bp.route("/svg.day/<day_scope>")
     def do_render_svg_day(day_scope):
@@ -240,8 +240,8 @@ def _register_rest_endpoints(app):
         page_domains = [escape(arg) for arg in request.args.getlist('domain')]
         return report.notes_json_tree(db_session, page_domains, page_scopes)
 
-    @notes_v2_rest_bp.route("/note-domains")
+    @notes_v2_rest_bp.route("/domains")
     def do_get_note_domains():
-        return notes_v2.report.note_domains.domain_stats(db_session)
+        return notes_v2.report.domains.stats(db_session)
 
     app.register_blueprint(notes_v2_rest_bp, url_prefix='/v2')

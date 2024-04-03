@@ -39,14 +39,14 @@ def test_get_domain_stats(test_client, note_v2_session):
 
     assert len(NoteDomain.query.all()) == 4
 
-    r = test_client.get('/v2/note-domains')
+    r = test_client.get('/v2/domains')
     j = json.loads(r.get_data())
 
     assert "domain 1" in j
 
 
 def test_domain_stats_no_domains(test_client):
-    r = test_client.get('/v2/note-domains')
+    r = test_client.get('/v2/domains')
     j = json.loads(r.get_data())
 
     assert not j

@@ -7,7 +7,7 @@ from ..models import NoteDomain, Note
 from ..time_scope import TimeScope
 
 
-def domain_stats(session):
+def stats(session):
     """
     Build and return statistics for every matching NoteDomain
 
@@ -48,7 +48,7 @@ def domain_stats(session):
     return response_json
 
 
-def render_note_domains(
+def render_stats(
         session,
         query_limiter,
 ):
@@ -116,6 +116,6 @@ def render_note_domains(
             yield info
 
     return render_template(
-        'note-domains.html',
+        'notes/domains.html',
         domains_generator=render_domains(),
     )
