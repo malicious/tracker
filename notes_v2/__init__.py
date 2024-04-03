@@ -15,7 +15,7 @@ from sqlalchemy.pool import NullPool
 import notes_v2.report
 from notes_v2 import add, report
 from notes_v2.models import Base, Note, NoteDomain
-from notes_v2.time_scope import TimeScope
+from util import TimeScope
 # noinspection PyUnresolvedReferences
 from . import models
 

@@ -1,11 +1,11 @@
 from datetime import datetime
-from typing import Dict, List, Iterable
+from typing import Dict, Iterable
 
 from sqlalchemy import or_, select
-from sqlalchemy.orm import Session, joinedload, query
+from sqlalchemy.orm import Session, joinedload
 
 from notes_v2.models import Note, NoteDomain
-from notes_v2.time_scope import TimeScope
+from util import TimeScope
 
 NOTES_KEY = "notes"
 
@@ -51,7 +51,7 @@ class NoteStapler:
 
     def _construct_scope_tree(self, scope: TimeScope) -> Dict:
         # TODO: Could probably collapse these cases into something cute and recursive
-        if scope.is_quarter():
+        if scope.is_quarter:
             if scope not in self.scope_tree:
                 self.scope_tree[scope] = {
                     NOTES_KEY: [],
@@ -59,8 +59,8 @@ class NoteStapler:
 
             return self.scope_tree[scope]
 
-        elif scope.is_week():
-            quarter_tree = self._construct_scope_tree(scope.parent)
+        elif scope.is_week:
+            quarter_tree = self._construct_scope_tree(scope.parent_quarter)
             if scope not in quarter_tree:
                 quarter_tree[scope] = {
                     NOTES_KEY: [],
@@ -68,8 +68,8 @@ class NoteStapler:
 
             return quarter_tree[scope]
 
-        elif scope.is_day():
-            week_tree = self._construct_scope_tree(scope.parent)
+        elif scope.is_day:
+            week_tree = self._construct_scope_tree(scope.parent_week)
             if scope not in week_tree:
                 week_tree[scope] = {
                     NOTES_KEY: [],
@@ -102,11 +102,11 @@ class NoteStapler:
                 return n.sort_time
 
             ts = TimeScope(n.time_scope_id)
-            if ts.is_day():
+            if ts.is_day:
                 return datetime.strptime(n.time_scope_id, "%G-ww%V.%u")
-            elif ts.is_week():
+            elif ts.is_week:
                 return datetime.strptime(n.time_scope_id + '.1', "%G-ww%V.%u")
-            elif ts.is_quarter():
+            elif ts.is_quarter:
                 start_year = int(ts[:4])
                 start_month = int(ts[-1]) * 3 - 2
                 return datetime(start_year, start_month, 1)
@@ -136,7 +136,7 @@ class NoteStapler:
     ) -> int:
         total_notes_count = 0
         if not skip_child_scopes:
-            for day_scope in scope.child_scopes:
+            for day_scope in scope.children:
                 added_notes = self._add_by_day(TimeScope(day_scope))
                 total_notes_count += added_notes
 
@@ -183,16 +183,16 @@ class NoteStapler:
         return total_notes_count
 
     def add_by_scope(self, scope: TimeScope) -> None:
-        if scope.is_quarter():
+        if scope.is_quarter:
             self._add_by_quarter(scope)
-        elif scope.is_week():
+        elif scope.is_week:
             # Add notes in reverse order, because _collapse_scope_tree() reasons
-            self._add_by_quarter(scope.get_parent(), skip_child_scopes=True)
+            self._add_by_quarter(scope.parent_quarter, skip_child_scopes=True)
             self._add_by_week(scope)
-        elif scope.is_day():
+        elif scope.is_day:
             # Add notes in reverse order, because _collapse_scope_tree() reasons
-            self._add_by_quarter(scope.get_parent().get_parent(), skip_child_scopes=True)
-            self._add_by_week(scope.get_parent(), skip_child_scopes=True)
+            self._add_by_quarter(scope.parent_quarter, skip_child_scopes=True)
+            self._add_by_week(scope.parent_week, skip_child_scopes=True)
             self._add_by_day(scope)
         else:
             raise ValueError(f"TimeScope has unknown type: {repr(scope)}")

@@ -2,9 +2,9 @@ from flask import render_template
 from markupsafe import Markup
 from sqlalchemy import select, func
 
+from util import TimeScope
 from .render_utils import _domain_to_html_link
 from ..models import NoteDomain, Note
-from ..time_scope import TimeScope
 
 
 def stats(session):
@@ -96,7 +96,7 @@ def render_stats(
             info.domain_id = row[0]
             info.domain_id_link = Markup(_domain_to_html_link(info.domain_id, (), None))
 
-            info.latest = info.latest.minimize_vs(info.earliest)
+            info.latest = info.latest.as_short_str(info.earliest)
 
             info.count = row[4]
             info.count_str = f"{info.count:_}"
