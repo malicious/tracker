@@ -52,8 +52,12 @@ def test_week_type():
 
 def test_quarter_type():
     s = TimeScope("2018—Q3")
-    assert s.start == _construct_dt(2018, 7, 1)
-    assert s.end == _construct_dt(2018, 10, 1)
+    s.validate()
+
     assert not s.is_day
     assert not s.is_week
     assert s.is_quarter
+
+    # Quarters are special, in that they represent whole weeks
+    assert s.start == _construct_dt(2018, 7, 2)
+    assert s.end == _construct_dt(2018, 10, 1)

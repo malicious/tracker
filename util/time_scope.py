@@ -68,18 +68,33 @@ class TimeScope(str):
         if m:
             self._type = TimeScope.Type.quarter
             year = int(m[1])
-            if m[2] == '1':
-                self._dt_start = datetime(year, 1, 1)
-                self._dt_end = datetime(year, 4, 1)
-            elif m[2] == '2':
-                self._dt_start = datetime(year, 4, 1)
-                self._dt_end = datetime(year, 7, 1)
-            elif m[2] == '3':
-                self._dt_start = datetime(year, 7, 1)
-                self._dt_end = datetime(year, 10, 1)
-            elif m[2] == '4':
-                self._dt_start = datetime(year, 10, 1)
-                self._dt_end = datetime(year + 1, 1, 1)
+            month = int(m[2]) * 3 - 2
+
+            # So, we don't actually use calendar quarters.
+            # Every quarter has a whole number of weeks.
+            technical_start_day = TimeScopeBuilder.day_scope_from_dt(datetime(year, month, 1))
+            technical_start_week = TimeScopeBuilder.get_parent_scope(technical_start_day)
+
+            # If the first of the month is after Thursday, that week belongs to the previous quarter.
+            actual_start_week = technical_start_week
+            if technical_start_day[-1] in ("5", "6", "7"):
+                actual_start_week = TimeScopeBuilder.next_scope(technical_start_week)
+
+            self._dt_start = actual_start_week.start
+
+            # And for the last week: look for one where we own the Thursday.
+            if month == 10:
+                technical_end_day = TimeScopeBuilder.day_scope_from_dt(datetime(year + 1, 1, 1))
+            else:
+                technical_end_day = TimeScopeBuilder.day_scope_from_dt(datetime(year, month + 3, 1))
+            technical_end_week = TimeScopeBuilder.get_parent_scope(technical_end_day)
+
+            actual_end_week = technical_end_week
+            if technical_end_day[-1] in ("5", "6", "7"):
+                actual_end_week = TimeScopeBuilder.next_scope(technical_end_week)
+
+            self._dt_end = actual_end_week.start
+
             return
 
         raise ValueError(f"Couldn't parse TimeScope: {repr(self)}")
