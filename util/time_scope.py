@@ -165,7 +165,7 @@ class TimeScope(str):
 
 class TimeScopeBuilder:
     @staticmethod
-    def day_scope_from_dt(dt: datetime):
+    def day_scope_from_dt(dt: datetime) -> TimeScope:
         "Construct a \"day\" TimeScope, since datetimes are points in time"
         return TimeScope(dt.strftime("%G-ww%V.%u"))
 

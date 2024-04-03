@@ -7,6 +7,7 @@ from sqlalchemy import exists
 from sqlalchemy.orm import Session
 
 from tasks.database_models import TaskLinkage, Task
+from util import TimeScope
 
 
 def _to_aio(t) -> Iterable[str]:
@@ -100,14 +101,7 @@ def make_renderer(
 
     def minimize_vs_today(printed_scope_id) -> str:
         todays_scope_id = todays_date.strftime("%G-ww%V.%u")
-        if todays_scope_id == printed_scope_id:
-            return ''
-
-        # If the years are different, there's nothing to minimize
-        if todays_scope_id[0:4] != printed_scope_id[0:4]:
-            return printed_scope_id
-
-        return printed_scope_id[5:]
+        return TimeScope(printed_scope_id).as_short_str(todays_scope_id)
 
     def _compute(t: Task) -> TaskRenderInfo:
         open_linkages_exist = db_session.scalar(

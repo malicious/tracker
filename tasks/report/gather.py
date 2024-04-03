@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 
 from tasks.database_models import Task, TaskLinkage
 from tasks.report.render import to_aio, make_renderer
-from util import TimeScope
+from util import TimeScope, TimeScopeBuilder
 
 
 def to_summary_html(t: Task, ref_scope: TimeScope | None = None) -> str:
@@ -34,9 +34,8 @@ def to_summary_html(t: Task, ref_scope: TimeScope | None = None) -> str:
                 '</summary>'
 
     # Otherwise, do our best to guess at additional info
-    short_scope_str = t.linkages[0].time_scope_id.strftime("%G-ww%V.%u")
-    if short_scope_str[0:5] == ref_scope[0:5]:
-        short_scope_str = short_scope_str[5:]
+    ts0 = TimeScopeBuilder.day_scope_from_dt(t.linkages[0].time_scope_id)
+    short_scope_str = ts0.as_short_str(ref_scope)
 
     return \
             '<summary class="task">' + \
@@ -63,11 +62,9 @@ def report_one_task(task_id, return_bare_dict=False):
     return f'<html><body><pre>{task.as_json()}</pre></body></html>'
 
 
-def generate_tasks_by_scope(db_session: Session, scope_id: str):
-    # day-like scope (`%G-ww%V.%u`)
-    m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d).(\d)", scope_id)
-    if m:
-        scope = datetime.strptime(scope_id, "%G-ww%V.%u").date()
+def generate_tasks_by_scope(db_session: Session, page_scope: TimeScope):
+    if page_scope.is_day:
+        scope = datetime.strptime(page_scope, "%G-ww%V.%u").date()
         tasks = Task.query \
             .join(TaskLinkage,
                   and_(Task.task_id == TaskLinkage.task_id,
@@ -77,16 +74,13 @@ def generate_tasks_by_scope(db_session: Session, scope_id: str):
             .all()
 
         return {
-            scope_id: tasks,
+            page_scope: tasks,
         }
 
-    # week-like scope (`%G-ww%V`)
-    m = re.fullmatch(r"(\d\d\d\d)-ww([0-5]\d)", scope_id)
-    if m:
+    if page_scope.is_week:
         tasks_by_scope = {}
 
-        for day in range(1, 8):
-            day_scope_id = f"{scope_id}.{day}"
+        for day_scope_id in page_scope.children:
             day_scope = datetime.strptime(day_scope_id, "%G-ww%V.%u").date()
             tasks = Task.query \
                 .join(TaskLinkage,
@@ -100,22 +94,11 @@ def generate_tasks_by_scope(db_session: Session, scope_id: str):
 
         return tasks_by_scope
 
-    # quarter-like scope (`YYYY—QN`, that's an emdash in the middle)
-    m = re.fullmatch(r"(\d\d\d\d)—Q([1-4])", scope_id)
-    if m:
-        start_year = int(scope_id[:4])
-        start_month = int(scope_id[-1]) * 3 - 2
-
-        quarter_start_date = datetime(start_year, start_month, 1)
-        if start_month == 10:
-            quarter_end_date = datetime(start_year + 1, 1, 1)
-        else:
-            quarter_end_date = datetime(start_year, start_month + 3, 1)
-
+    if page_scope.is_quarter:
         tasks_by_scope = {}
 
-        current_day_start = quarter_start_date
-        while current_day_start < quarter_end_date:
+        current_day_start = page_scope.start
+        while current_day_start < page_scope.end:
             tasks = Task.query \
                 .join(TaskLinkage,
                       and_(Task.task_id == TaskLinkage.task_id,
@@ -130,7 +113,7 @@ def generate_tasks_by_scope(db_session: Session, scope_id: str):
         return tasks_by_scope
 
     # otherwise, no idea
-    raise ValueError(f"No idea how to handle {repr(scope_id)}")
+    raise ValueError(f"No idea how to handle {repr(page_scope)}")
 
 
 def fetch_tasks_by_domain(
