@@ -62,8 +62,8 @@ time_scope_id,desc
 
 def test_to_from_csv(note_v2_session):
     import_export_test_file = """\
-created_at,sort_time,time_scope_id,domains,source,desc,detailed_desc
-,,2021-ww31.6,,,"long, long description, with commas",
+created_at,sort_time,desc,detailed_desc,domains,time_scope_id,source,metadata
+,,"long, long description, with commas",,,2021-ww31.6,,
 """
     all_from_csv(note_v2_session, io.StringIO(import_export_test_file), expect_duplicates=False)
     assert len(Note.query.all()) > 0
@@ -75,11 +75,11 @@ created_at,sort_time,time_scope_id,domains,source,desc,detailed_desc
 
 def test_to_from_csv_stress(note_v2_session):
     io_test_file = """\
-created_at,sort_time,time_scope_id,domains,source,desc,detailed_desc
-,,2021-ww31.6,,,"long, long description, with commas",
-2000-01-01 00:00:00,,2021-ww31.7,domains: no,"maybe-invalid\r\ncopy-pasted CRLF newlines",okie desc,
-2000-01-01 00:00:00,2021-08-08 15:37:55.679000,2021-ww31.7,domains: no & domains: yes,,"escaped ""desc""
-with regular LF-only newline",unniecode ❲😎😎😎❳
+created_at,sort_time,desc,detailed_desc,domains,time_scope_id,source,metadata
+,,"long, long description, with commas",,,2021-ww31.6,,
+2000-01-01 00:00:00,,okie desc,,domains: no,2021-ww31.7,,"- source: maybe-invalid\r\ncopy-pasted CRLF newlines"
+2000-01-01 00:00:00,2021-08-08 15:37:55.679000,"escaped ""desc""
+with regular LF-only newline",unniecode ❲😎😎😎❳,domains: no & domains: yes,2021-ww31.7,,
 """
     expected_count = 3
 

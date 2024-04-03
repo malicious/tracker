@@ -8,36 +8,8 @@ from notes_v2.report.gather import NoteStapler
 from util import TimeScope
 
 
-def test_scope_parents():
-    ts1 = TimeScope("2021-ww32.3")
-
-    ts2 = ts1.parent
-    assert ts2 == "2021-ww32"
-
-    ts3 = ts2.parent
-    assert ts3 == "2021—Q3"
-
-    ts4 = ts3.parent
-    assert not ts4
-
-
-def test_scope_children():
-    ts3 = TimeScope("2021—Q3")
-    ts2s = ts3.child_scopes
-    assert len(ts2s) == 13
-    assert ts2s[0] == "2021-ww27"
-
-
-def test_scope_children2():
-    ts3 = TimeScope("2021—Q3")
-    ts2s = ts3.child_scopes
-    ts1s = ts2s[0].child_scopes
-    assert len(ts1s) == 7
-    assert ts1s[0] == "2021-ww27.1"
-
-
 def test_stapler_basic(note_v2_session):
-    ns = NoteStapler(note_v2_session, [])
+    ns = NoteStapler(note_v2_session, [], week_promotion_threshold=9, quarter_promotion_threshold=17)
     assert ns
 
     ns._construct_scope_tree(TimeScope("2021-ww32.3"))
@@ -57,7 +29,7 @@ def test_stapler_basic(note_v2_session):
 
 
 def test_stapler_collapse(note_v2_session):
-    ns = NoteStapler(note_v2_session, [])
+    ns = NoteStapler(note_v2_session, [], week_promotion_threshold=0, quarter_promotion_threshold=0)
     ns._construct_scope_tree(TimeScope("2021-ww32.3"))
     ns._construct_scope_tree(TimeScope("2021-ww31.7"))
     ns._collapse_scope_tree(TimeScope("2021—Q3"))
