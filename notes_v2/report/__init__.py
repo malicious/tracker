@@ -167,15 +167,30 @@ def render_matching_notes(
             f'<div class="domains">{_render_n2_domains(db_session, n, domains, scope_ids, single_page)}</div>\n'
         )
 
-    def render_n2_json(n: Note) -> str:
-        note_json = n.as_json(include_domains=True)
-        # Add extra debugging info
-        if note_json.get('detailed_desc'):
-            note_json['detailed_desc_length'] = len(note_json['detailed_desc'])
+    def render_n2_json(
+            n: Note, 
+            detailed_desc_max_length: int | None = 280,
+    ) -> str:
+        def render_fn() -> str:
+            note_json = n.as_json(include_domains=True)
+
+            # Add extra debugging info
+            ddesc = note_json.get('detailed_desc', None)
+            if ddesc is not None:
+                # Re-add the `detailed_desc` field so it shows up last in rendering
+                del note_json['detailed_desc']
+                if detailed_desc_max_length is not None and len(ddesc) > detailed_desc_max_length:
+                    note_json['detailed_desc'] = ddesc[:detailed_desc_max_length] + '... [truncated]'
+                else:
+                    note_json['detailed_desc'] = ddesc
+
+                note_json['detailed_desc_characters'] = len(ddesc)
+
+            return json.dumps(note_json, indent=2)
 
         return cache(
             key=("note json", n.note_id),
-            generate_fn=lambda: json.dumps(note_json, indent=2))
+            generate_fn=render_fn)
 
     def memoized_render_notes(jinja_render_fn):
         def generate_fn():
