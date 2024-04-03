@@ -254,23 +254,14 @@ class TimeScopeBuilder:
             return [TimeScope(f"{scope}.{day}") for day in range(1, 8)]
 
         elif scope.is_quarter:
-            # TODO: Convert to `yield`
             result = []
 
-            # Figure out the first Thursday in this quarter
             start_day = TimeScopeBuilder.day_scope_from_dt(scope.start)
-            start_week = TimeScopeBuilder.get_parent_scope(start_day)
-            if start_day[-1] in ("5", "6", "7"):
-                start_week = start_week.next
+            current_week = TimeScopeBuilder.get_parent_scope(start_day)
 
-            child: TimeScope = start_week
-            while True:
-                child_thursday = TimeScope(child + ".4")
-                if child_thursday.start >= scope.end:
-                    break
-
-                result.append(child)
-                child = child.next
+            while current_week.end <= scope.end:
+                result.append(current_week)
+                current_week = current_week.next
 
             return result
 

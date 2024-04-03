@@ -71,13 +71,8 @@ def render_one_calendar(
 
     def day_counts_generator(quarter_scope: TimeScope):
         per_week_counts = {}
-
-        valid_weeks = list(quarter_scope.children)
-        for week in valid_weeks:
+        for week in quarter_scope.children:
             per_week_counts[week] = [0] * 7
-
-        earliest_day = TimeScopeBuilder.day_scope_from_dt(valid_weeks[0].start)
-        latest_day = TimeScopeBuilder.day_scope_from_dt(valid_weeks[-1].end)
 
         query = (
             select(
@@ -88,8 +83,8 @@ def render_one_calendar(
             .where(and_(
                 NoteDomain.domain_id.ilike(page_domain_filter),
                 # NB These are string comparisons!
-                Note.time_scope_id >= earliest_day,
-                Note.time_scope_id < latest_day,
+                Note.time_scope_id >= TimeScopeBuilder.day_scope_from_dt(quarter_scope.start),
+                Note.time_scope_id < TimeScopeBuilder.day_scope_from_dt(quarter_scope.end),
             ))
             .group_by(Note.time_scope_id)
             .order_by(
@@ -173,12 +168,8 @@ def render_calendar(
         entries_modified: int = 0
         "Counts the number of entries modified, so we can skip rendering if 0"
 
-        valid_weeks = list(quarter_scope.children)
-        for week in valid_weeks:
+        for week in quarter_scope.children:
             per_week_counts[week] = {}
-
-        earliest_day = TimeScopeBuilder.day_scope_from_dt(valid_weeks[0].start)
-        latest_day = TimeScopeBuilder.day_scope_from_dt(valid_weeks[-1].end)
 
         for domain_filter in page_domain_filters:
             # Initialize all the counts for this filter.
@@ -194,8 +185,8 @@ def render_calendar(
                 .where(and_(
                     NoteDomain.domain_id.ilike(domain_filter),
                     # NB These are string comparisons!
-                    Note.time_scope_id >= earliest_day,
-                    Note.time_scope_id < latest_day,
+                    Note.time_scope_id >= TimeScopeBuilder.day_scope_from_dt(quarter_scope.start),
+                    Note.time_scope_id < TimeScopeBuilder.day_scope_from_dt(quarter_scope.end),
                 ))
                 .group_by(Note.time_scope_id)
                 .order_by(
