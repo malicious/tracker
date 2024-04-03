@@ -10,7 +10,7 @@ from sqlalchemy.orm import Session
 from notes_v2.models import Note, NoteDomain
 from notes_v2.report.gather import notes_json_tree
 from notes_v2.report.render import domain_to_css_color, render_day_svg, render_week_svg
-from notes_v2.time_scope import TimeScope
+from util import TimeScope, TimeScopeBuilder
 # noinspection PyUnresolvedReferences
 from . import counts, domains, gather, render
 from .render import standalone_render_day_svg, standalone_render_week_svg
@@ -76,21 +76,21 @@ def _render_n2_time(
     scope_id_years = set([ts[0:4] for ts in scope_ids])
     if n.time_scope_id[0:4] not in scope_id_years:
         if n.sort_time:
-            return TimeScope.from_datetime(n.sort_time)
+            return TimeScopeBuilder.day_scope_from_dt(n.sort_time)
         else:
             return n.time_scope_id
 
     # For notes without a sort_time, just dump the date
     if not n.sort_time:
-        return TimeScope(n.time_scope_id).minimize_vs(reference_scope)
+        return TimeScope(n.time_scope_id).as_short_str(reference_scope)
 
     # For same-day notes, just show %H:%M
     if reference_scope.is_day():
-        if reference_scope == TimeScope.from_datetime(n.sort_time):
+        if reference_scope == TimeScopeBuilder.day_scope_from_dt(n.sort_time):
             return n.sort_time.strftime('%H:%M')
 
     return "{} {}".format(
-        TimeScope.from_datetime(n.sort_time).minimize_vs(reference_scope),
+        TimeScopeBuilder.day_scope_from_dt(n.sort_time).as_short_str(reference_scope),
         n.sort_time.strftime('%H:%M'),
     )
 
@@ -244,7 +244,7 @@ def render_matching_notes(
             disable_caching = True
         # Sometimes, we render a week <svg> for a single day.
         # This makes the rendering weird and incomplete, so don't cache it.
-        if len(scope_ids) == 1 and TimeScope(scope_ids[0]).is_day():
+        if len(scope_ids) == 1 and TimeScope(scope_ids[0]).is_day:
             disable_caching = True
 
         render_inline: bool = single_page
@@ -293,19 +293,19 @@ def render_matching_notes(
 
         scope_id0 = TimeScope(list(scope_ids)[0])
 
-        if scope_id0.is_day():
+        if scope_id0.is_day:
             next_dt = datetime.strptime(scope_id0, '%G-ww%V.%u') + timedelta(days=1)
-            render_kwargs['next_scope'] = _scope_to_html_link(TimeScope.from_datetime(next_dt))
+            render_kwargs['next_scope'] = _scope_to_html_link(TimeScopeBuilder.day_scope_from_dt(next_dt))
             prev_dt = datetime.strptime(scope_id0, '%G-ww%V.%u') + timedelta(days=-1)
-            render_kwargs['prev_scope'] = _scope_to_html_link(TimeScope.from_datetime(prev_dt))
+            render_kwargs['prev_scope'] = _scope_to_html_link(TimeScopeBuilder.day_scope_from_dt(prev_dt))
 
-        elif scope_id0.is_week():
+        elif scope_id0.is_week:
             next_dt = datetime.strptime(scope_id0 + '.1', '%G-ww%V.%u') + timedelta(days=7)
             render_kwargs['next_scope'] = _scope_to_html_link(next_dt.strftime('%G-ww%V'))
             prev_dt = datetime.strptime(scope_id0 + '.1', '%G-ww%V.%u') + timedelta(days=-7)
             render_kwargs['prev_scope'] = _scope_to_html_link(prev_dt.strftime('%G-ww%V'))
 
-        elif scope_id0.is_quarter():
+        elif scope_id0.is_quarter:
             year = int(scope_id0[:4])
             quarter = int(scope_id0[-1])
             next_quarter = f"{year}—Q{quarter + 1}"
@@ -325,7 +325,7 @@ def render_matching_notes(
         domains_as_html = '\n & '.join(f'<span>{d}</span>' for d in domains_as_html)
 
         render_kwargs['scope_nav_header'] = Markup(
-            f'<div>\n{domains_as_html}\n</div>\n'
+            f'<div>\n{domains_as_html}\n</div>\n' +
             '<div class="close"><a href="{}">[x]</a></div>'.format(
                 url_for(".do_render_matching_notes", scope=scope_ids, single_page=single_page),
             )
