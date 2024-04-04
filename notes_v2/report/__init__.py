@@ -14,7 +14,7 @@ from util import TimeScope, TimeScopeBuilder
 # noinspection PyUnresolvedReferences
 from . import counts, domains, gather, render
 from .render import standalone_render_day_svg, standalone_render_week_svg
-from .render_utils import domain_to_css_color, _domain_to_html_link
+from .render_utils import domain_to_css_color, _domain_to_html_link, cache
 
 
 def _render_n2_domains(
@@ -93,16 +93,6 @@ def _render_n2_time(
         TimeScopeBuilder.day_scope_from_dt(n.sort_time).as_short_str(reference_scope),
         n.sort_time.strftime('%H:%M'),
     )
-
-
-def cache(key, generate_fn):
-    if not hasattr(current_app, 'cache_dict'):
-        current_app.cache_dict = {}
-
-    if key not in current_app.cache_dict:
-        current_app.cache_dict[key] = generate_fn()
-
-    return current_app.cache_dict[key]
 
 
 def render_matching_notes(

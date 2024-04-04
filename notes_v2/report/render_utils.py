@@ -2,6 +2,7 @@ import functools
 import hashlib
 from typing import Tuple
 
+from flask import current_app
 from markupsafe import escape
 
 max_cache_size = 25_000
@@ -50,3 +51,13 @@ def _domain_to_html_link(
     }{
         "&single_page=true" if single_page else ""
     }" style="{domain_to_css_color(domain_id)}">{domain_id}</a>'''
+
+
+def cache(key, generate_fn):
+    if not hasattr(current_app, 'cache_dict'):
+        current_app.cache_dict = {}
+
+    if key not in current_app.cache_dict:
+        current_app.cache_dict[key] = generate_fn()
+
+    return current_app.cache_dict[key]
