@@ -59,6 +59,7 @@ def _dot_radius_and_styling(
     return dot_radius, f'style="fill: hsl({_domain_hue(domain_id0)}, 80%, 40%); fill-opacity: {dot_opacity:.2f}"'
 
 
+# TODO: Investigate why this is a separate function
 def tooltip_cache(key, generate_fn):
     if not hasattr(current_app, 'tooltip_cache_dict'):
         current_app.tooltip_cache_dict = {}

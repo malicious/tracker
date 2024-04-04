@@ -4,6 +4,7 @@ from flask import render_template
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import Session
 
+from .render_utils import cache
 from ..models import NoteDomain, Note
 from util import TimeScope, TimeScopeBuilder
 
@@ -69,6 +70,11 @@ def render_one_calendar(
             yield current_quarter
             current_quarter = current_quarter.next
 
+    def caching_quarters_generator():
+        return cache(
+            key=("calendar quarters", (page_domain_filter,)),
+            generate_fn=lambda: list(quarters_generator()))
+
     def day_counts_generator(quarter_scope: TimeScope):
         per_week_counts = {}
         for week in quarter_scope.children:
@@ -104,15 +110,20 @@ def render_one_calendar(
         # Now that everything's populated appropriately, return the results
         yield from per_week_counts.items()
 
+    def caching_day_counts_generator(quarter_scope: TimeScope):
+        return cache(
+            key=("calendar single", quarter_scope, page_domain_filter),
+            generate_fn=lambda: list(day_counts_generator(quarter_scope)))
+
     def week_counts_generator(quarter_scope: TimeScope):
-        for week_scope, day_counts in day_counts_generator(quarter_scope):
+        for week_scope, day_counts in caching_day_counts_generator(quarter_scope):
             yield week_scope, len([c for c in day_counts if c])
 
     return render_template(
         'notes/counts-simple.html',
-        make_quarters=quarters_generator,
+        make_quarters=caching_quarters_generator,
         make_week_counts=week_counts_generator,
-        make_day_counts=day_counts_generator,
+        make_day_counts=caching_day_counts_generator,
     )
 
 
@@ -152,6 +163,11 @@ def render_calendar(
             current_quarter = current_quarter.next
 
         return
+
+    def caching_quarters_generator():
+        return cache(
+            key=("calendar quarters", page_domain_filters),
+            generate_fn=lambda: list(quarters_generator()))
 
     def counts_generator(quarter_scope: TimeScope):
         per_week_counts = {}
@@ -211,8 +227,13 @@ def render_calendar(
         # Now that everything's populated appropriately, return the results
         yield from per_week_counts.items()
 
+    def caching_counts_generator(quarter_scope: TimeScope):
+        return cache(
+            key=("calendar multi", quarter_scope, page_domain_filters),
+            generate_fn=lambda: list(counts_generator(quarter_scope)))
+
     return render_template(
         'notes/counts.html',
-        make_quarters=quarters_generator,
-        make_counts=counts_generator,
+        make_quarters=caching_quarters_generator,
+        make_counts=caching_counts_generator,
     )
