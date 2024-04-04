@@ -9,12 +9,12 @@ from sqlalchemy.orm import Session
 
 from notes_v2.models import Note, NoteDomain
 from notes_v2.report.gather import notes_json_tree
-from notes_v2.report.render import domain_to_css_color, render_day_svg, render_week_svg
+from notes_v2.report.render import render_day_svg, render_week_svg
 from util import TimeScope, TimeScopeBuilder
 # noinspection PyUnresolvedReferences
 from . import counts, domains, gather, render
 from .render import standalone_render_day_svg, standalone_render_week_svg
-from .render_utils import _domain_to_html_link
+from .render_utils import domain_to_css_color, _domain_to_html_link
 
 
 def _render_n2_domains(

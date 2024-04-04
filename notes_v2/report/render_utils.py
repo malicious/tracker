@@ -1,15 +1,37 @@
 import functools
+import hashlib
 from typing import Tuple
 
 from markupsafe import escape
-
-from notes_v2.report import domain_to_css_color
 
 max_cache_size = 25_000
 """
 This is based on the number of notes in a query,
 where the query takes like 10+ seconds to render.
 """
+
+
+@functools.lru_cache(maxsize=max_cache_size)
+def _domain_hue(d: str) -> str:
+    domain_hash = hashlib.sha256(d.encode('utf-8')).hexdigest()
+    domain_hash_int = int(domain_hash[0:4], 16)
+
+    color_h = (domain_hash_int % 12) * (256.0 / 12)
+    return f"{color_h:.2f}"
+
+
+@functools.lru_cache(maxsize=max_cache_size)
+def domain_to_css_color(d: str) -> str:
+    """
+    Map the domain string to a visually-distinct CSS color.
+
+    Current implementation hashes the domain string, then takes the first 4
+    characters as a base-16 number, which is then mapped to one of 8 final HSL
+    colors.
+
+    TODO: We could probably do with more than equally-spaced "hue" values
+    """
+    return f"color: hsl({_domain_hue(d)}, 80%, 40%);"
 
 
 @functools.lru_cache(maxsize=max_cache_size)
