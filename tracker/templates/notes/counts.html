@@ -113,7 +113,7 @@ a:hover {
 
   <div class="days-table">
   {%- for week_scope, day_counts_dict in make_counts(quarter_scope) %}
-    <div class="week-spacer">{{ week_scope.as_long_str() }}</div>
+    <div class="week-spacer">{{ link_scope(week_scope) }}</div>
     <div class="week-spacer">{# filter #}</div>
 
     <div class="week-spacer">{# Monday #}</div>
@@ -126,7 +126,7 @@ a:hover {
 
     {%- for filter, day_counts in day_counts_dict.items() %}
     <div>{# week_scope #}</div>
-    <div class="day-count-label">{{ filter }}</div>
+    <div class="day-count-label">{{ link_filter(week_scope, filter) }}</div>
       {%- for day_count in day_counts %}
         {%- if day_count %}
     <div class="day-count">{{ day_count }}</div>

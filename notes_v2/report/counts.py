@@ -1,7 +1,8 @@
 from dataclasses import dataclass
 from typing import Tuple
 
-from flask import render_template
+from flask import render_template, url_for
+from markupsafe import Markup
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import Session
 
@@ -274,8 +275,28 @@ def render_calendar(
             key=("calendar multi", quarter_scope, page_domains, page_domain_filters),
             generate_fn=lambda: list(counts_generator(quarter_scope)))
 
+    def link_filter(scope: TimeScope, domain_filter):
+        url = url_for(
+            ".do_render_matching_notes",
+            scope=scope,
+            domain=domain_filter,
+        )
+        response = f'<a href="{url}">{domain_filter}</a>'
+        return Markup(response)
+
+    def link_scope(scope: TimeScope):
+        url = url_for(
+            ".do_render_matching_notes",
+            scope=scope,
+            domain=(*page_domains, *page_domain_filters),
+        )
+        response = f'<a href="{url}">{scope.as_long_str()}</a>'
+        return Markup(response)
+
     return render_template(
         'notes/counts.html',
         make_quarters=caching_quarters_generator,
         make_counts=caching_counts_generator,
+        link_scope=link_scope,
+        link_filter=link_filter,
     )
