@@ -7,7 +7,7 @@ from markupsafe import Markup
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import Session
 
-from .render_utils import cache
+from .render_utils import render_cache, render_cache_generator
 from ..models import NoteDomain, Note
 from util import TimeScope, TimeScopeBuilder
 
@@ -54,6 +54,7 @@ def render_one_calendar(
         db_session: Session,
         page_domain_filter: str,
 ):
+    @render_cache_generator('calendar quarters', (), (page_domain_filter,))
     def quarters_generator():
         scope_bounds_query = (
             select(
@@ -73,11 +74,7 @@ def render_one_calendar(
             yield current_quarter
             current_quarter = current_quarter.next
 
-    def caching_quarters_generator():
-        return cache(
-            key=("calendar quarters", (page_domain_filter,)),
-            generate_fn=lambda: list(quarters_generator()))
-
+    @render_cache_generator('calendar single', page_domain_filter)
     def day_counts_generator(quarter_scope: TimeScope):
         per_week_counts = {}
         for week in quarter_scope.children:
@@ -112,20 +109,15 @@ def render_one_calendar(
         # Now that everything's populated appropriately, return the results
         yield from per_week_counts.items()
 
-    def caching_day_counts_generator(quarter_scope: TimeScope):
-        return cache(
-            key=("calendar single", quarter_scope, page_domain_filter),
-            generate_fn=lambda: list(day_counts_generator(quarter_scope)))
-
     def week_counts_generator(quarter_scope: TimeScope):
-        for week_scope, day_counts in caching_day_counts_generator(quarter_scope):
+        for week_scope, day_counts in day_counts_generator(quarter_scope):
             yield week_scope, len([c for c in day_counts if c])
 
     return render_template(
         'notes/counts-simple.html',
-        make_quarters=caching_quarters_generator,
+        make_quarters=quarters_generator,
         make_week_counts=week_counts_generator,
-        make_day_counts=caching_day_counts_generator,
+        make_day_counts=day_counts_generator,
     )
 
 
@@ -134,6 +126,7 @@ def render_calendar(
         page_domains: Tuple[str],
         page_domain_filters: Tuple[str],
 ):
+    @render_cache_generator('calendar quarters', page_domains, page_domain_filters)
     def quarters_generator():
         """
         This function is a little dumb because time_scope_id's are stored dumbly in SQLite.
@@ -172,13 +165,6 @@ def render_calendar(
             yield current_quarter
             current_quarter = current_quarter.next
 
-        return
-
-    def caching_quarters_generator():
-        return cache(
-            key=("calendar quarters", page_domains, page_domain_filters),
-            generate_fn=lambda: list(quarters_generator()))
-
     @dataclass
     class GenerationResult:
         quarter_ignored: int = 0
@@ -186,6 +172,7 @@ def render_calendar(
         entries_modified: int = 0
         "Counts the number of entries modified, so we can skip rendering if 0"
 
+    @render_cache_generator('calendar multi', page_domains, page_domain_filters)
     def counts_generator(quarter_scope: TimeScope):
         per_week_counts = {}
         """
@@ -271,11 +258,7 @@ def render_calendar(
         # Now that everything's populated appropriately, return the results
         yield from per_week_counts.items()
 
-    def caching_counts_generator(quarter_scope: TimeScope):
-        return cache(
-            key=("calendar multi", quarter_scope, page_domains, page_domain_filters),
-            generate_fn=lambda: list(counts_generator(quarter_scope)))
-
+    @render_cache
     def link_filter(scope: TimeScope, domain_filter):
         url = url_for(
             ".do_render_matching_notes",
@@ -285,11 +268,7 @@ def render_calendar(
         response = f'<a href="{url}">{domain_filter}</a>'
         return Markup(response)
 
-    def caching_link_filter(scope: TimeScope, domain_filter):
-        return cache(
-            key=("link_filter", scope, domain_filter),
-            generate_fn=lambda: link_filter(scope, domain_filter))
-
+    @render_cache
     def link_scope(scope: TimeScope):
         url = url_for(
             ".do_render_matching_notes",
@@ -299,20 +278,16 @@ def render_calendar(
         response = f'<a href="{url}">{scope.as_long_str()}</a>'
         return Markup(response)
 
-    def caching_link_scope(scope: TimeScope):
-        return cache(
-            key=("link_scope", scope),
-            generate_fn=lambda: link_scope(scope))
-
+    # NB This is apparently very bad to cache. Maybe it's the decorator overhead?
     def is_future(scope: TimeScope):
         dt0 = datetime.now()  # TODO: Decide what to do with timezones
         return dt0 < scope.start
 
     return render_template(
         'notes/counts.html',
-        make_quarters=caching_quarters_generator,
-        make_counts=caching_counts_generator,
-        link_scope=caching_link_scope,
-        link_filter=caching_link_filter,
+        make_quarters=quarters_generator,
+        make_counts=counts_generator,
+        link_scope=link_scope,
+        link_filter=link_filter,
         is_future=is_future,
     )

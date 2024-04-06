@@ -54,6 +54,8 @@ def _domain_to_html_link(
 
 
 def cache(key, generate_fn):
+    print(f"cache: key={key}")
+
     if not hasattr(current_app, 'cache_dict'):
         current_app.cache_dict = {}
 
@@ -61,3 +63,28 @@ def cache(key, generate_fn):
         current_app.cache_dict[key] = generate_fn()
 
     return current_app.cache_dict[key]
+
+
+def render_cache(func):
+    def caching_wrapper(*args, **kwargs):
+        return cache(
+            key=(func.__name__, args, str(kwargs)),
+            generate_fn=lambda: func(*args, **kwargs))
+
+    return caching_wrapper
+
+
+def render_cache_generator(*args, **kwargs):
+    """
+    NB All output from the original function is stored in a list!
+    """
+    def decorate2(func):
+        cache_keys = (args, str(kwargs))
+        def special_wrapper(*args, **kwargs):
+            return cache(
+                key=(cache_keys, args, str(kwargs)),
+                generate_fn=lambda: list(func(*args, **kwargs)))
+
+        return special_wrapper
+
+    return decorate2
