@@ -16,6 +16,22 @@
   --highlight-bg-color: white;
 
   --default-left-right-margin: 8.0%;
+{%- if prev_scope or scope_nav_header or next_scope %}
+  --scope-nav-height: 24px;
+  --scope-nav-total-height: 48px;
+{%- else %}
+  --scope-nav-height: 0;
+  --scope-nav-total-height: 0;
+{% endif %}
+
+  --scope-header-content: 24px;
+  --scope-header-border: 1px;
+  --scope-header-padding: 8px;
+  --scope-header-total-height: calc(
+      var(--scope-header-padding)
+      + var(--scope-header-content)
+      + var(--scope-header-border)
+      + var(--scope-header-padding));
 }
 @media (prefers-color-scheme: dark) {
 :root {
@@ -39,67 +55,103 @@ a {
 }
 a:hover {
   text-decoration: underline;
+  background-color: var(--highlight-bg-color);
 }
 </style>
-{% endblock %}
 
 <style type="text/css">
-.blank-count {
-  background-color: #fdd;
-}
-.full-count {
-  background-color: #ddd;
-}
+  .scope-container > .spacer-上 {
+    height: calc(32px - var(--scope-header-padding));
+  }
+  
+  .scope-header-container {
+    position: sticky;
+    top: var(--scope-nav-total-height);
+    height: calc(--scope-header-total-height);
+    z-index: 90;
+    background-color: var(--default-bg-color);
+  
+    padding: 0;
+    padding-right: var(--default-left-right-margin);
+    padding-left: var(--default-left-right-margin);
+  }
+  
+  .scope-header {
+    font-size: var(--scope-header-content);
+    line-height: var(--scope-header-content);
+    height: var(--scope-header-content);
+    color: var(--highlight-fg-color);
 
-.weeks-table {
-  display: grid;
-  grid-template-columns: 300px 30px 30px 30px 30px 30px 30px 30px 30px 30px 30px 30px 30px 30px 30px;
-}
-.week-count {
-  margin: 16px 0 16px 0;
-  padding: 8px 0 8px 0;
-  border-left: 1px solid silver;
-  text-align: center;
-}
-
-.days-table {
-  display: grid;
-  grid-template-columns: 400px 50px 50px 50px 50px 50px 50px 50px;
-  max-width: 1080px;
-  margin-left: auto;
-  margin-right: auto;
-}
-.days-table > div {
-  white-space: nowrap;
-
-  -webkit-user-select: none;
-  user-select: none;
-}
-.week-spacer {
-  padding: 8px 0 8px 24px;
-  border-bottom: 1px solid silver;
-}
-.day-count-label {
-  padding: 4px 16px 4px 0;
-  border-right: 1px solid silver;
-  text-align: right;
-}
-.day-count {
-  padding: 4px 0 4px 0;
-  border-right: 1px solid silver;
-  text-align: center;
-}
-
+    padding-top: var(--scope-header-padding);
+    padding-bottom: var(--scope-header-padding);
+    border-bottom: var(--scope-header-border) solid dimgrey;
+  }
 </style>
 
+<style type="text/css">
+  .blank-count {
+    background-color: #fdd;
+  }
+  .full-count {
+    background-color: #ddd;
+  }
+  
+  .weeks-table {
+    display: grid;
+    grid-template-columns: auto repeat(14, 30px);
+    grid-template-rows: auto;
+  }
+  
+  .days-table {
+    display: grid;
+    grid-template-columns: 400px repeat(7, 50px);
+    column-gap: 12px;
+    max-width: 1080px;
+  }
+  .days-table > div {
+    white-space: nowrap;
+  
+    -webkit-user-select: none;
+    user-select: none;
+  }
+  .day-count-label {
+    padding: 4px 16px 4px 0;
+    border-right: 1px solid silver;
+    text-align: right;
+  }
+  .day-count {
+    padding: 4px 0 4px 0;
+    border-right: 1px solid silver;
+    text-align: center;
+  }
+  
+</style>
+{%- endblock %}
+
+<style type="text/css">
+  .week-count {
+    margin: 16px 0 16px 0;
+    padding: 8px 0 8px 0;
+    border-left: 1px solid silver;
+    text-align: center;
+  }
+  
+</style>
 </head>
 
 
 
 <body>
+{%- block content %}
 {%- for quarter_scope in make_quarters() %}
   <div class="weeks-table">
-    <h3>{{ quarter_scope }}</h3>
+    <div class="scope-container">
+      <div class="spacer-上"></div>
+      <div class="scope-header-container">
+        <div class="scope-header">## {{ quarter_scope }}</div>
+      </div>
+    </div>
+
   {%- for week, days_on in make_week_counts(quarter_scope) %}
     {%- if days_on == 7 %}
     <div class="week-count full-count">{{ days_on }}</div>
@@ -127,5 +179,7 @@ a:hover {
   </div>
 
 {%- endfor %}
+{%- endblock -%}
+
 </body>
 </html>

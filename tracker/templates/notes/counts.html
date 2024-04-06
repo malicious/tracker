@@ -1,105 +1,31 @@
-<!DOCTYPE html>
-<html lang="en">
-<head>
+{%- extends "notes/counts-simple.html" %}
 
-{% block head %}
-<meta charset="UTF-8">
-<style type="text/css">
-:root {
-  --default-bg-color: #eee;
-  --default-fg-color: dimgray;
-  --disabled-fg-color: #aaa;
-  --default-hover-color: #ddd;
 
-  --highlight-fg-color: black;
-  /* this needs to stand out from default-bg-color, which is off-white */
-  --highlight-bg-color: white;
 
-  --default-left-right-margin: 8.0%;
-}
-@media (prefers-color-scheme: dark) {
-:root {
-  --default-bg-color: black;
-  --default-fg-color: silver;
-  --default-hover-color: #222;
-
-  --highlight-fg-color: white;
-  --highlight-bg-color: #444;
-}}
-body {
-  font-family: 'Source Code Pro', monospace;
-  overflow-wrap: break-word;
-  color: var(--default-fg-color);
-  background-color: var(--default-bg-color);
-  margin: 0;
-}
-a {
-  color: inherit;
-  text-decoration: none;
-}
-a:hover {
-  text-decoration: underline;
-}
-</style>
-{% endblock %}
+{%- block head %}
+{{- super() }}
 
 <style type="text/css">
-.blank-count {
-  background-color: #fdd;
-}
-.full-count {
-  background-color: #ddd;
-}
-
-.weeks-table {
-  display: grid;
-  grid-template-columns: 300px 30px 30px 30px 30px 30px 30px 30px 30px 30px 30px 30px 30px 30px 30px;
-}
-.week-count {
-  margin: 16px 0 16px 0;
-  padding: 8px 0 8px 0;
-  border-left: 1px solid silver;
-  text-align: center;
-}
-
-.days-table {
-  display: grid;
-  grid-template-columns: 100px 400px 50px 50px 50px 50px 50px 50px 50px;
-  max-width: 1080px;
-  margin-left: auto;
-  margin-right: auto;
-}
-.days-table > div {
-  white-space: nowrap;
-
-  -webkit-user-select: none;
-  user-select: none;
-}
-.week-spacer {
-  padding: 8px 0 8px 24px;
-  border-bottom: 1px solid silver;
-}
-.day-count-label {
-  padding: 4px 16px 4px 0;
-  border-right: 1px solid silver;
-  text-align: right;
-}
-.day-count {
-  padding: 4px 0 4px 0;
-  border-right: 1px solid silver;
-  text-align: center;
-}
-
+  .week-spacer {
+    padding: 8px 0 8px 24px;
+    border-bottom: 1px solid silver;
+  }
+  
 </style>
-
-</head>
-
+{%- endblock %}
 
 
-<body>
+
+{%- block content %}
 {%- for quarter_scope in make_quarters() %}
   <div class="weeks-table">
-    <h3>{{ quarter_scope }}</h3>
+    <div class="scope-container">
+      <div class="spacer-上"></div>
+      <div class="scope-header-container">
+        <div class="scope-header">## {{ quarter_scope }}</div>
+      </div>
+    </div>
+
   {%- for week, day_counts_dict in [] %}
     {%- if days_on == 7 %}
     <div class="week-count full-count">{{ days_on }}</div>
@@ -114,7 +40,6 @@ a:hover {
   <div class="days-table">
   {%- for week_scope, day_counts_dict in make_counts(quarter_scope) %}
     <div class="week-spacer">{{ link_scope(week_scope) }}</div>
-    <div class="week-spacer">{# filter #}</div>
 
     <div class="week-spacer">{# Monday #}</div>
     <div class="week-spacer">{# Tuesday #}</div>
@@ -125,8 +50,8 @@ a:hover {
     <div class="week-spacer">{# Sunday #}</div>
 
     {%- for filter, day_counts in day_counts_dict.items() %}
-    <div>{# week_scope #}</div>
     <div class="day-count-label">{{ link_filter(week_scope, filter) }}</div>
+
       {%- for day_count in day_counts %}
         {%- if day_count %}
     <div class="day-count">{{ day_count }}</div>
@@ -135,9 +60,9 @@ a:hover {
         {%- endif %}
       {%- endfor %}{# day_counts #}
     {%- endfor %}{# day_counts_dict.items() #}
+
   {%- endfor %}{# make_counts(quarter_scope) #}
   </div>
 
 {%- endfor %}
-</body>
-</html>
+{%- endblock -%}
