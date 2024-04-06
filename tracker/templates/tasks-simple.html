@@ -1,13 +1,12 @@
-{% import "shared-macros.jinja" as shared_macros %}
-{% import "task-macros.jinja" as task_macros %}
+{%- import "shared-macros.jinja" as shared_macros %}
+{%- import "task-macros.jinja" as task_macros %}
 
-{% extends "base.html" %}
+{%- extends "base.html" %}
 
 
 
-{% block head %}
-
-{{ super() }}
+{%- block head %}
+{{- super() }}
 
 <style type="text/css">
 :root {
@@ -65,10 +64,9 @@
 
 
 
-{% block content %}
+{%- block content %}
 
 {% set ns = namespace(tasks_remaining = tasks_list|length) %}
-
 {% for task in tasks_list %}
   {% set tabs = [
     (
@@ -87,6 +85,5 @@
         tabs=tabs) }}
 
   {% set ns.tasks_remaining = ns.tasks_remaining - 1 %}
-{% endfor %}
-
-{% endblock %}
+{%- endfor %}
+{%- endblock %}

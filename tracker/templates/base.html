@@ -2,7 +2,7 @@
 <html lang="en">
 <head>
 
-{% block head %}
+{% block head -%}
 <meta charset="UTF-8">
 <style type="text/css">
 :root {
@@ -129,14 +129,12 @@ a:hover {
   height: 6px;
 }
 </style>
-{% endblock %}
-
+{%- endblock %}
 </head>
 
 
 
 <body>
-
 {%- if prev_scope or scope_nav_header or next_scope %}
 <div class="scope-spacer-上"></div>
 <div class="scope-nav">
@@ -160,4 +158,3 @@ a:hover {
 
 </body>
 </html>
-

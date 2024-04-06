@@ -21,6 +21,15 @@
     --task-resolved-fg-color: #bbb;
     --task-resolved-highlight-bg-color: var(--highlight-bg-color);
 
+    --scope-header-content: 24px;
+    --scope-header-border: 1px;
+    --scope-header-padding: 8px;
+    --scope-header-total-height: calc(
+        var(--scope-header-padding)
+        + var(--scope-header-content)
+        + var(--scope-header-border)
+        + var(--scope-header-padding));
+
     --category-header-content: 18px;
     --category-header-padding: 12px;
     --category-header-total-height: calc(
@@ -49,13 +58,13 @@
   {#- ================================================================= -#}
 
   .scope-container > .spacer-上 {
-    height: 20px;
+    height: calc(32px - var(--scope-header-padding));
   }
 
   .scope-header-container {
     position: sticky;
     top: calc(var(--scope-nav-height));
-    height: 33px; /* includes 1px border */
+    height: calc(--scope-header-total-height);
     z-index: 90;
     background-color: var(--default-bg-color);
 
@@ -65,14 +74,14 @@
   }
 
   .scope-header {
-    font-size: 24px;
-    line-height: 24px;
-    height: 24px;
+    font-size: var(--scope-header-content);
+    line-height: var(--scope-header-content);
+    height: var(--scope-header-content);
     color: var(--highlight-fg-color);
 
-    padding-top: 8px;
-    padding-bottom: 8px;
-    border-bottom: 1px solid dimgrey;
+    padding-top: var(--scope-header-padding);
+    padding-bottom: var(--scope-header-padding);
+    border-bottom: var(--scope-header-border) solid dimgrey;
   }
   .scope-container-post-spacer {
     height: 64px;
@@ -83,7 +92,7 @@
   }
   .category-header {
     position: sticky;
-    top: var(--scope-nav-total-height);
+    top: calc(var(--scope-nav-total-height) + var(--scope-header-total-height));
     z-index: 80;
     background-color: var(--default-bg-color);
 
@@ -509,4 +518,3 @@
 </div>
 
 {%- endblock %}{# content #}
-

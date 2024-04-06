@@ -362,7 +362,7 @@
 
 {# ================================================================= -#}
 
-{% block content %}
+{%- block content %}
 
 {% set ns = namespace() %}
 {% for scope, scope_tasks in tasks_by_scope.items() if scope_tasks %}
@@ -402,12 +402,12 @@
 </div>{# scope-container #}
 <!-- this is _outside_ `.scope-container` because the sticky header shouldn't be on top of it -->
 <div class="scope-container-post-spacer"></div>
-{% endfor %}
+{%- endfor %}
 
 <div class="spacer-下"></div>
 
 <div class="task-add-panel">
-{{ task_add_panel() }}
+  {{- task_add_panel() }}
 </div>
 
-{% endblock %}
+{%- endblock %}{# content #}
