@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+from datetime import datetime
 from typing import Tuple
 
 from flask import render_template, url_for
@@ -284,6 +285,11 @@ def render_calendar(
         response = f'<a href="{url}">{domain_filter}</a>'
         return Markup(response)
 
+    def caching_link_filter(scope: TimeScope, domain_filter):
+        return cache(
+            key=("link_filter", scope, domain_filter),
+            generate_fn=lambda: link_filter(scope, domain_filter))
+
     def link_scope(scope: TimeScope):
         url = url_for(
             ".do_render_matching_notes",
@@ -293,10 +299,20 @@ def render_calendar(
         response = f'<a href="{url}">{scope.as_long_str()}</a>'
         return Markup(response)
 
+    def caching_link_scope(scope: TimeScope):
+        return cache(
+            key=("link_scope", scope),
+            generate_fn=lambda: link_scope(scope))
+
+    def is_future(scope: TimeScope):
+        dt0 = datetime.now()  # TODO: Decide what to do with timezones
+        return dt0 < scope.start
+
     return render_template(
         'notes/counts.html',
         make_quarters=caching_quarters_generator,
         make_counts=caching_counts_generator,
-        link_scope=link_scope,
-        link_filter=link_filter,
+        link_scope=caching_link_scope,
+        link_filter=caching_link_filter,
+        is_future=is_future,
     )

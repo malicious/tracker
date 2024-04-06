@@ -11,6 +11,10 @@
     border-bottom: 1px solid silver;
   }
   
+  .future-count {
+    background-color: rgb(192, 240, 240);
+  }
+
 </style>
 {%- endblock %}
 
@@ -53,10 +57,12 @@
     <div class="day-count-label">{{ link_filter(week_scope, filter) }}</div>
 
       {%- for day_count in day_counts %}
-        {%- if day_count %}
+        {%- if day_count > 0 %}
     <div class="day-count">{{ day_count }}</div>
         {%- else %}
-    <div class="day-count blank-count"></div>
+    <div class="day-count blank-count {{
+      "future-count" if is_future(week_scope) else ""
+    }}"></div>
         {%- endif %}
       {%- endfor %}{# day_counts #}
     {%- endfor %}{# day_counts_dict.items() #}
