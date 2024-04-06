@@ -1,3 +1,4 @@
+from dataclasses import dataclass
 from typing import Tuple
 
 from flask import render_template
@@ -88,7 +89,6 @@ def render_one_calendar(
             .join(NoteDomain, NoteDomain.note_id == Note.note_id)
             .where(and_(
                 NoteDomain.domain_id.ilike(page_domain_filter),
-                # NB These are string comparisons!
                 Note.time_scope_id >= TimeScopeBuilder.day_scope_from_dt(quarter_scope.start),
                 Note.time_scope_id < TimeScopeBuilder.day_scope_from_dt(quarter_scope.end),
             ))
@@ -129,6 +129,7 @@ def render_one_calendar(
 
 def render_calendar(
         db_session: Session,
+        page_domains: Tuple[str],
         page_domain_filters: Tuple[str],
 ):
     def quarters_generator():
@@ -147,14 +148,21 @@ def render_calendar(
             .filter(func.not_(Note.time_scope_id.contains('—')))
         )
 
-        if len(page_domain_filters) > 1:
-            scope_bounds_query = scope_bounds_query \
-                .where(or_(*[NoteDomain.domain_id.ilike(f) for f in page_domain_filters]))
-        elif len(page_domain_filters) == 1:
-            scope_bounds_query = scope_bounds_query \
-                .where(NoteDomain.domain_id.ilike(page_domain_filters[0]))
+        # These have to be provided in one shot to be OR'd,
+        # providing them in two .where() clauses generates an AND.
+        where_clauses = [
+            *[NoteDomain.domain_id.ilike(f) for f in page_domains],
+            *[NoteDomain.domain_id.ilike(f) for f in page_domain_filters],
+        ]
+
+        if len(where_clauses) > 1:
+            scope_bounds_query = scope_bounds_query.where(or_(*where_clauses))
+        elif len(where_clauses) == 1:
+            scope_bounds_query = scope_bounds_query.where(where_clauses[0])
 
         scope_bounds = db_session.execute(scope_bounds_query).one()
+        if not scope_bounds[0] or not scope_bounds[1]:
+            raise ValueError(f"Couldn't find any TimeScope boundaries for {page_domains} + {page_domain_filters}")
 
         current_quarter = TimeScope(scope_bounds[0]).parent_quarter
         end_end: datetime = TimeScope(scope_bounds[1]).end
@@ -166,8 +174,15 @@ def render_calendar(
 
     def caching_quarters_generator():
         return cache(
-            key=("calendar quarters", page_domain_filters),
+            key=("calendar quarters", page_domains, page_domain_filters),
             generate_fn=lambda: list(quarters_generator()))
+
+    @dataclass
+    class GenerationResult:
+        quarter_ignored: int = 0
+        week_ignored: int = 0
+        entries_modified: int = 0
+        "Counts the number of entries modified, so we can skip rendering if 0"
 
     def counts_generator(quarter_scope: TimeScope):
         per_week_counts = {}
@@ -181,47 +196,74 @@ def render_calendar(
                 }
             }
         """
-        entries_modified: int = 0
-        "Counts the number of entries modified, so we can skip rendering if 0"
+        initialized_domains = set()
+        result = GenerationResult()
 
         for week in quarter_scope.children:
             per_week_counts[week] = {}
 
-        for domain_filter in page_domain_filters:
-            # Initialize all the counts for this filter.
-            for counts in per_week_counts.values():
-                counts[domain_filter] = [0] * 7
+        def fetch_per_domain_counts(
+                domain_filter: str,
+                coalesce_matching_domains: bool = False,
+        ) -> None:
+            if domain_filter in initialized_domains:
+                return
 
-            query = (
-                select(
-                    Note.time_scope_id,
-                    func.count(Note.note_id),
-                )
+            if coalesce_matching_domains:
+                base_query = \
+                    select(Note.time_scope_id, func.count(Note.note_id)) \
+                    .group_by(Note.time_scope_id)
+            else:
+                base_query = \
+                    select(Note.time_scope_id, func.count(Note.note_id), NoteDomain.domain_id) \
+                    .group_by(Note.time_scope_id, NoteDomain.domain_id)
+
+            count_rows = db_session.execute(
+                base_query
                 .join(NoteDomain, NoteDomain.note_id == Note.note_id)
                 .where(and_(
                     NoteDomain.domain_id.ilike(domain_filter),
-                    # NB These are string comparisons!
                     Note.time_scope_id >= TimeScopeBuilder.day_scope_from_dt(quarter_scope.start),
                     Note.time_scope_id < TimeScopeBuilder.day_scope_from_dt(quarter_scope.end),
                 ))
-                .group_by(Note.time_scope_id)
                 .order_by(
                     Note.time_scope_id.asc(),
                 )
-            )
+            ).all()
 
-            for count_row in db_session.execute(query).all():
+            for count_row in count_rows:
                 count_scope = TimeScope(count_row[0])
                 if not count_scope.is_day:
+                    if count_scope.is_quarter:
+                        result.quarter_ignored += 1
+                    if count_scope.is_week:
+                        result.week_ignored += 1
                     continue
+
+                if coalesce_matching_domains:
+                    domain_ish_label = str(domain_filter)
+                else:
+                    domain_ish_label = count_row[2]
+
+                # TODO: This will be inconsistent across quarters, but is that okay?
+                if domain_ish_label not in initialized_domains:
+                    for counts in per_week_counts.values():
+                        counts[domain_ish_label] = [0] * 7
+                    initialized_domains.add(domain_ish_label)
 
                 week_counts = per_week_counts[count_scope.parent_week]
                 day_index = int(count_scope[-1]) - 1
-                week_counts[domain_filter][day_index] = count_row[1]
+                week_counts[domain_ish_label][day_index] = count_row[1]
 
-                entries_modified += 1
+                result.entries_modified += 1
 
-        if not entries_modified:
+        for domain_filter in page_domain_filters:
+            fetch_per_domain_counts(domain_filter, True)
+
+        for domain in page_domains:
+            fetch_per_domain_counts(domain)
+
+        if not result.entries_modified:
             return []
 
         # Now that everything's populated appropriately, return the results
@@ -229,7 +271,7 @@ def render_calendar(
 
     def caching_counts_generator(quarter_scope: TimeScope):
         return cache(
-            key=("calendar multi", quarter_scope, page_domain_filters),
+            key=("calendar multi", quarter_scope, page_domains, page_domain_filters),
             generate_fn=lambda: list(counts_generator(quarter_scope)))
 
     return render_template(

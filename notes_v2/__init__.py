@@ -194,11 +194,17 @@ def _register_endpoints(app):
 
     @notes_v2_bp.route("/domains/calendar")
     def do_render_domain_calendar():
+        """
+        The difference between domains and filters is that a `filter` will lump together all matching notes.
+
+        TODO: Preserve relative ordering of domains and filters.
+        """
+        page_domains = tuple(escape(arg) for arg in request.args.getlist('domain') or [])
         page_domain_filters = tuple(escape(arg) for arg in request.args.getlist('filter') or [])
-        if not page_domain_filters:
+        if not page_domains and not page_domain_filters:
             return {"error": "Must provide domain filters, because we're not rendering every note"}
 
-        return notes_v2.report.counts.render_calendar(db_session, page_domain_filters)
+        return notes_v2.report.counts.render_calendar(db_session, page_domains, page_domain_filters)
 
     @notes_v2_bp.route("/domains/calendar/<string:sql_ilike_filter>")
     def do_render_one_domain_calendar(sql_ilike_filter: str):
