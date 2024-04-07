@@ -1,5 +1,6 @@
 import functools
 import hashlib
+import logging
 from typing import Tuple
 
 from flask import current_app
@@ -10,6 +11,9 @@ max_cache_size = 25_000
 This is based on the number of notes in a query,
 where the query takes like 10+ seconds to render.
 """
+
+logger = logging.getLogger('n2.cache')
+logger.setLevel(logging.INFO)
 
 
 @functools.lru_cache(maxsize=max_cache_size)
@@ -54,13 +58,14 @@ def _domain_to_html_link(
 
 
 def cache(key, generate_fn):
-    print(f"cache: key={key}")
-
     if not hasattr(current_app, 'cache_dict'):
         current_app.cache_dict = {}
 
     if key not in current_app.cache_dict:
+        logger.info(f"adding cache entry with key: {key}")
         current_app.cache_dict[key] = generate_fn()
+    else:
+        logger.debug(f"reading cache entry with key: {key}")
 
     return current_app.cache_dict[key]
 
