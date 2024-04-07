@@ -11,7 +11,7 @@ from sqlalchemy.orm import Session
 from notes_v2.models import Note, NoteDomain
 from notes_v2.report.gather import notes_json_tree
 from util import TimeScope
-from .render_utils import max_cache_size, _domain_hue
+from .render_utils import max_cache_size, _domain_hue, cache
 
 default_dot_render_offset = 0
 
@@ -199,23 +199,25 @@ def standalone_render_day_svg(
         day_scope: str,
         disable_caching: bool,
 ):
-    week_scope = day_scope.parent_week
-    quarter_scope = day_scope.parent_quarter
-
-    quarter_notes = notes_json_tree(
+    notes_tree = notes_json_tree(
         db_session,
         domain_ids,
         [day_scope],
-    )[quarter_scope]
-    week_notes = quarter_notes[week_scope]
+    )
+    quarter_notes = notes_tree[day_scope.parent_quarter]
+    week_notes = quarter_notes[day_scope.parent_week]
     day_notes = week_notes[day_scope]
 
-    svg_text = render_day_svg(db_session, domain_ids, day_scope, day_notes['notes'])
-    response = Response(svg_text, mimetype='image/svg+xml')
-    if not disable_caching:
+    if disable_caching:
+        svg_text = render_day_svg(db_session, domain_ids, day_scope, day_notes['notes'])
+        response = Response(svg_text, mimetype='image/svg+xml')
         response.cache_control.max_age = 31536000
-    return response
-
+        return response
+    else:
+        svg_text = cache(
+            key=("/svg.day cache entry", day_scope, domain_ids),
+            generate_fn=lambda: render_day_svg(db_session, domain_ids, day_scope, day_notes['notes']))
+        return Response(svg_text, mimetype='image/svg+xml')
 
 def render_week_svg(
         db_session: Session,
@@ -357,13 +359,21 @@ def render_week_svg(
 
 
 def standalone_render_week_svg(db_session, domains, week_scope, disable_caching):
-    quarter_scope = week_scope.parent_quarter
-
-    quarter_notes = notes_json_tree(db_session, domains, [week_scope])[quarter_scope]
+    notes_tree = notes_json_tree(
+        db_session,
+        domains,
+        [week_scope],
+    )
+    quarter_notes = notes_tree[week_scope.parent_quarter]
     week_notes = quarter_notes[week_scope]
 
-    svg_text = render_week_svg(db_session, domains, week_scope, week_notes)
-    response = Response(svg_text, mimetype='image/svg+xml')
-    if not disable_caching:
+    if disable_caching:
+        svg_text = render_week_svg(db_session, domains, week_scope, week_notes)
+        response = Response(svg_text, mimetype='image/svg+xml')
         response.cache_control.max_age = 31536000
-    return response
+        return response
+    else:
+        svg_text = cache(
+            key=("/svg.week cache entry", week_scope, domains),
+            generate_fn=lambda: render_week_svg(db_session, domains, week_scope, week_notes))
+        return Response(svg_text, mimetype='image/svg+xml')
