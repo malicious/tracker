@@ -1,6 +1,8 @@
+import logging
 from datetime import datetime
 from typing import Dict, Iterable
 
+from markupsafe import Markup
 from sqlalchemy import or_, select
 from sqlalchemy.orm import Session, joinedload
 
@@ -8,6 +10,9 @@ from notes_v2.models import Note, NoteDomain
 from util import TimeScope
 
 NOTES_KEY = "notes"
+
+logger = logging.getLogger(__name__)
+logger.setLevel(logging.INFO)
 
 
 class NoteStapler:
@@ -123,10 +128,11 @@ class NoteStapler:
             .filter(Note.time_scope_id == scope) \
             .order_by(Note.sort_time.asc())
         new_notes = list(n for (n,) in self.session.execute(new_note_rows).unique().all())
-        print(f"Rendering {len(new_notes)} new notes for {scope}")
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
         notes_list.extend(new_notes)
+
+        logger.debug(f"Stapled: day scope {scope} <= {len(notes_list)} notes")
         return len(new_notes)
 
     def _add_by_week(
@@ -144,7 +150,6 @@ class NoteStapler:
             .filter(Note.time_scope_id == scope) \
             .order_by(Note.time_scope_id.asc())
         new_notes = list(n for (n,) in self.session.execute(new_note_rows).unique().all())
-        print(f"Rendering {len(new_notes)} new notes for {scope}")
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
         notes_list.extend(new_notes)
@@ -154,6 +159,7 @@ class NoteStapler:
         if total_notes_count <= self.week_promotion_threshold:
             self._collapse_scope_tree(scope)
 
+        logger.debug(f"Stapled: week scope {scope} <= {total_notes_count} notes")
         return total_notes_count
 
     def _add_by_quarter(
@@ -171,7 +177,6 @@ class NoteStapler:
             .filter(Note.time_scope_id == scope) \
             .order_by(Note.time_scope_id.asc())
         new_notes = list(n for (n,) in self.session.execute(new_note_rows).unique().all())
-        print(f"Rendering {len(new_notes)} new notes for {scope}")
 
         notes_list = self._construct_scope_tree(scope)[NOTES_KEY]
         notes_list.extend(new_notes)
@@ -180,6 +185,7 @@ class NoteStapler:
         if total_notes_count <= self.quarter_promotion_threshold:
             self._collapse_scope_tree(scope)
 
+        logger.debug(f"Stapled quarter scope {scope} <= {total_notes_count} notes")
         return total_notes_count
 
     def add_by_scope(self, scope: TimeScope) -> None:
@@ -240,8 +246,8 @@ class NoteStapler:
 
 def notes_json_tree(
         db_session: Session,
-        domain_ids: Iterable[str],
-        scope_ids: Iterable[str],
+        domain_ids: Iterable[Markup | str],
+        scope_ids: Iterable[Markup | str],
         disable_scope_collapse: bool = False,
 ):
     week_promotion_threshold: int = 9
@@ -250,7 +256,7 @@ def notes_json_tree(
         week_promotion_threshold = 0
         quarter_promotion_threshold = 0
 
-    print(f"Stapling: {domain_ids} x {scope_ids}")
+    logger.debug(f"Stapling: {domain_ids} x {scope_ids}")
     ns = NoteStapler(
         db_session,
         domain_ids,
