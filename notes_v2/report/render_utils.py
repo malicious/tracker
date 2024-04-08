@@ -79,12 +79,25 @@ def render_cache(func):
     return caching_wrapper
 
 
-def render_cache_generator(*args, **kwargs):
+def render_cache_with_args(*args):
+    def decorate2(func):
+        cache_keys = (args)
+        def special_wrapper(*args, **kwargs):
+            return cache(
+                key=(cache_keys, args, str(kwargs)),
+                generate_fn=lambda: func(*args, **kwargs))
+
+        return special_wrapper
+
+    return decorate2
+
+
+def render_cache_generator(*args):
     """
     NB All output from the original function is stored in a list!
     """
     def decorate2(func):
-        cache_keys = (args, str(kwargs))
+        cache_keys = (args)
         def special_wrapper(*args, **kwargs):
             return cache(
                 key=(cache_keys, args, str(kwargs)),

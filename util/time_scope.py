@@ -1,3 +1,4 @@
+import functools
 import re
 from datetime import date, datetime, timedelta
 from enum import Enum
@@ -251,6 +252,7 @@ class TimeScopeBuilder:
 
         return None
 
+    @functools.lru_cache(maxsize=500)
     @staticmethod
     def get_child_scopes(scope: TimeScope) -> List[TimeScope]:
         if scope.is_day:

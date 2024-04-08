@@ -7,7 +7,7 @@ from markupsafe import Markup
 from sqlalchemy import select, func, and_, or_
 from sqlalchemy.orm import Session
 
-from .render_utils import render_cache, render_cache_generator
+from .render_utils import render_cache, render_cache_generator, render_cache_with_args
 from ..models import NoteDomain, Note
 from util import TimeScope, TimeScopeBuilder
 
@@ -339,6 +339,7 @@ def render_calendar(
         dt0 = datetime.now()  # TODO: Decide what to do with timezones
         return dt0 < scope.start
 
+    @render_cache_with_args("should_make_week_headers", page_domains, page_domain_filters)
     def should_make_week_headers(quarter_scope: TimeScope) -> bool:
         quarter_counts_transposed_items: list = list(week_counts_generator(quarter_scope))
         return len(quarter_counts_transposed_items) > 1
