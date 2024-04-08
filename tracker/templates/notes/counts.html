@@ -6,13 +6,21 @@
 {{- super() }}
 
 <style type="text/css">
+  .weeks-table > .domain-ish {
+    padding: 8px 32px 8px 16px;
+    border-bottom: 1px solid silver;
+    text-align: right;
+  }
+
   .week-spacer {
     padding: 8px 0 8px 24px;
     border-bottom: 1px solid silver;
   }
-  
   .future-count {
     background-color: rgb(192, 240, 240);
+  }
+  .day-count-label {
+    margin-left: 250px;
   }
 
 </style>
@@ -22,23 +30,30 @@
 
 {%- block content %}
 {%- for quarter_scope in make_quarters() %}
-  <div class="weeks-table">
-    <div class="scope-container">
-      <div class="spacer-上"></div>
-      <div class="scope-header-container">
-        <div class="scope-header">## {{ quarter_scope }}</div>
-      </div>
+  <div class="scope-container">
+    <div class="spacer-上"></div>
+    <div class="scope-header-container">
+      <div class="scope-header">## {{ quarter_scope }}</div>
     </div>
+  </div>
 
-  {%- for week, day_counts_dict in [] %}
-    {%- if days_on == 7 %}
+  <div class="weeks-table">
+  {%- for domain_ish_label, domain_ish_counts in make_domain_week_counts(quarter_scope) %}
+    <div class="domain-ish">{{ link_filter(quarter_scope, domain_ish_label) }}</div>
+    {%- for week_scope, days_on in domain_ish_counts.items() %}
+      {%- if days_on == 7 %}
     <div class="week-count full-count">{{ days_on }}</div>
-    {%- elif days_on %}
+      {%- elif days_on > 0 %}
     <div class="week-count">{{ days_on }}</div>
-    {%- else %}
-    <div class="week-count blank-count">{{ days_on }}</div>
-    {%- endif %}
-  {%- endfor %}
+      {%- elif days_on == 0 %}
+    <div class="week-count blank-count {{
+      "future-count" if is_future(week_scope) else ""
+    }}">{{ days_on }}</div>
+      {%- else %}
+    <div></div>
+      {%- endif %}
+    {%- endfor %}{# domain_ish_counts #}
+  {%- endfor %}{# make_domain_week_counts() #}
   </div>
 
   <div class="days-table">

@@ -107,13 +107,23 @@ a:hover {
   
   .weeks-table {
     display: grid;
-    grid-template-columns: auto repeat(14, 30px);
     grid-template-rows: auto;
+    grid-template-columns: auto repeat(14, 30px);
+    justify-content: end;
+
+    margin-right: var(--default-left-right-margin);
+    margin-bottom: 16px;
+    margin-left: var(--default-left-right-margin);
   }
-  
+  .week-count {
+    padding: 8px 0 8px 0;
+    border-left: 1px solid silver;
+    text-align: center;
+  }
+
   .days-table {
     display: grid;
-    grid-template-columns: 400px repeat(7, 50px);
+    grid-template-columns: fit-content(40%) repeat(7, 50px);
     column-gap: 12px;
 
     padding-right: var(--default-left-right-margin);
@@ -129,25 +139,16 @@ a:hover {
     padding: 4px 16px 4px 0;
     border-right: 1px solid silver;
     text-align: right;
+    max-width: 400px;
   }
   .day-count {
     padding: 4px 0 4px 0;
     border-right: 1px solid silver;
     text-align: center;
   }
-  
 </style>
 {%- endblock %}
 
-<style type="text/css">
-  .week-count {
-    margin: 16px 0 16px 0;
-    padding: 8px 0 8px 0;
-    border-left: 1px solid silver;
-    text-align: center;
-  }
-  
-</style>
 </head>
 
 
@@ -155,15 +156,16 @@ a:hover {
 <body>
 {%- block content %}
 {%- for quarter_scope in make_quarters() %}
-  <div class="weeks-table">
-    <div class="scope-container">
-      <div class="spacer-上"></div>
-      <div class="scope-header-container">
-        <div class="scope-header">## {{ quarter_scope }}</div>
-      </div>
+  <div class="scope-container">
+    <div class="spacer-上"></div>
+    <div class="scope-header-container">
+      <div class="scope-header">## {{ quarter_scope }}</div>
     </div>
+  </div>
 
-  {%- for week, days_on in make_week_counts(quarter_scope) %}
+  <div class="weeks-table">
+    <div>{# filter #}</div>
+  {%- for week_scope, days_on in make_week_counts(quarter_scope) %}
     {%- if days_on == 7 %}
     <div class="week-count full-count">{{ days_on }}</div>
     {%- elif days_on %}
@@ -171,7 +173,7 @@ a:hover {
     {%- else %}
     <div class="week-count blank-count">{{ days_on }}</div>
     {%- endif %}
-  {%- endfor %}
+  {%- endfor %}{# make_week_counts() #}
   </div>
 
   <div class="days-table">

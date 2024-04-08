@@ -286,6 +286,30 @@ def render_calendar(
         # Now that everything's populated appropriately, return the results
         yield from quarter_counts.items()
 
+    def week_counts_generator(quarter_scope: TimeScope):
+        # For rendering purposes, we transpose everything into a day_counts per domain_ish map.
+        # This could be rectified by changing the CSS to render row-by-row, but this is easier.
+        quarter_counts_transposed = {}
+
+        for week_scope, per_domain_counts in day_counts_generator(quarter_scope):
+            for domain_ish_label, day_counts in per_domain_counts.items():
+                # Initialize the sub-dict, as needed
+                if domain_ish_label not in quarter_counts_transposed:
+                    domain_ish_counts = {}
+                    for domain_week in quarter_scope.children:
+                        domain_ish_counts[domain_week] = 0
+
+                    # Add an extra week, because the CSS is hard-coded to 14 weeks
+                    if len(domain_ish_counts) < 14:
+                        domain_ish_counts[domain_week.next] = -1
+
+                    quarter_counts_transposed[domain_ish_label] = domain_ish_counts
+
+                domain_ish_counts = quarter_counts_transposed[domain_ish_label]
+                domain_ish_counts[week_scope] = len([c for c in day_counts if c])
+
+        yield from quarter_counts_transposed.items()
+
     @render_cache
     def link_filter(scope: TimeScope, domain_filter):
         url = url_for(
@@ -315,6 +339,7 @@ def render_calendar(
         'notes/counts.html',
         make_quarters=quarters_generator,
         make_counts=day_counts_generator,
+        make_domain_week_counts=week_counts_generator,
         link_scope=link_scope,
         link_filter=link_filter,
         is_future=is_future,
