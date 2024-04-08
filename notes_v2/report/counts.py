@@ -12,6 +12,15 @@ from ..models import NoteDomain, Note
 from util import TimeScope, TimeScopeBuilder
 
 
+@dataclass
+class GenerationResult:
+    quarter_ignored: int = 0
+    week_ignored: int = 0
+    entries_modified: int = 0
+    "Counts the number of entries modified, so we can skip rendering if 0"
+    entries_modified_redundantly: int = 0
+
+
 def calendar(
         db_session: Session,
         page_scopes: Tuple[str],
@@ -62,11 +71,13 @@ def render_one_calendar(
                 func.max(Note.time_scope_id),
             )
             .join(NoteDomain, NoteDomain.note_id == Note.note_id)
-            .where(NoteDomain.domain_id.ilike(page_domain_filter))
             .filter(func.not_(Note.time_scope_id.contains('—')))
+            .where(NoteDomain.domain_id.ilike(page_domain_filter))
         )
 
         scope_bounds = db_session.execute(scope_bounds_query).one()
+        if not scope_bounds[0] or not scope_bounds[1]:
+            raise ValueError(f"Couldn't find any TimeScope boundaries for {page_domain_filter}")
 
         current_quarter = TimeScope(scope_bounds[0]).parent_quarter
         end_end: datetime = TimeScope(scope_bounds[1]).end
@@ -76,38 +87,46 @@ def render_one_calendar(
 
     @render_cache_generator('calendar single', page_domain_filter)
     def day_counts_generator(quarter_scope: TimeScope):
-        per_week_counts = {}
-        for week in quarter_scope.children:
-            per_week_counts[week] = [0] * 7
+        quarter_counts = {}
+        result = GenerationResult()
+
+        for week_scope in quarter_scope.children:
+            quarter_counts[week_scope] = [0] * 7
 
         query = (
-            select(
-                Note.time_scope_id,
-                func.count(Note.note_id),
-            )
+            select(Note.time_scope_id, func.count(Note.note_id))
+            .group_by(Note.time_scope_id)
             .join(NoteDomain, NoteDomain.note_id == Note.note_id)
             .where(and_(
                 NoteDomain.domain_id.ilike(page_domain_filter),
                 Note.time_scope_id >= TimeScopeBuilder.day_scope_from_dt(quarter_scope.start),
                 Note.time_scope_id < TimeScopeBuilder.day_scope_from_dt(quarter_scope.end),
             ))
-            .group_by(Note.time_scope_id)
             .order_by(
                 Note.time_scope_id.asc(),
             )
         )
 
-        for count_row in db_session.execute(query).all():
-            count_scope = TimeScope(count_row[0])
-            if not count_scope.is_day:
+        for day_count_row in db_session.execute(query).all():
+            count_scope = TimeScope(day_count_row[0])
+            if count_scope.is_quarter:
+                result.quarter_ignored += 1
+                continue
+            if count_scope.is_week:
+                result.week_ignored += 1
                 continue
 
-            week_counts = per_week_counts[count_scope.parent_week]
+            day_counts = quarter_counts[count_scope.parent_week]
             day_index = int(count_scope[-1]) - 1
-            week_counts[day_index] = count_row[1]
 
-        # Now that everything's populated appropriately, return the results
-        yield from per_week_counts.items()
+            if day_counts[day_index] == day_count_row[1]:
+                result.entries_modified_redundantly += 1
+            else:
+                result.entries_modified += 1
+
+            day_counts[day_index] = day_count_row[1]
+
+        yield from quarter_counts.items()
 
     def week_counts_generator(quarter_scope: TimeScope):
         for week_scope, day_counts in day_counts_generator(quarter_scope):
@@ -116,8 +135,8 @@ def render_one_calendar(
     return render_template(
         'notes/counts-simple.html',
         make_quarters=quarters_generator,
-        make_week_counts=week_counts_generator,
         make_day_counts=day_counts_generator,
+        make_week_counts=week_counts_generator,
     )
 
 
@@ -165,16 +184,9 @@ def render_calendar(
             yield current_quarter
             current_quarter = current_quarter.next
 
-    @dataclass
-    class GenerationResult:
-        quarter_ignored: int = 0
-        week_ignored: int = 0
-        entries_modified: int = 0
-        "Counts the number of entries modified, so we can skip rendering if 0"
-
     @render_cache_generator('calendar multi', page_domains, page_domain_filters)
-    def counts_generator(quarter_scope: TimeScope):
-        per_week_counts = {}
+    def day_counts_generator(quarter_scope: TimeScope):
+        quarter_counts = {}
         """
         nested dict mapping from weeks to domains to counts:
 
@@ -184,14 +196,22 @@ def render_calendar(
                     "dietary%": [1, 2, 1, 2, 13, 0, 0]
                 }
             }
+
+        variable naming:
+
+        - `quarter_counts` is the parent dict
+          - `week_scope` is the week scope for each entry in this dict
+          - `per_domain_counts` holds everything for the given week
+            - `domain_ish_label` is the key for each entry
+            - `day_counts` is an array of 7 counts, mapping to days of the week
         """
         initialized_domains = set()
         result = GenerationResult()
 
-        for week in quarter_scope.children:
-            per_week_counts[week] = {}
+        for week_scope in quarter_scope.children:
+            quarter_counts[week_scope] = {}
 
-        def fetch_per_domain_counts(
+        def populate_per_domain_counts(
                 domain_filter: str,
                 coalesce_matching_domains: bool = False,
         ) -> None:
@@ -207,7 +227,7 @@ def render_calendar(
                     select(Note.time_scope_id, func.count(Note.note_id), NoteDomain.domain_id) \
                     .group_by(Note.time_scope_id, NoteDomain.domain_id)
 
-            count_rows = db_session.execute(
+            day_count_rows = db_session.execute(
                 base_query
                 .join(NoteDomain, NoteDomain.note_id == Note.note_id)
                 .where(and_(
@@ -220,43 +240,51 @@ def render_calendar(
                 )
             ).all()
 
-            for count_row in count_rows:
-                count_scope = TimeScope(count_row[0])
-                if not count_scope.is_day:
-                    if count_scope.is_quarter:
-                        result.quarter_ignored += 1
-                    if count_scope.is_week:
-                        result.week_ignored += 1
+            for day_count_row in day_count_rows:
+                count_scope = TimeScope(day_count_row[0])
+                # Confirm that we're actually dealing with days, since we don't have any UI for non-day notes
+                if count_scope.is_quarter:
+                    result.quarter_ignored += 1
+                    continue
+                if count_scope.is_week:
+                    result.week_ignored += 1
                     continue
 
                 if coalesce_matching_domains:
                     domain_ish_label = str(domain_filter)
                 else:
-                    domain_ish_label = count_row[2]
+                    domain_ish_label = day_count_row[2]
 
-                # TODO: This will be inconsistent across quarters, but is that okay?
+                # NB The set of labels will vary per quarter, skipping one if it doesn't show up at all.
                 if domain_ish_label not in initialized_domains:
-                    for counts in per_week_counts.values():
-                        counts[domain_ish_label] = [0] * 7
+                    for per_domain_counts in quarter_counts.values():
+                        per_domain_counts[domain_ish_label] = [0] * 7
+
                     initialized_domains.add(domain_ish_label)
 
-                week_counts = per_week_counts[count_scope.parent_week]
+                day_counts = quarter_counts[count_scope.parent_week][domain_ish_label]
                 day_index = int(count_scope[-1]) - 1
-                week_counts[domain_ish_label][day_index] = count_row[1]
 
-                result.entries_modified += 1
+                # Do the update, with some tracking for debug/profiling purposes
+                if day_counts[day_index] == day_count_row[1]:
+                    result.entries_modified_redundantly += 1
+                else:
+                    result.entries_modified += 1
+
+                day_counts[day_index] = day_count_row[1]
 
         for domain_filter in page_domain_filters:
-            fetch_per_domain_counts(domain_filter, True)
+            populate_per_domain_counts(domain_filter, True)
 
         for domain in page_domains:
-            fetch_per_domain_counts(domain)
+            populate_per_domain_counts(domain)
 
         if not result.entries_modified:
+            print(f"[DEBUG] No entries modified, GenerationResult: {result}")
             return []
 
         # Now that everything's populated appropriately, return the results
-        yield from per_week_counts.items()
+        yield from quarter_counts.items()
 
     @render_cache
     def link_filter(scope: TimeScope, domain_filter):
@@ -286,7 +314,7 @@ def render_calendar(
     return render_template(
         'notes/counts.html',
         make_quarters=quarters_generator,
-        make_counts=counts_generator,
+        make_counts=day_counts_generator,
         link_scope=link_scope,
         link_filter=link_filter,
         is_future=is_future,
