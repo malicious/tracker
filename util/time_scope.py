@@ -38,6 +38,12 @@ class TimeScope(str):
     def validate(self):
         self._build_properties()
 
+        # Check for weird ones like "2018-ww53.1", which should use the ISO year of 2019.
+        if self._type == TimeScope.Type.day:
+            start_str = self.start.strftime('%G-ww%V.%u')
+            if start_str != self:
+                raise ValueError(f"Got inconsistent TimeScope: {self} <> {start_str}")
+
     def _build_properties(self):
         """
         Provides support for a custom time-scope format used in my notes
