@@ -300,8 +300,10 @@ def render_calendar(
                         domain_ish_counts[domain_week] = 0
 
                     # Add an extra week, because the CSS is hard-coded to 14 weeks
-                    if len(domain_ish_counts) < 14:
-                        domain_ish_counts[domain_week.next] = -1
+                    new_unique_week = domain_week.next
+                    while len(domain_ish_counts) < 14:
+                        domain_ish_counts[new_unique_week] = -1
+                        new_unique_week = new_unique_week.next
 
                     quarter_counts_transposed[domain_ish_label] = domain_ish_counts
 
