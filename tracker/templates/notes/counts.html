@@ -16,13 +16,15 @@
     padding: 8px 0 8px 24px;
     border-bottom: 1px solid silver;
   }
+  .full-count {
+    background-color: #ddd;
+  }
   .future-count {
     background-color: rgb(192, 240, 240);
   }
   .day-count-filter-label {
     margin-left: 250px;
   }
-
 </style>
 {%- endblock %}
 
@@ -44,7 +46,7 @@
       {%- if days_on == 7 %}
     <div class="week-count full-count">{{ days_on }}</div>
       {%- elif days_on > 0 %}
-    <div class="week-count">{{ days_on }}</div>
+    <div class="week-count week-count-{{days_on}}">{{ days_on }}</div>
       {%- elif days_on == 0 %}
     <div class="week-count blank-count {{
       "future-count" if is_future(week_scope) else ""

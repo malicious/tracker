@@ -63,7 +63,6 @@ a:hover {
   text-decoration: underline;
   background-color: var(--highlight-bg-color);
 }
-
 </style>
 
 <style type="text/css">
@@ -98,13 +97,6 @@ a:hover {
 </style>
 
 <style type="text/css">
-  .blank-count {
-    background-color: #fdd;
-  }
-  .full-count {
-    background-color: #ddd;
-  }
-  
   .weeks-table {
     display: grid;
     grid-template-rows: auto;
@@ -117,9 +109,16 @@ a:hover {
   }
   .week-count {
     padding: 8px 0 8px 0;
-    border-left: 1px solid silver;
     text-align: center;
   }
+  .week-count-0 { background-color: #fdd; }
+  .week-count-1 { background: linear-gradient(var(--default-bg-color) 85%, #e0e0e0 0%); }
+  .week-count-2 { background: linear-gradient(var(--default-bg-color) 71%, #e0e0e0 0%); }
+  .week-count-3 { background: linear-gradient(var(--default-bg-color) 57%, #e0e0e0 0%); }
+  .week-count-4 { background: linear-gradient(var(--default-bg-color) 42%, #e0e0e0 0%); }
+  .week-count-5 { background: linear-gradient(var(--default-bg-color) 28%, #e0e0e0 0%); }
+  .week-count-6 { background: linear-gradient(var(--default-bg-color) 14%, #e0e0e0 0%); }
+  .week-count-7 { background-color: #ddd }
 
   .days-table {
     display: grid;
@@ -146,6 +145,10 @@ a:hover {
     border-right: 1px solid silver;
     text-align: center;
   }
+  .day-count-0,
+  .blank-count {
+    background-color: #fdd;
+  }
 </style>
 {%- endblock %}
 
@@ -166,13 +169,7 @@ a:hover {
   <div class="weeks-table">
     <div>{# filter #}</div>
   {%- for week_scope, days_on in make_week_counts(quarter_scope) %}
-    {%- if days_on == 7 %}
-    <div class="week-count full-count">{{ days_on }}</div>
-    {%- elif days_on %}
-    <div class="week-count">{{ days_on }}</div>
-    {%- else %}
-    <div class="week-count blank-count">{{ days_on }}</div>
-    {%- endif %}
+    <div class="week-count week-count-{{days_on}}">{{ days_on }}</div>
   {%- endfor %}{# make_week_counts() #}
   </div>
 
