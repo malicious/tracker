@@ -19,7 +19,7 @@
   .future-count {
     background-color: rgb(192, 240, 240);
   }
-  .day-count-label {
+  .day-count-filter-label {
     margin-left: 250px;
   }
 
@@ -57,7 +57,8 @@
   </div>
 
   <div class="days-table">
-  {%- for week_scope, day_counts_dict in make_counts(quarter_scope) %}
+  {%- for week_scope, day_counts_dict in make_day_counts(quarter_scope) %}
+    {%- if should_make_week_headers(quarter_scope) %}
     <div class="week-spacer">{{ link_scope(week_scope) }}</div>
 
     <div class="week-spacer">{# Monday #}</div>
@@ -67,15 +68,20 @@
     <div class="week-spacer">{# Friday #}</div>
     <div class="week-spacer">{# Saturday #}</div>
     <div class="week-spacer">{# Sunday #}</div>
+    {%- endif %}
 
     {%- for filter, day_counts in day_counts_dict.items() %}
-    <div class="day-count-label">{{ link_filter(week_scope, filter) }}</div>
+      {%- if should_make_week_headers(quarter_scope) %}
+    <div class="day-count-label day-count-filter-label">{{ link_filter(week_scope, filter) }}</div>
+      {%- else %}
+    <div class="day-count-label">{{ link_scope(week_scope, as_short=quarter_scope) }}</div>
+      {%- endif %}
 
       {%- for day_count in day_counts %}
         {%- if day_count > 0 %}
-    <div class="day-count">{{ day_count }}</div>
+    <div class="day-count full-count">{{ day_count }}</div>
         {%- else %}
-    <div class="day-count blank-count {{
+    <div class="day-count {{
       "future-count" if is_future(week_scope) else ""
     }}"></div>
         {%- endif %}

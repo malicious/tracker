@@ -135,8 +135,8 @@ def render_one_calendar(
     return render_template(
         'notes/counts-simple.html',
         make_quarters=quarters_generator,
-        make_day_counts=day_counts_generator,
         make_week_counts=week_counts_generator,
+        make_day_counts=day_counts_generator,
     )
 
 
@@ -321,25 +321,34 @@ def render_calendar(
         return Markup(response)
 
     @render_cache
-    def link_scope(scope: TimeScope):
+    def link_scope(scope: TimeScope, as_short: TimeScope | None =None):
         url = url_for(
             ".do_render_matching_notes",
             scope=scope,
             domain=(*page_domains, *page_domain_filters),
         )
-        response = f'<a href="{url}">{scope.as_long_str()}</a>'
+        url_text = scope.as_long_str()
+        if as_short is not None:
+            url_text = scope.as_short_str(as_short)
+
+        response = f'<a href="{url}">{url_text}</a>'
         return Markup(response)
 
     # NB This is apparently very bad to cache. Maybe it's the decorator overhead?
-    def is_future(scope: TimeScope):
+    def is_future(scope: TimeScope) -> bool:
         dt0 = datetime.now()  # TODO: Decide what to do with timezones
         return dt0 < scope.start
+
+    def should_make_week_headers(quarter_scope: TimeScope) -> bool:
+        quarter_counts_transposed_items: list = list(week_counts_generator(quarter_scope))
+        return len(quarter_counts_transposed_items) > 1
 
     return render_template(
         'notes/counts.html',
         make_quarters=quarters_generator,
-        make_counts=day_counts_generator,
         make_domain_week_counts=week_counts_generator,
+        make_day_counts=day_counts_generator,
+        should_make_week_headers=should_make_week_headers,
         link_scope=link_scope,
         link_filter=link_filter,
         is_future=is_future,
