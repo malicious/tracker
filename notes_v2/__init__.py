@@ -1,7 +1,7 @@
 import hashlib
 import os
 import re
-from datetime import datetime
+from datetime import datetime, timedelta
 
 import click
 import sqlalchemy
@@ -9,13 +9,14 @@ from flask import Blueprint, redirect, request, url_for
 from flask.cli import with_appcontext
 from flask.json.provider import DefaultJSONProvider
 from markupsafe import escape
+from sqlalchemy import func
 from sqlalchemy.orm import scoped_session, sessionmaker, Session
 from sqlalchemy.pool import NullPool
 
 import notes_v2.report
 from notes_v2 import add, report
 from notes_v2.models import Base, Note, NoteDomain
-from util import TimeScope
+from util import TimeScope, TimeScopeBuilder
 # noinspection PyUnresolvedReferences
 from . import models
 
@@ -189,6 +190,18 @@ def _register_endpoints(app):
                 query = query.filter(NoteDomain.domain_id.ilike(full_sql_filter))
 
             return query
+
+        return notes_v2.report.domains.render_stats(db_session, nd_limiter)
+
+    @notes_v2_bp.route("/domains/recent")
+    def do_render_recent_domains():
+        def nd_limiter(query, cutoff_days: int = 90):
+            early_cutoff = datetime.now() - timedelta(days=cutoff_days)
+            early_cutoff_ts = TimeScopeBuilder.day_scope_from_dt(early_cutoff)
+
+            # TODO: Modify the query so `func.count(Note.note_id)` goes past the cutoff.
+            #       For now, it only reports the number of notes in the last 90 days.
+            return query.where(Note.time_scope_id >= early_cutoff_ts)
 
         return notes_v2.report.domains.render_stats(db_session, nd_limiter)
 

@@ -96,14 +96,14 @@ def render_stats(
             info.domain_id = row[0]
             info.domain_id_link = Markup(_domain_to_html_link(info.domain_id, (), None))
 
-            info.latest = info.latest.as_short_str(info.earliest)
+            info.latest = TimeScope(row[2]).as_short_str(info.earliest)
 
             info.count = row[4]
             info.count_str = f"{info.count:_}"
 
             # If there's too many notes, limit it to the latest quarter scope
             if info.count > max_notes_cutoff:
-                target_scope = info.latest.parent_quarter
+                target_scope = TimeScope(row[2]).parent_quarter
                 info.domain_id_link = Markup(_domain_to_html_link(
                     info.domain_id,
                     (target_scope,),
