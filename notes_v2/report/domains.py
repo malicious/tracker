@@ -51,6 +51,7 @@ def stats(session):
 def render_stats(
         session,
         query_limiter,
+        max_notes_cutoff: int = 100,
 ):
     """
     Build and return human-readable page that lists domains + their info
@@ -66,9 +67,7 @@ def render_stats(
         count: int
         count_str: str
 
-    def render_domains(
-            max_notes_cutoff: int = 100,
-    ):
+    def render_domains():
         query = query_limiter(
             select(
                 NoteDomain.domain_id,
@@ -114,5 +113,5 @@ def render_stats(
 
     return render_template(
         'notes/domains.html',
-        domains_generator=render_domains(),
+        domains_generator=render_domains,
     )

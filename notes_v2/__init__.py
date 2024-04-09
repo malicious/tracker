@@ -203,7 +203,7 @@ def _register_endpoints(app):
             #       For now, it only reports the number of notes in the last 90 days.
             return query.where(Note.time_scope_id >= early_cutoff_ts)
 
-        return notes_v2.report.domains.render_stats(db_session, nd_limiter)
+        return notes_v2.report.domains.render_stats(db_session, nd_limiter, max_notes_cutoff=0)
 
     @notes_v2_bp.route("/domains/calendar")
     def do_render_domain_calendar():

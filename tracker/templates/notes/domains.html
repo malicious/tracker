@@ -110,7 +110,7 @@ a:hover {
     <div class="header domain-id">domain_id</div>
     <div class="header count">count</div>
 
-  {% for info in domains_generator %}
+  {% for info in domains_generator() %}
     <div class="earliest">{{ info.earliest }}</div>
     <div class="latest">{{ info.latest }}</div>
     <div class="domain-id">{{ info.domain_id_link }}</div>
@@ -126,4 +126,3 @@ a:hover {
 
 </body>
 </html>
-
