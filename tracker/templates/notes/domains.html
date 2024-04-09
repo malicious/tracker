@@ -22,6 +22,7 @@
   --scope-nav-height: 0px;
 {% endif %}
 }
+
 @media (prefers-color-scheme: dark) {
 :root {
   --default-bg-color: black;
@@ -31,6 +32,7 @@
   --highlight-fg-color: white;
   --highlight-bg-color: #444;
 }}
+
 body {
   font-family: 'Source Code Pro', monospace;
   overflow-wrap: break-word;
@@ -38,6 +40,10 @@ body {
   background-color: var(--default-bg-color);
   margin: 0;
 }
+body > .spacer-下 {
+  height: 640px;
+}
+
 a {
   color: inherit;
   text-decoration: none;
@@ -115,6 +121,8 @@ a:hover {
   {%- endif %}
   {%- endfor %}
   </div>
+
+  <div class="spacer-下"></div>
 
 </body>
 </html>
