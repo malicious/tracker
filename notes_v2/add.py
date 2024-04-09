@@ -2,6 +2,7 @@ import csv
 import json
 import logging
 import sys
+from dataclasses import dataclass
 from os import path
 from typing import Dict, Optional, Set
 
@@ -154,22 +155,29 @@ def all_from_csv(
         csv_file,
         expect_duplicates: bool,
 ):
-    times_todo_ignored = 0
-    times_import_failed = 0
+    @dataclass
+    class ImportResult:
+        ignored_todo: int = 0
+        import_failed_parser_error: int = 0
+        import_failed_integrity_error: int = 0
+        import_succeeded: int = 0
+
+    result = ImportResult()
 
     reader = csv.DictReader(csv_file)
     for entry_index, csv_entry in enumerate(reader):
         try:
             one_from_csv(session, csv_entry, expect_duplicates)
+            result.import_succeeded += 1
 
             if (entry_index + 1) % 1000 == 0:
-                logger.info(f"{csv_file.name} => imported {entry_index + 1:7_} entries so far")
+                logger.debug(f"{csv_file.name} => reviewed {entry_index + 1:7_} CSV rows so far")
 
         except parser.ParserError as e:
             if print_details:
                 logger.warning(e)
 
-            times_import_failed += 1
+            result.import_failed_parser_error += 1
             continue
 
         # TODO: Handle this properly, don't just do whatever the error message says.
@@ -186,7 +194,7 @@ def all_from_csv(
                     "domains" in csv_entry
                     and "todo" in csv_entry.get("domains")
             ):
-                times_todo_ignored += 1
+                result.ignored_todo += 1
                 continue
 
             logger.warning('\n'.join([
@@ -195,19 +203,20 @@ def all_from_csv(
                 '',
             ]))
 
-            times_import_failed += 1
+            result.import_failed_integrity_error += 1
             continue
 
-    if times_todo_ignored > 0:
-        logger.warning(f"Ignored malformed CSV rows with domain \"todo\" "
-                       f"({times_todo_ignored} times in {path.basename(csv_file.name)})")
+    if result.ignored_todo > 0:
+        logger.warning(f"{csv_file.name}: Ignored {result.ignored_todo} malformed CSV rows with domain \"todo\"")
 
-    # TODO: There's some overlap between import fails and \"todo\" notes,
-    #       clarify in a way that makes it clear what the user should do
-    if times_import_failed > 0:
-        logger.warning(f"Failed to import {times_import_failed} additional rows from {path.basename(csv_file.name)}")
+    if result.import_failed_parser_error > 0:
+        logger.warning(f"{csv_file.name}: Failed to import {result.import_failed_parser_error} rows due to parsing error, check file contents")
 
     session.commit()
+    logger.info(f"Imported {result.import_succeeded} notes from {csv_file.name}")
+
+    if print_details:
+        logger.info(result)
 
 
 def all_to_csv(
