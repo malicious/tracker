@@ -6,6 +6,17 @@
 {{- super() }}
 
 <style type="text/css">
+  :root {
+    --count-full-bg-color: #e0e0e0;
+    --count-future-bg-color: rgb(192, 240, 240);
+  }
+  @media (prefers-color-scheme: dark) {
+    :root {
+      --count-full-bg-color: #222;
+      --count-future-bg-color: #022;
+    }
+  }
+
   .weeks-table > .domain-ish {
     padding: 8px 32px 8px 16px;
     border-bottom: 1px solid silver;
@@ -17,10 +28,10 @@
     border-bottom: 1px solid silver;
   }
   .full-count {
-    background-color: #ddd;
+    background-color: var(--count-full-bg-color);
   }
   .future-count {
-    background-color: rgb(192, 240, 240);
+    background-color: var(--count-future-bg-color);
   }
   .day-count-filter-label {
     margin-left: 250px; 
@@ -48,9 +59,7 @@
   {%- for domain_ish_label, domain_ish_counts in make_domain_week_counts(quarter_scope) %}
     <div class="domain-ish">{{ link_filter(quarter_scope, domain_ish_label) }}</div>
     {%- for week_scope, days_on in domain_ish_counts.items() %}
-      {%- if days_on == 7 %}
-    <div class="week-count full-count">{{ days_on }}</div>
-      {%- elif days_on > 0 %}
+      {%- if days_on > 0 %}
     <div class="week-count week-count-{{days_on}}">{{ days_on }}</div>
       {%- elif days_on == 0 %}
     <div class="week-count blank-count {{

@@ -14,6 +14,8 @@
   --highlight-fg-color: black;
   /* this needs to stand out from default-bg-color, which is off-white */
   --highlight-bg-color: white;
+  --count-empty-bg-color: #fdd;
+  --count-sparkline-bg-color: #e0e0e0;
 
   --default-left-right-margin: 8.0%;
 {%- if prev_scope or scope_nav_header or next_scope %}
@@ -42,6 +44,8 @@
 
   --highlight-fg-color: white;
   --highlight-bg-color: #444;
+  --count-empty-bg-color: #411;
+  --count-sparkline-bg-color: #333;
 }}
 
 body {
@@ -111,14 +115,15 @@ a:hover {
     padding: 8px 0 8px 0;
     text-align: center;
   }
-  .week-count-0 { background-color: #fdd; }
-  .week-count-1 { background: linear-gradient(var(--default-bg-color) 85%, #e0e0e0 0%); }
-  .week-count-2 { background: linear-gradient(var(--default-bg-color) 71%, #e0e0e0 0%); }
-  .week-count-3 { background: linear-gradient(var(--default-bg-color) 57%, #e0e0e0 0%); }
-  .week-count-4 { background: linear-gradient(var(--default-bg-color) 42%, #e0e0e0 0%); }
-  .week-count-5 { background: linear-gradient(var(--default-bg-color) 28%, #e0e0e0 0%); }
-  .week-count-6 { background: linear-gradient(var(--default-bg-color) 14%, #e0e0e0 0%); }
-  .week-count-7 { background-color: #ddd }
+  /* These counts don't map exactly to n/7 because the letter in the middle distorts their visual weight. */
+  .week-count-0 { background-color: var(--count-empty-bg-color); }
+  .week-count-1 { background: linear-gradient(var(--default-bg-color) 90%, var(--count-sparkline-bg-color) 0%); }
+  .week-count-2 { background: linear-gradient(var(--default-bg-color) 80%, var(--count-sparkline-bg-color) 0%); }
+  .week-count-3 { background: linear-gradient(var(--default-bg-color) 60%, var(--count-sparkline-bg-color) 0%); }
+  .week-count-4 { background: linear-gradient(var(--default-bg-color) 40%, var(--count-sparkline-bg-color) 0%); }
+  .week-count-5 { background: linear-gradient(var(--default-bg-color) 30%, var(--count-sparkline-bg-color) 0%); }
+  .week-count-6 { background: linear-gradient(var(--default-bg-color) 20%, var(--count-sparkline-bg-color) 0%); }
+  .week-count-7 { background-color: var(--count-sparkline-bg-color); }
 
   .days-table {
     display: grid;
@@ -146,7 +151,7 @@ a:hover {
   }
   .day-count-0,
   .blank-count {
-    background-color: #fdd;
+    background-color: var(--count-empty-bg-color);
   }
 </style>
 {%- endblock %}
