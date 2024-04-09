@@ -96,14 +96,14 @@
 
 
 
-{%- macro linkage_footer_row(button_name='💾 save task') %}
+{%- macro linkage_footer_row(button_name='💾 &nbsp; &nbsp; save task') %}
 <div class="linkage-footer-row">
   <div>
-    <button class="new" disabled>+</button>
+    <button class="new" disabled>➕</button>
   </div>
   <div></div>
   <div>
-    <button class="done" disabled>mark done</button>
+    <button class="done" disabled>✔️ &nbsp; &nbsp; done</button>
   </div>
   <div style="text-align: right;">
     <button>{{ button_name }}</button>
@@ -252,6 +252,10 @@
 }
 .linkage-row button {
   width: 100%;
+}
+.linkage-footer-row button {
+  padding: 14px 18px 14px 18px;
+  font-size: 100%;
 }
 input.not-saved, textarea.not-saved,
 .not-saved div, .not-saved input, .not-saved textarea,
