@@ -1,8 +1,6 @@
 import operator
-import re
 from collections import defaultdict
 from datetime import datetime, timedelta
-from typing import Optional
 
 from flask import render_template, url_for
 from sqlalchemy import or_, select, and_
