@@ -163,7 +163,7 @@ def all_from_csv(
             one_from_csv(session, csv_entry, expect_duplicates)
 
             if (entry_index + 1) % 1000 == 0:
-                logger.info(f"Imported {entry_index + 1:7_} entries so far")
+                logger.info(f"{csv_file.name} => imported {entry_index + 1:7_} entries so far")
 
         except parser.ParserError as e:
             if print_details:
