@@ -18,6 +18,9 @@
     --tab-label-font-size: 12px;
     --tab-label-width: 48px;
     --task-future-fg-color: hsl(214, 40%, 65%);
+    {#- TODO: convert these to something that varies based on hash #}
+    --task-readonly-fg-color: #888;
+    --task-readonly-highlight-bg-color: #e8e8f0;
     --task-resolved-fg-color: #bbb;
     --task-resolved-highlight-bg-color: var(--highlight-bg-color);
 
@@ -41,6 +44,8 @@
   @media (prefers-color-scheme: dark) {
     :root {
       --task-future-fg-color: hsl(214, 70%, 30%);
+      --task-readonly-fg-color: #444;
+      --task-readonly-highlight-bg-color: #111;
       --task-resolved-fg-color: #222;
       --task-resolved-highlight-bg-color: #111;
     }
@@ -215,9 +220,8 @@
 
   .readonly,
   .readonly .task-only {
-    {#- TODO: convert this to something that varies based on hash #}
-    color: #888;
-    background-color: #e8e8f0;
+    color: var(--task-readonly-fg-color);
+    background-color: var(--task-readonly-highlight-bg-color);
   }
   .task-and-details:hover .task-only {
     background: var(--default-hover-color);
