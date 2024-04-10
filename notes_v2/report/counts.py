@@ -132,11 +132,27 @@ def render_one_calendar(
         for week_scope, day_counts in day_counts_generator(quarter_scope):
             yield week_scope, len([c for c in day_counts if c])
 
+    @render_cache_with_args('/counts link_scope', (), (page_domain_filter,))
+    def link_scope(scope: TimeScope, as_short: TimeScope | None = None):
+        url = url_for(
+            ".do_render_matching_notes",
+            scope=scope,
+            domain=page_domain_filter,
+        )
+        if as_short is None:
+            url_text = scope.as_long_str()
+        else:
+            url_text = scope.as_short_str(as_short)
+
+        response = f'<a href="{url}">{url_text}</a>'
+        return Markup(response)
+
     return render_template(
         'notes/counts-simple.html',
         make_quarters=quarters_generator,
         make_week_counts=week_counts_generator,
         make_day_counts=day_counts_generator,
+        link_scope=link_scope,
     )
 
 
@@ -329,8 +345,9 @@ def render_calendar(
             scope=scope,
             domain=(*page_domains, *page_domain_filters),
         )
-        url_text = scope.as_long_str()
-        if as_short is not None:
+        if as_short is None:
+            url_text = scope.as_long_str()
+        else:
             url_text = scope.as_short_str(as_short)
 
         response = f'<a href="{url}">{url_text}</a>'

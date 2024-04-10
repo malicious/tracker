@@ -140,7 +140,8 @@ a:hover {
     user-select: none;
   }
   .day-count-label {
-    padding: 4px 16px 4px 0;
+    padding: 4px 12px 4px 0;
+    margin: 0 4px 0 0;
     border-right: 1px solid silver;
     text-align: right;
     max-width: 400px;
@@ -166,7 +167,7 @@ a:hover {
   <div class="scope-container">
     <div class="spacer-上"></div>
     <div class="scope-header-container">
-      <div class="scope-header">## {{ quarter_scope }}</div>
+      <div class="scope-header">## {{ link_scope(quarter_scope) }}</div>
     </div>
   </div>
 
@@ -179,7 +180,7 @@ a:hover {
 
   <div class="days-table">
   {%- for week_scope, day_counts in make_day_counts(quarter_scope) %}
-    <div class="day-count-label">{{ week_scope.as_short_str(quarter_scope) }}</div>
+    <div class="day-count-label">{{ link_scope(week_scope, as_short=quarter_scope) }}</div>
 
     {%- for day_count in day_counts %}
       {%- if day_count %}
