@@ -323,7 +323,7 @@ def render_calendar(
         return Markup(response)
 
     @render_cache_with_args('/counts link_scope', page_domains, page_domain_filters)
-    def link_scope(scope: TimeScope, as_short: TimeScope | None =None):
+    def link_scope(scope: TimeScope, as_short: TimeScope | None = None):
         url = url_for(
             ".do_render_matching_notes",
             scope=scope,

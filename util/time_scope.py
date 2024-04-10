@@ -182,6 +182,10 @@ class TimeScope(str):
         return self[5:]
 
     def as_long_str(self) -> str:
+        # Quarter scopes should have different formatting, because they're much weirder
+        if self.is_quarter:
+            return self + self.start.strftime(" // %b %d")
+
         return self + self.start.strftime("-%b-%d")
 
 
