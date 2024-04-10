@@ -64,6 +64,9 @@ def cache(key, generate_fn):
     if key not in current_app.cache_dict:
         logger.info(f"adding cache entry with key: {key}")
         current_app.cache_dict[key] = generate_fn()
+
+        if len(current_app.cache_dict) % 1000 == 0:
+            logger.info(f"cache size has grown to {len(current_app.cache_dict)}")
     else:
         logger.debug(f"reading cache entry with key: {key}")
 
