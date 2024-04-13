@@ -17,6 +17,7 @@ serve-uvicorn:
 	source $(activate_script) \
   && uvicorn tracker.app_prod:asgi_app \
   --port 7529 \
+  --workers 8 \
   --reload
 
 .PHONY: serve-hypercorn
