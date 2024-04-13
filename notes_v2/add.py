@@ -154,6 +154,7 @@ def all_from_csv(
         session,
         csv_file,
         expect_duplicates: bool,
+        print_details: bool = False,
 ):
     @dataclass
     class ImportResult:
@@ -164,6 +165,10 @@ def all_from_csv(
 
     result = ImportResult()
 
+    import_source = ""
+    if hasattr(csv_file, 'name'):
+        import_source = csv_file.name
+
     reader = csv.DictReader(csv_file)
     for entry_index, csv_entry in enumerate(reader):
         try:
@@ -171,7 +176,7 @@ def all_from_csv(
             result.import_succeeded += 1
 
             if (entry_index + 1) % 1000 == 0:
-                logger.debug(f"{csv_file.name} => reviewed {entry_index + 1:7_} CSV rows so far")
+                logger.debug(f"{import_source} => reviewed {entry_index + 1:7_} CSV rows so far")
 
         except parser.ParserError as e:
             if print_details:
@@ -207,13 +212,13 @@ def all_from_csv(
             continue
 
     if result.ignored_todo > 0:
-        logger.warning(f"{csv_file.name}: Ignored {result.ignored_todo} malformed CSV rows with domain \"todo\"")
+        logger.warning(f"{import_source}: Ignored {result.ignored_todo} malformed CSV rows with domain \"todo\"")
 
     if result.import_failed_parser_error > 0:
-        logger.warning(f"{csv_file.name}: Failed to import {result.import_failed_parser_error} rows due to parsing error, check file contents")
+        logger.warning(f"{import_source}: Failed to import {result.import_failed_parser_error} rows due to parsing error, check file contents")
 
     session.commit()
-    logger.info(f"Imported {result.import_succeeded} notes from {csv_file.name}")
+    logger.info(f"Imported {result.import_succeeded} notes from {import_source}")
 
     if print_details:
         logger.info(result)
