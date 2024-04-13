@@ -220,7 +220,7 @@ def edit_tasks_all(
 
     render_kwargs['to_aio'] = to_aio
 
-    return render_template('tasks/edit-all.html', **render_kwargs)
+    return render_template('tasks/edit.html', **render_kwargs)
 
 
 def edit_tasks_in_scope(
@@ -245,8 +245,8 @@ def edit_tasks_in_scope(
     render_kwargs['next_scope'] = \
         f'<a href="{url_for(".do_edit_tasks_in_scope", scope_id=next_scope)}">{next_scope}</a>'
 
-    return render_template('tasks-in-scope.html', **render_kwargs)
+    return render_template('tasks/in-scope.html', **render_kwargs)
 
 
 def edit_tasks_simple(*args):
-    return render_template('tasks-simple.html', tasks_list=args)
+    return render_template('tasks/edit-simple.html', tasks_list=args)
