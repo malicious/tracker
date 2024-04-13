@@ -308,7 +308,7 @@ def render_matching_notes(
             )
         )
 
-    return render_template('notes-v2.html',
+    return render_template('notes/render.html',
                            cached_render=memoized_render_notes,
                            render_n2_desc=render_n2_desc,
                            render_n2_json=render_n2_json,
@@ -328,7 +328,7 @@ def edit_notes_simple(*args):
     def render_n2_json(n: Note) -> str:
         return escape(json.dumps(n.as_json(include_domains=True), indent=2))
 
-    return render_template('notes-simple.html',
+    return render_template('notes/render-simple.html',
                            note_desc_as_html=render_n2_desc,
                            pretty_print_note=render_n2_json,
                            notes_list=args)
