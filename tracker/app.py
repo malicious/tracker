@@ -4,6 +4,7 @@ import re
 from typing import Dict
 
 from flask import Flask
+from flask import send_from_directory
 from markupsafe import Markup, escape
 
 import notes_v2
@@ -23,6 +24,16 @@ def create_app(settings_overrides: Dict = {}):
             os.makedirs(app.instance_path)
         except OSError:
             pass
+
+    @app.route('/favicon.ico')
+    def favicon():
+        return send_from_directory(os.path.join(app.root_path, ''),
+                                   'favicon.ico', mimetype='image/vnd.microsoft.icon')
+
+    @app.route('/apple-touch-icon.png')
+    def favicon2():
+        return send_from_directory(os.path.join(app.root_path, ''),
+                                   'apple-touch-icon.png', mimetype='image/png')
 
     notes_v2.init_app(app)
     tasks.flask.init_app(app)
