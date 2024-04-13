@@ -220,7 +220,7 @@ def edit_tasks_all(
 
     render_kwargs['to_aio'] = to_aio
 
-    return render_template('tasks-all.html', **render_kwargs)
+    return render_template('tasks/edit-all.html', **render_kwargs)
 
 
 def edit_tasks_in_scope(
